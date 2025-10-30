@@ -1,3 +1,6 @@
+# 👥 Contributors
+[![Contributors](https://img.shields.io/github/contributors/KodingMulu/SkillLink?color=blue)](https://github.com/KodingMulu/SkillLink/graphs/contributors)
+
 # 🧠 About SkillLink
 SkillLink is a collaborative platform that helps students develop their portfolios through real-world projects with industry partners.
 
