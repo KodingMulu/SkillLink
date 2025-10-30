@@ -58,3 +58,71 @@ skilllink/
 Each folder (api, web, mobile) can be run and deployed separately.
 Use each environment variable in hosting services such as Vercel, and Expo without having to upload .env files to the public.
 ```
+
+# 🚀 How to Run a Project (Setup & Installation)
+1. Clone repository
+   ```
+   git clone https://github.com/KodingMulu/SkillLink.git
+   cd skilllink
+   ```
+2. Go to the folder you want to run
+   ```
+   cd api      # or cd web or cd mobile
+   ```
+3. Instal dependencies
+   ```
+   npm install
+   ```
+4. Environment variable configuration
+   ```
+   Copy the .env.example file to .env and adjust the values.
+   ```
+5. Run the project
+   For API & Web (Next.js)
+   ```
+   npm run dev
+   ```
+
+   For Mobile (React Native)
+   ```
+   npm run android    # or npm run web / npm run ios
+   ```
+
+# 🔑 Environment Variables (.env Example)
+Here are examples of commonly used variables:
+```
+# Umum
+NEXT_PUBLIC_API_URL=https://api.skilllink.com
+
+# API / Backend
+DATABASE_URL=postgresql://user:password@localhost:5432/skilllink
+JWT_SECRET=your_jwt_secret_key
+CLOUD_STORAGE_KEY=your_storage_key
+
+# Web
+NEXT_PUBLIC_BASE_URL=https://skilllink.vercel.app
+
+# Mobile
+EXPO_PUBLIC_API_URL=https://api.skilllink.com
+```
+```
+💡 Save the .env file locally and do not upload it to GitHub.
+When deploying to hosting such as Vercel, add these variables via the Project Settings → Environment Variables menu.
+```
+
+# 🧩 Key Features
+- 👥 Student & Industry Collaboration – Students can join real projects from companies.
+- 🧾 Automatic Portfolio – Completed projects are automatically saved as a portfolio.
+- 💬 Internal Communication System – Chat or discussion between project team members.
+- 📱 Cross-Platform Access – Web and mobile apps are connected through a single API.
+- 🔒 Secure Authentication – Uses JWT and separate environment variables for each service.
+
+# 🌐 Deployment / Hosting Info
+```
+| Section      | Recommendation Platform                                       | Notes                                              |
+| ------------ | ------------------------------------------------------------- | -------------------------------------------------- |
+| **API**      | [Render](https://render.com) / [Railway](https://railway.app) | Run the Next.js backend server                     |
+| **Web**      | [Vercel](https://vercel.com)                                  | Automatically build and deploy from the repository |
+| **Mobile**   | [Expo](https://expo.dev)                                      | Build and publish mobile applications              |
+| **Database** | [Supabase](https://supabase.com) / PostgreSQL                 | Directly connected to the API                      |
+```
