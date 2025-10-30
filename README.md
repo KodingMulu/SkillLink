@@ -118,11 +118,13 @@ When deploying to hosting such as Vercel, add these variables via the Project Se
 - 🔒 Secure Authentication – Uses JWT and separate environment variables for each service.
 
 # 🌐 Deployment / Hosting Info
-```
 | Section      | Recommendation Platform                                       | Notes                                              |
 | ------------ | ------------------------------------------------------------- | -------------------------------------------------- |
 | **API**      | [Render](https://render.com) / [Railway](https://railway.app) | Run the Next.js backend server                     |
 | **Web**      | [Vercel](https://vercel.com)                                  | Automatically build and deploy from the repository |
 | **Mobile**   | [Expo](https://expo.dev)                                      | Build and publish mobile applications              |
 | **Database** | [Supabase](https://supabase.com) / PostgreSQL                 | Directly connected to the API                      |
+
+```
+Ensure that each service has its own environment variable as needed.
 ```
