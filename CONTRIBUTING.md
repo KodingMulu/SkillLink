@@ -65,5 +65,5 @@ Before pushing, make sure the code is:
 If you encounter any issues or need assistance,
 create a new issue in the Issues tab, or contact the project's primary maintainer.
 
-Terima kasih telah berkontribusi!
-Setiap kontribusi kecil membantu SkillLink jadi lebih baik 🚀
+Thank you for contributing!
+Every little contribution helps SkillLink become better 🚀
