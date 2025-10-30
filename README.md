@@ -28,3 +28,33 @@ SkillLink was developed using modern technology to ensure high performance, ease
 ## Tools & Deployment
 - Vercel – Web & API Deployment
 - Expo / EAS – Building and implementing mobile applications
+
+# 🗂️ Folder Structure
+```
+skilllink/
+├── api/               # Folder backend (Next.js API)
+│   ├── src/
+│   ├── prisma/
+│   ├── package.json
+│   └── .env.example
+│
+├── web/               # Folder web app (Next.js Web)
+│   ├── src/
+│   ├── public/
+│   ├── package.json
+│   └── .env.example
+│
+├── mobile/            # Folder mobile app (React Native)
+│   ├── app/
+│   ├── assets/
+│   ├── package.json
+│   └── app.json
+│
+├── README.md
+└── package.json       # Root config (opsional untuk workspace management)
+```
+```
+💡 Note:
+Each folder (api, web, mobile) can be run and deployed separately.
+Use each environment variable in hosting services such as Vercel, and Expo without having to upload .env files to the public.
+```
