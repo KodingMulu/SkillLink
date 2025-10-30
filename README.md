@@ -11,12 +11,12 @@ SkillLink aims to bridge the academic and industrial worlds through an integrate
 # ⚙️ Tech Stack
 SkillLink was developed using modern technology to ensure high performance, ease of development, and cross-platform flexibility:
 ## Backend & API
-- Next.js – React Framework for API Routes and SSR
+- Next.js (Next 16 & React 19) – React Framework for API Routes and SSR
 - Prisma / Supabase / PostgreSQL – Main ORM & Database
 - JWT – Token-based Authentication
 
 ## Web App
-- Next.js (React 18) – Primary frontend with App Router
+- Next.js (Next 16 & React 19) – Primary frontend with App Router
 - Tailwind CSS – Modern and responsive styling
 - shadcn/ui – Ready-to-use UI components
 
@@ -51,7 +51,7 @@ skilllink/
 │   └── app.json
 │
 ├── README.md
-└── package.json       # Root config (opsional untuk workspace management)
+└── package.json
 ```
 ```
 💡 Note:
