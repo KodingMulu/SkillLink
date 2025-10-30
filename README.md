@@ -14,7 +14,6 @@ SkillLink was developed using modern technology to ensure high performance, ease
 - Next.js – React Framework for API Routes and SSR
 - Prisma / Supabase / PostgreSQL – Main ORM & Database
 - JWT – Token-based Authentication
-- Cloud Storage (optional: Google Drive / Cloudflare R2) – Project File Storage
 
 ## Web App
 - Next.js (React 18) – Primary frontend with App Router
