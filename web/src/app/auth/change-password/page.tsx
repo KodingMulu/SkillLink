@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import { Mail, ArrowLeft, CheckCircle } from 'lucide-react';
+import Link from 'next/link';
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState('');
@@ -97,7 +98,7 @@ export default function ForgotPasswordPage() {
                   className="w-full flex items-center justify-center space-x-2 text-gray-600 hover:text-gray-800 py-2 transition"
                 >
                   <ArrowLeft className="w-4 h-4" />
-                  <span className="font-medium">Kembali ke Login</span>
+                  <Link href={'/auth/register'}>Daftar sekarang</Link>
                 </button>
               </div>
             </>
