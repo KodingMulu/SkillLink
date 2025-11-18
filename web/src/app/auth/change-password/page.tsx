@@ -152,7 +152,7 @@ export default function ForgotPasswordPage() {
                   className="w-full flex items-center justify-center space-x-2 text-gray-600 hover:text-gray-800 py-2 transition"
                 >
                   <ArrowLeft className="w-4 h-4" />
-                  <span className="font-medium">Kembali ke Login</span>
+                  <Link href={'/auth/login'}>Kembali Login</Link>
                 </button>
               </div>
             </>
