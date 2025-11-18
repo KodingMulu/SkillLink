@@ -123,7 +123,7 @@ export default function ForgetPasswordPage() {
               disabled={loading}
               className="w-full bg-gradient-to-r from-blue-500 to-purple-600 text-white py-3 rounded-lg font-semibold hover:from-blue-600 hover:to-purple-700 transform hover:scale-105 transition duration-200 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
             >
-              {loading ? 'Mengirim...' : 'Kirim Link Reset'}
+              {loading ? 'Mengirim...' : 'konfirmasi'}
             </button>
 
             {/* Additional Info */}
