@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { Mail, ArrowLeft, Lock, CheckCircle, AlertCircle } from 'lucide-react';
+import Link from 'next/link';
 
 export default function ForgetPasswordPage() {
   const [step, setStep] = useState(1); // 1: Email Input, 2: Success Message, 3: Reset Password
@@ -134,7 +135,7 @@ export default function ForgetPasswordPage() {
                   onClick={() => alert('Redirect to login')}
                   className="text-purple-600 hover:text-purple-800 font-semibold transition"
                 >
-                  Masuk di sini
+                  <Link href={'/auth/login'}>Masuk di sini</Link>
                 </button>
               </p>
             </div>
