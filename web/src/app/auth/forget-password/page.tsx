@@ -64,8 +64,20 @@ export default function ForgetPasswordPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-500 via-purple-500 to-pink-500 flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md">
+    <div className="min-h-screen relative flex items-center justify-center p-4">
+      {/* Background Image - Gambar Terlihat Jelas */}
+      <div 
+        className="absolute inset-0 bg-cover bg-center bg-no-repeat"
+        style={{
+          backgroundImage: "url('/images/background.jpg')",
+        }}
+      >
+        {/* Overlay ringan (opsional) - uncomment jika ingin sedikit gelap */}
+        {/* <div className="absolute inset-0 bg-black/20"></div> */}
+      </div>
+
+      {/* Card Content */}
+      <div className="bg-white/95 backdrop-blur-md rounded-2xl shadow-2xl w-full max-w-md relative z-10">
         {/* Step 1: Email Input */}
         {step === 1 && (
           <div className="p-8">
@@ -131,12 +143,9 @@ export default function ForgetPasswordPage() {
             <div className="mt-6 text-center">
               <p className="text-sm text-gray-600">
                 Ingat password Anda?{' '}
-                <button
-                  onClick={() => alert('Redirect to login')}
-                  className="text-purple-600 hover:text-purple-800 font-semibold transition"
-                >
-                  <Link href={'/auth/login'}>Masuk di sini</Link>
-                </button>
+                <Link href={'/auth/login'} className="text-purple-600 hover:text-purple-800 font-semibold transition">
+                  Masuk di sini
+                </Link>
               </p>
             </div>
           </div>
