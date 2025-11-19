@@ -1,7 +1,20 @@
 'use client';
 import { useState, useRef, KeyboardEvent } from "react";
 
-export default function VerifyCode() {
+interface VerifyCodeProps {
+     backgroundImage?: string;
+     backgroundColor?: string;
+}
+
+export default function VerifyCode({ backgroundImage, backgroundColor }: VerifyCodeProps) {
+     // Ganti dengan path gambar background Anda
+     const defaultBackground = '/images/bg.webp';
+     
+     const backgroundStyle = backgroundImage 
+          ? { backgroundImage: `url(${backgroundImage})`, backgroundSize: 'cover', backgroundPosition: 'center', backgroundRepeat: 'no-repeat' }
+          : backgroundColor 
+               ? { backgroundColor: backgroundColor }
+               : { backgroundImage: `url(${defaultBackground})`, backgroundSize: 'cover', backgroundPosition: 'center', backgroundRepeat: 'no-repeat' };
      const [code, setCode] = useState<string[]>(['', '', '', '']);
      const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
@@ -64,7 +77,7 @@ export default function VerifyCode() {
      };
 
      return (
-          <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+          <div className="min-h-screen flex items-center justify-center p-4" style={backgroundStyle}>
                <div className="bg-white rounded-lg shadow-lg p-8 max-w-md w-full">
                     <div className="mb-6">
                          <div className="w-12 h-12 bg-teal-700 rounded-full flex items-center justify-center mx-auto mb-4">
