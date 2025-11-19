@@ -3,12 +3,26 @@ import { Briefcase, Menu, X } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
 
-export default function NavigationHome() {
+interface NavigationHomeProps {
+     backgroundImage?: string;
+     backgroundColor?: string;
+}
+
+export default function NavigationHome({ backgroundImage, backgroundColor }: NavigationHomeProps) {
      const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+     // Tambahkan path gambar background Anda di sini
+     const defaultBackground = '/images/background.jpg'; // Ganti dengan path gambar Anda
+     
+     const backgroundStyle = backgroundImage 
+          ? { backgroundImage: `url(${backgroundImage})`, backgroundSize: 'cover', backgroundPosition: 'center' }
+          : backgroundColor 
+               ? { backgroundColor: backgroundColor }
+               : { backgroundImage: `url(${defaultBackground})`, backgroundSize: 'cover', backgroundPosition: 'center' };
 
      return (
           <>
-               <nav className="fixed top-0 w-full bg-white shadow-sm z-50">
+               <nav className="fixed top-0 w-full shadow-sm z-50" style={backgroundStyle}>
                     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                          <div className="flex items-center justify-between h-16">
                               <div className="flex items-center">
@@ -48,7 +62,7 @@ export default function NavigationHome() {
                     </div>
 
                     {mobileMenuOpen && (
-                         <div className="md:hidden bg-white border-t">
+                         <div className="md:hidden border-t" style={backgroundStyle}>
                               <div className="px-4 py-4 space-y-3">
                                    <button className="block w-full text-left py-2 text-gray-700">Cari Pekerjaan</button>
                                    <button className="block w-full text-left py-2 text-gray-700">Cari Freelancer</button>
