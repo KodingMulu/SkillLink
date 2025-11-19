@@ -5,7 +5,7 @@ import { Mail, ArrowLeft, Lock, CheckCircle, AlertCircle } from 'lucide-react';
 import Link from 'next/link';
 
 export default function ForgetPasswordPage() {
-  const [step, setStep] = useState(1); // 1: Email Input, 2: Success Message, 3: Reset Password
+  const [step, setStep] = useState(1);
   const [email, setEmail] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -28,7 +28,6 @@ export default function ForgetPasswordPage() {
 
     setLoading(true);
     
-    // Simulasi API call
     setTimeout(() => {
       setLoading(false);
       setStep(2);
@@ -55,33 +54,27 @@ export default function ForgetPasswordPage() {
 
     setLoading(true);
     
-    // Simulasi API call
     setTimeout(() => {
       setLoading(false);
       alert('Password berhasil diubah!');
-      // Redirect to login page
     }, 1500);
   };
 
   return (
     <div className="min-h-screen relative flex items-center justify-center p-4">
-      {/* Background Image - Gambar Terlihat Jelas */}
+      {/* Background Image */}
       <div 
         className="absolute inset-0 bg-cover bg-center bg-no-repeat"
         style={{
-          backgroundImage: "url('/images/background.jpg')",
+          backgroundImage: "url('/images/bg.jpg')",
         }}
-      >
-        {/* Overlay ringan (opsional) - uncomment jika ingin sedikit gelap */}
-        {/* <div className="absolute inset-0 bg-black/20"></div> */}
-      </div>
+      />
 
       {/* Card Content */}
       <div className="bg-white/95 backdrop-blur-md rounded-2xl shadow-2xl w-full max-w-md relative z-10">
         {/* Step 1: Email Input */}
         {step === 1 && (
           <div className="p-8">
-            {/* Back Button */}
             <button
               onClick={() => window.history.back()}
               className="flex items-center text-gray-600 hover:text-gray-900 transition mb-6"
@@ -90,7 +83,6 @@ export default function ForgetPasswordPage() {
               Kembali
             </button>
 
-            {/* Header */}
             <div className="text-center mb-8">
               <div className="w-16 h-16 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full mx-auto mb-4 flex items-center justify-center">
                 <Lock className="w-8 h-8 text-white" />
@@ -101,7 +93,6 @@ export default function ForgetPasswordPage() {
               </p>
             </div>
 
-            {/* Error Message */}
             {error && (
               <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg flex items-start">
                 <AlertCircle className="w-5 h-5 text-red-500 mr-2 mt-0.5 flex-shrink-0" />
@@ -109,7 +100,6 @@ export default function ForgetPasswordPage() {
               </div>
             )}
 
-            {/* Email Input */}
             <div className="mb-6">
               <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
                 Email Address
@@ -130,20 +120,18 @@ export default function ForgetPasswordPage() {
               </div>
             </div>
 
-            {/* Submit Button */}
             <button
               onClick={handleSendEmail}
               disabled={loading}
               className="w-full bg-gradient-to-r from-blue-500 to-purple-600 text-white py-3 rounded-lg font-semibold hover:from-blue-600 hover:to-purple-700 transform hover:scale-105 transition duration-200 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
             >
-              {loading ? 'Mengirim...' : 'konfirmasi'}
+              {loading ? 'Mengirim...' : 'Konfirmasi'}
             </button>
 
-            {/* Additional Info */}
             <div className="mt-6 text-center">
               <p className="text-sm text-gray-600">
                 Ingat password Anda?{' '}
-                <Link href={'/auth/login'} className="text-purple-600 hover:text-purple-800 font-semibold transition">
+                <Link href="/auth/login" className="text-purple-600 hover:text-purple-800 font-semibold transition">
                   Masuk di sini
                 </Link>
               </p>
@@ -154,7 +142,6 @@ export default function ForgetPasswordPage() {
         {/* Step 2: Success Message */}
         {step === 2 && (
           <div className="p-8">
-            {/* Success Icon */}
             <div className="text-center mb-8">
               <div className="w-20 h-20 bg-green-100 rounded-full mx-auto mb-4 flex items-center justify-center">
                 <CheckCircle className="w-12 h-12 text-green-500" />
@@ -169,7 +156,6 @@ export default function ForgetPasswordPage() {
               </p>
             </div>
 
-            {/* Info Box */}
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
               <h3 className="font-semibold text-blue-900 mb-2">Tidak menerima email?</h3>
               <ul className="text-sm text-blue-800 space-y-1">
@@ -179,7 +165,6 @@ export default function ForgetPasswordPage() {
               </ul>
             </div>
 
-            {/* Actions */}
             <div className="space-y-3">
               <button
                 onClick={handleSendEmail}
@@ -197,15 +182,11 @@ export default function ForgetPasswordPage() {
               </button>
             </div>
 
-            {/* Back to Login */}
             <div className="mt-6 text-center">
-              <button
-                onClick={() => alert('Back to login')}
-                className="flex items-center justify-center w-full text-gray-600 hover:text-gray-900 transition"
-              >
+              <Link href="/auth/login" className="flex items-center justify-center w-full text-gray-600 hover:text-gray-900 transition">
                 <ArrowLeft className="w-4 h-4 mr-2" />
                 Kembali ke halaman login
-              </button>
+              </Link>
             </div>
           </div>
         )}
@@ -213,7 +194,6 @@ export default function ForgetPasswordPage() {
         {/* Step 3: Reset Password Form */}
         {step === 3 && (
           <div className="p-8">
-            {/* Back Button */}
             <button
               onClick={() => setStep(2)}
               className="flex items-center text-gray-600 hover:text-gray-900 transition mb-6"
@@ -222,7 +202,6 @@ export default function ForgetPasswordPage() {
               Kembali
             </button>
 
-            {/* Header */}
             <div className="text-center mb-8">
               <div className="w-16 h-16 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full mx-auto mb-4 flex items-center justify-center">
                 <Lock className="w-8 h-8 text-white" />
@@ -233,7 +212,6 @@ export default function ForgetPasswordPage() {
               </p>
             </div>
 
-            {/* Error Message */}
             {error && (
               <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg flex items-start">
                 <AlertCircle className="w-5 h-5 text-red-500 mr-2 mt-0.5 flex-shrink-0" />
@@ -241,7 +219,6 @@ export default function ForgetPasswordPage() {
               </div>
             )}
 
-            {/* New Password Input */}
             <div className="mb-4">
               <label htmlFor="newPassword" className="block text-sm font-medium text-gray-700 mb-2">
                 Password Baru
@@ -262,7 +239,6 @@ export default function ForgetPasswordPage() {
               </div>
             </div>
 
-            {/* Confirm Password Input */}
             <div className="mb-6">
               <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-2">
                 Konfirmasi Password
@@ -283,7 +259,6 @@ export default function ForgetPasswordPage() {
               </div>
             </div>
 
-            {/* Password Requirements */}
             <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 mb-6">
               <h4 className="text-sm font-semibold text-gray-700 mb-2">Password harus mengandung:</h4>
               <ul className="text-sm text-gray-600 space-y-1">
@@ -308,7 +283,6 @@ export default function ForgetPasswordPage() {
               </ul>
             </div>
 
-            {/* Submit Button */}
             <button
               onClick={handleResetPassword}
               disabled={loading}
