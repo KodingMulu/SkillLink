@@ -45,8 +45,20 @@ export default function HeroHome() {
 
      return (
           <>
-               <section className="pt-24 pb-12 px-4 bg-gradient-to-br from-green-50 via-blue-50 to-purple-50">
-                    <div className="max-w-7xl mx-auto text-center">
+               <section className="pt-24 pb-12 px-4 relative">
+                    {/* ===== TAMBAHAN BACKGROUND IMAGE - MULAI ===== */}
+                    <div 
+                         className="absolute inset-0 bg-cover bg-center bg-no-repeat"
+                         style={{
+                              backgroundImage: "url('/images/bg.webp')", // 👈 GANTI NAMA FILE GAMBAR DI SINI
+                         }}
+                    >
+                         {/* Overlay ringan (opsional) - uncomment jika ingin sedikit gelap */}
+                         <div className="absolute inset-0 bg-gradient-to-br from-green-50/80 via-blue-50/80 to-purple-50/80"></div>
+                    </div>
+                    {/* ===== TAMBAHAN BACKGROUND IMAGE - SELESAI ===== */}
+
+                    <div className="max-w-7xl mx-auto text-center relative z-10">
                          <h1 className="text-4xl md:text-6xl font-bold text-gray-900 mb-10 mt-10 min-h-32">
                               Temukan <span className="bg-gradient-to-r from-green-500 to-blue-600 bg-clip-text text-transparent">
                                    {typedText}
