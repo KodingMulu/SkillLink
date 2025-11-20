@@ -13,7 +13,6 @@ export default function RegisterPage() {
     confirmPassword: ''
   });
   const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [acceptTerms, setAcceptTerms] = useState(false);
 
@@ -47,7 +46,7 @@ export default function RegisterPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-white to-purple-50 p-4 py-12">
+    <div className="min-h-screen bg-gradient-to-br from-blue-500 via-purple-500 to-pink-500 flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         <div className="bg-white rounded-2xl shadow-xl p-8 space-y-6">
           <div className="text-center space-y-2">
@@ -182,10 +181,6 @@ export default function RegisterPage() {
             </button>
           </p>
         </div>
-
-        <p className="text-center text-sm text-gray-500 mt-6">
-          © 2024 Your Company. All rights reserved.
-        </p>
       </div>
     </div>
   );
