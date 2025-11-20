@@ -1,98 +1,272 @@
-import { Image } from 'expo-image';
-import { Platform, StyleSheet } from 'react-native';
+import React, { useState } from 'react';
+import { View, StyleSheet, ScrollView, Alert } from 'react-native';
+import {
+  TextInput,
+  Button,
+  Text,
+  Card,
+  Checkbox,
+  ActivityIndicator,
+} from 'react-native-paper';
+import { LinearGradient } from 'expo-linear-gradient';
+import { useRouter } from 'expo-router';
 
-import { HelloWave } from '@/components/hello-wave';
-import ParallaxScrollView from '@/components/parallax-scroll-view';
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
-import { Link } from 'expo-router';
+export default function RegisterScreen() {
+  const router = useRouter();
+  const [formData, setFormData] = useState({
+    fullName: '',
+    email: '',
+    password: '',
+    confirmPassword: '',
+  });
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [acceptTerms, setAcceptTerms] = useState(false);
 
-export default function HomeScreen() {
+  const handleChange = (name: string, value: string) => {
+    setFormData({
+      ...formData,
+      [name]: value,
+    });
+  };
+
+  const handleSubmit = () => {
+    if (formData.password !== formData.confirmPassword) {
+      Alert.alert('Error', 'Password tidak cocok!');
+      return;
+    }
+
+    if (!acceptTerms) {
+      Alert.alert('Error', 'Anda harus menyetujui syarat dan ketentuan');
+      return;
+    }
+
+    setIsLoading(true);
+
+    // setTimeout(() => {
+    //   console.log('Register attempt:', formData);
+    //   Alert.alert(
+    //     'Berhasil',
+    //     `Registrasi berhasil!\nNama: ${formData.fullName}\nEmail: ${formData.email}`,
+    //     [
+    //       {
+    //         text: 'OK',
+    //         onPress: () => router.push('/auth/login'),
+    //       },
+    //     ]
+    //   );
+    //   setIsLoading(false);
+    // }, 1500);
+  };
+
   return (
-    <ParallaxScrollView
-      headerBackgroundColor={{ light: '#A1CEDC', dark: '#1D3D47' }}
-      headerImage={
-        <Image
-          source={require('@/assets/images/partial-react-logo.png')}
-          style={styles.reactLogo}
-        />
-      }>
-      <ThemedView style={styles.titleContainer}>
-        <ThemedText type="title">Welcome!</ThemedText>
-        <HelloWave />
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 1: Try it</ThemedText>
-        <ThemedText>
-          Edit <ThemedText type="defaultSemiBold">app/(tabs)/index.tsx</ThemedText> to see changes.
-          Press{' '}
-          <ThemedText type="defaultSemiBold">
-            {Platform.select({
-              ios: 'cmd + d',
-              android: 'cmd + m',
-              web: 'F12',
-            })}
-          </ThemedText>{' '}
-          to open developer tools.
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <Link href="/modal">
-          <Link.Trigger>
-            <ThemedText type="subtitle">Step 2: Explore</ThemedText>
-          </Link.Trigger>
-          <Link.Preview />
-          <Link.Menu>
-            <Link.MenuAction title="Action" icon="cube" onPress={() => alert('Action pressed')} />
-            <Link.MenuAction
-              title="Share"
-              icon="square.and.arrow.up"
-              onPress={() => alert('Share pressed')}
-            />
-            <Link.Menu title="More" icon="ellipsis">
-              <Link.MenuAction
-                title="Delete"
-                icon="trash"
-                destructive
-                onPress={() => alert('Delete pressed')}
-              />
-            </Link.Menu>
-          </Link.Menu>
-        </Link>
+    <LinearGradient
+      colors={['#3b82f6', '#a855f7', '#ec4899']}
+      style={styles.container}
+    >
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+      >
+        <Card style={styles.card}>
+          <Card.Content>
+            <View style={styles.header}>
+              <View style={styles.iconContainer}>
+                <LinearGradient
+                  colors={['#3b82f6', '#9333ea']}
+                  style={styles.iconGradient}
+                >
+                  <Text style={styles.iconText}>👤</Text>
+                </LinearGradient>
+              </View>
+              <Text variant="headlineMedium" style={styles.title}>
+                Buat Akun Baru
+              </Text>
+              <Text variant="bodyMedium" style={styles.subtitle}>
+                Daftar untuk memulai perjalanan Anda
+              </Text>
+            </View>
 
-        <ThemedText>
-          {`Tap the Explore tab to learn more about what's included in this starter app.`}
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 3: Get a fresh start</ThemedText>
-        <ThemedText>
-          {`When you're ready, run `}
-          <ThemedText type="defaultSemiBold">npm run reset-project</ThemedText> to get a fresh{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> directory. This will move the current{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> to{' '}
-          <ThemedText type="defaultSemiBold">app-example</ThemedText>.
-        </ThemedText>
-      </ThemedView>
-    </ParallaxScrollView>
+            <View style={styles.form}>
+              <TextInput
+                label="User Name"
+                value={formData.fullName}
+                onChangeText={(text) => handleChange('fullName', text)}
+                mode="outlined"
+                left={<TextInput.Icon icon="account" />}
+                placeholder="Masukkan nama lengkap"
+                style={styles.input}
+              />
+
+              <TextInput
+                label="Email"
+                value={formData.email}
+                onChangeText={(text) => handleChange('email', text)}
+                mode="outlined"
+                keyboardType="email-address"
+                autoCapitalize="none"
+                left={<TextInput.Icon icon="email" />}
+                placeholder="nama@email.com"
+                style={styles.input}
+              />
+
+              <TextInput
+                label="Password"
+                value={formData.password}
+                onChangeText={(text) => handleChange('password', text)}
+                mode="outlined"
+                secureTextEntry={!showPassword}
+                left={<TextInput.Icon icon="lock" />}
+                right={
+                  <TextInput.Icon
+                    icon={showPassword ? 'eye-off' : 'eye'}
+                    onPress={() => setShowPassword(!showPassword)}
+                  />
+                }
+                placeholder="••••••••"
+                style={styles.input}
+              />
+
+              <TextInput
+                label="Konfirmasi Password"
+                value={formData.confirmPassword}
+                onChangeText={(text) => handleChange('confirmPassword', text)}
+                mode="outlined"
+                secureTextEntry={!showConfirmPassword}
+                left={<TextInput.Icon icon="lock" />}
+                right={
+                  <TextInput.Icon
+                    icon={showConfirmPassword ? 'eye-off' : 'eye'}
+                    onPress={() => setShowConfirmPassword(!showConfirmPassword)}
+                  />
+                }
+                placeholder="••••••••"
+                style={styles.input}
+              />
+
+              <View style={styles.checkboxContainer}>
+                <Checkbox
+                  status={acceptTerms ? 'checked' : 'unchecked'}
+                  onPress={() => setAcceptTerms(!acceptTerms)}
+                />
+                <Text variant="bodySmall" style={styles.checkboxText}>
+                  Saya setuju dengan{' '}
+                  <Text style={styles.link}>syarat dan ketentuan</Text> serta{' '}
+                  <Text style={styles.link}>kebijakan privasi</Text>
+                </Text>
+              </View>
+
+              <Button
+                mode="contained"
+                onPress={handleSubmit}
+                disabled={isLoading}
+                style={styles.button}
+                contentStyle={styles.buttonContent}
+                labelStyle={styles.buttonLabel}
+              >
+                {isLoading ? <ActivityIndicator color="#fff" /> : 'Daftar'}
+              </Button>
+            </View>
+
+            {/* <View style={styles.footer}>
+              <Text variant="bodyMedium" style={styles.footerText}>
+                Sudah punya akun?{' '}
+                <Text
+                  style={styles.loginLink}
+                  onPress={() => router.push('/auth/login')}
+                >
+                  Masuk
+                </Text>
+              </Text>
+            </View> */}
+          </Card.Content>
+        </Card>
+      </ScrollView>
+    </LinearGradient>
   );
 }
 
 const styles = StyleSheet.create({
-  titleContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
+  container: {
+    flex: 1,
   },
-  stepContainer: {
-    gap: 8,
+  scrollContent: {
+    flexGrow: 1,
+    justifyContent: 'center',
+    padding: 16,
+  },
+  card: {
+    borderRadius: 16,
+    elevation: 8,
+  },
+  header: {
+    alignItems: 'center',
+    marginBottom: 24,
+  },
+  iconContainer: {
+    marginBottom: 16,
+  },
+  iconGradient: {
+    width: 64,
+    height: 64,
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  iconText: {
+    fontSize: 32,
+  },
+  title: {
+    fontWeight: 'bold',
+    color: '#1f2937',
     marginBottom: 8,
   },
-  reactLogo: {
-    height: 178,
-    width: 290,
-    bottom: 0,
-    left: 0,
-    position: 'absolute',
+  subtitle: {
+    color: '#6b7280',
+  },
+  form: {
+    gap: 16,
+  },
+  input: {
+    backgroundColor: '#fff',
+  },
+  checkboxContainer: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    marginTop: 8,
+  },
+  checkboxText: {
+    flex: 1,
+    color: '#4b5563',
+    marginTop: 8,
+    marginLeft: 8,
+  },
+  link: {
+    color: '#2563eb',
+    fontWeight: '600',
+  },
+  button: {
+    marginTop: 8,
+    borderRadius: 8,
+    backgroundColor: '#3b82f6',
+  },
+  buttonContent: {
+    paddingVertical: 8,
+  },
+  buttonLabel: {
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  footer: {
+    marginTop: 24,
+    alignItems: 'center',
+  },
+  footerText: {
+    color: '#4b5563',
+  },
+  loginLink: {
+    color: '#2563eb',
+    fontWeight: '700',
   },
 });
