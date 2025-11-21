@@ -99,7 +99,8 @@ export default function LoginPage() {
                 type="button"
                 className="text-sm text-blue-600 hover:text-blue-700 font-medium"
               >
-                Lupa password?
+                <Link href="/auth/forget-password">Lupa password?</Link>
+                
               </button>
             </div>
 
