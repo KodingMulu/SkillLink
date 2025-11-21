@@ -1,188 +1,278 @@
-import React, { useRef, useState, useEffect } from "react";
-import { View, Animated, StyleSheet } from "react-native";
-import { Text, TextInput, Button, Checkbox, Card } from "react-native-paper";
-import { Link, useRouter } from "expo-router";
+import React, { useState } from 'react';
+import { View, StyleSheet, KeyboardAvoidingView, Platform, ScrollView, Alert } from 'react-native';
+import { TextInput, Button, Text, Surface, Checkbox } from 'react-native-paper';
+import { LinearGradient } from 'expo-linear-gradient';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
 
 export default function RegisterScreen() {
   const router = useRouter();
-
-  const [showPassword, setShowPassword] = useState(false);
-  const [acceptTerms, setAcceptTerms] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-
   const [formData, setFormData] = useState({
-    fullName: "",
-    email: "",
-    password: "",
-    confirmPassword: "",
+    fullName: '',
+    email: '',
+    phone: '',
+    password: '',
   });
+  const [showPassword, setShowPassword] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [acceptTerms, setAcceptTerms] = useState(false);
 
-  // Animasi muncul
-  const fadeAnim = useRef(new Animated.Value(0)).current;
-  const slideAnim = useRef(new Animated.Value(20)).current;
-
-  useEffect(() => {
-    Animated.parallel([
-      Animated.timing(fadeAnim, {
-        toValue: 1,
-        duration: 400,
-        useNativeDriver: true,
-      }),
-      Animated.timing(slideAnim, {
-        toValue: 0,
-        duration: 400,
-        useNativeDriver: true,
-      }),
-    ]).start();
-  }, []);
+  const handleChange = (field: string, value: string) => {
+    setFormData({
+      ...formData,
+      [field]: value,
+    });
+  };
 
   const handleSubmit = () => {
-    if (formData.password !== formData.confirmPassword) {
-      alert("Password tidak cocok!");
-      return;
-    }
-
     if (!acceptTerms) {
-      alert("Anda harus menyetujui syarat dan ketentuan");
+      Alert.alert('Peringatan', 'Anda harus menyetujui syarat dan ketentuan');
       return;
     }
 
     setIsLoading(true);
 
     setTimeout(() => {
-      alert("Registrasi berhasil!");
+      console.log('Register attempt:', formData);
+      Alert.alert(
+        'Berhasil',
+        `Registrasi berhasil!\nNama: ${formData.fullName}\nEmail: ${formData.email}`
+      );
       setIsLoading(false);
-      router.push("/auth/login");
-    }, 1200);
+    }, 1500);
   };
 
   return (
-    <View style={styles.container}>
-      <Animated.View
-        style={{
-          opacity: fadeAnim,
-          transform: [{ translateY: slideAnim }],
-          width: "100%",
-        }}
+    <LinearGradient
+      colors={['#3b82f6', '#a855f7', '#ec4899']}
+      start={{ x: 0, y: 0 }}
+      end={{ x: 1, y: 1 }}
+      style={styles.gradient}
+    >
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        style={styles.container}
       >
-        <Card style={styles.card}>
-          <Card.Content>
+        <ScrollView
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+        >
+          <Surface style={styles.card} elevation={4}>
+            {/* Header */}
+            <View style={styles.header}>
+              <LinearGradient
+                colors={['#3b82f6', '#9333ea']}
+                style={styles.iconContainer}
+              >
+                <MaterialCommunityIcons name="account" size={32} color="white" />
+              </LinearGradient>
+              <Text variant="headlineMedium" style={styles.title}>
+                Buat Akun Baru
+              </Text>
+              <Text variant="bodyMedium" style={styles.subtitle}>
+                Daftar untuk memulai perjalanan Anda
+              </Text>
+            </View>
 
-            <Text variant="headlineMedium" style={styles.title}>
-              Buat Akun Baru
-            </Text>
-
-            <TextInput
-              label="Nama Lengkap"
-              mode="outlined"
-              value={formData.fullName}
-              onChangeText={(t) => setFormData({ ...formData, fullName: t })}
-              style={styles.input}
-            />
-
-            <TextInput
-              label="Email"
-              mode="outlined"
-              keyboardType="email-address"
-              value={formData.email}
-              onChangeText={(t) => setFormData({ ...formData, email: t })}
-              style={styles.input}
-            />
-
-            <TextInput
-              label="Password"
-              mode="outlined"
-              secureTextEntry={!showPassword}
-              right={
-                <TextInput.Icon
-                  icon={showPassword ? "eye-off" : "eye"}
-                  onPress={() => setShowPassword(!showPassword)}
-                />
-              }
-              value={formData.password}
-              onChangeText={(t) => setFormData({ ...formData, password: t })}
-              style={styles.input}
-            />
-
-            <TextInput
-              label="Konfirmasi Password"
-              mode="outlined"
-              secureTextEntry={!showPassword}
-              value={formData.confirmPassword}
-              onChangeText={(t) =>
-                setFormData({ ...formData, confirmPassword: t })
-              }
-              style={styles.input}
-            />
-
-            <View style={styles.checkboxRow}>
-              <Checkbox
-                status={acceptTerms ? "checked" : "unchecked"}
-                onPress={() => setAcceptTerms(!acceptTerms)}
+            {/* Form */}
+            <View style={styles.form}>
+              <TextInput
+                label="User Name"
+                value={formData.fullName}
+                onChangeText={(value) => handleChange('fullName', value)}
+                mode="outlined"
+                left={<TextInput.Icon icon="account" />}
+                style={styles.input}
+                outlineStyle={styles.inputOutline}
+                placeholder="Masukkan nama lengkap"
               />
-              <Text onPress={() => setAcceptTerms(!acceptTerms)}>
-                Saya setuju dengan syarat & ketentuan
-              </Text>
+
+              <TextInput
+                label="Email"
+                value={formData.email}
+                onChangeText={(value) => handleChange('email', value)}
+                mode="outlined"
+                keyboardType="email-address"
+                autoCapitalize="none"
+                left={<TextInput.Icon icon="email" />}
+                style={styles.input}
+                outlineStyle={styles.inputOutline}
+                placeholder="nama@email.com"
+              />
+
+              <TextInput
+                label="Password"
+                value={formData.password}
+                onChangeText={(value) => handleChange('password', value)}
+                mode="outlined"
+                secureTextEntry={!showPassword}
+                left={<TextInput.Icon icon="lock" />}
+                right={
+                  <TextInput.Icon
+                    icon={showPassword ? 'eye-off' : 'eye'}
+                    onPress={() => setShowPassword(!showPassword)}
+                  />
+                }
+                style={styles.input}
+                outlineStyle={styles.inputOutline}
+                placeholder="••••••••"
+              />
+
+              {/* Terms Checkbox */}
+              <View style={styles.termsContainer}>
+                <Checkbox
+                  status={acceptTerms ? 'checked' : 'unchecked'}
+                  onPress={() => setAcceptTerms(!acceptTerms)}
+                  color="#3b82f6"
+                />
+                <View style={styles.termsTextContainer}>
+                  <Text variant="bodySmall" style={styles.termsText}>
+                    Saya setuju dengan{' '}
+                  </Text>
+                  <Button
+                    mode="text"
+                    compact
+                    labelStyle={styles.termsLink}
+                    onPress={() => console.log('Syarat dan ketentuan')}
+                  >
+                    syarat dan ketentuan
+                  </Button>
+                  <Text variant="bodySmall" style={styles.termsText}>
+                    {' '}serta{' '}
+                  </Text>
+                  <Button
+                    mode="text"
+                    compact
+                    labelStyle={styles.termsLink}
+                    onPress={() => console.log('Kebijakan privasi')}
+                  >
+                    kebijakan privasi
+                  </Button>
+                </View>
+              </View>
+
+              <Button
+                mode="contained"
+                onPress={handleSubmit}
+                loading={isLoading}
+                disabled={isLoading}
+                style={styles.registerButton}
+                contentStyle={styles.registerButtonContent}
+                labelStyle={styles.registerButtonLabel}
+              >
+                {isLoading ? 'Memproses...' : 'Daftar'}
+              </Button>
             </View>
 
-            <Button
-              mode="contained"
-              loading={isLoading}
-              onPress={handleSubmit}
-              style={styles.button}
-            >
-              Daftar
-            </Button>
-
-            <View style={{ marginTop: 10, alignItems: "center" }}>
-              <Text>
-                Sudah punya akun?{" "}
-                <Link href="/auth/login" style={styles.link}>
-                  Masuk
-                </Link>
+            {/* Footer */}
+            <View style={styles.footer}>
+              <Text variant="bodyMedium" style={styles.footerText}>
+                Sudah punya akun?{' '}
               </Text>
+              <Button
+                mode="text"
+                compact
+                onPress={() => router.push('/auth/login')}
+                labelStyle={styles.loginLink}
+              >
+                Masuk
+              </Button>
             </View>
-          </Card.Content>
-        </Card>
-      </Animated.View>
-    </View>
+          </Surface>
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </LinearGradient>
   );
 }
 
 const styles = StyleSheet.create({
+  gradient: {
+    flex: 1,
+  },
   container: {
     flex: 1,
-    backgroundColor: "#eef2ff",
-    justifyContent: "center",
-    alignItems: "center",
-    padding: 20,
+  },
+  scrollContent: {
+    flexGrow: 1,
+    justifyContent: 'center',
+    padding: 16,
   },
   card: {
-    width: "100%",
-    borderRadius: 20,
-    paddingVertical: 10,
-    elevation: 4,
+    borderRadius: 16,
+    padding: 24,
+    backgroundColor: 'white',
+  },
+  header: {
+    alignItems: 'center',
+    marginBottom: 24,
+  },
+  iconContainer: {
+    width: 64,
+    height: 64,
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 16,
   },
   title: {
-    textAlign: "center",
-    marginBottom: 15,
-    fontWeight: "700",
+    fontWeight: 'bold',
+    color: '#111827',
+    marginBottom: 8,
+  },
+  subtitle: {
+    color: '#6b7280',
+    textAlign: 'center',
+  },
+  form: {
+    gap: 16,
   },
   input: {
-    marginBottom: 12,
+    backgroundColor: 'white',
   },
-  button: {
-    marginTop: 10,
-    paddingVertical: 4,
-    borderRadius: 10,
+  inputOutline: {
+    borderRadius: 8,
   },
-  checkboxRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 10,
+  termsContainer: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
   },
-  link: {
-    color: "#3b82f6",
-    fontWeight: "600",
+  termsTextContainer: {
+    flex: 1,
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    alignItems: 'center',
+  },
+  termsText: {
+    color: '#4b5563',
+  },
+  termsLink: {
+    color: '#3b82f6',
+    fontWeight: '500',
+    fontSize: 12,
+  },
+  registerButton: {
+    marginTop: 8,
+    borderRadius: 8,
+    backgroundColor: '#3b82f6',
+  },
+  registerButtonContent: {
+    paddingVertical: 8,
+  },
+  registerButtonLabel: {
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  footer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: 24,
+  },
+  footerText: {
+    color: '#4b5563',
+  },
+  loginLink: {
+    color: '#3b82f6',
+    fontWeight: '600',
   },
 });
