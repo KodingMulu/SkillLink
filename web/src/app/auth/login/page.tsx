@@ -1,137 +1,172 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Eye, EyeOff, Lock, Mail } from 'lucide-react';
+import { Eye, EyeOff, Lock, Mail, ArrowRight, LogIn } from 'lucide-react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import axios from 'axios';
 
 export default function LoginPage() {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const router = useRouter();
+
+  const [formData, setFormData] = useState({
+    email: '',
+    password: ''
+  });
+
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [rememberMe, setRememberMe] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setFormData({
+      ...formData,
+      [e.target.name]: e.target.value
+    });
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-    
-    setTimeout(() => {
-      console.log('Login attempt:', { email, password });
-      alert(`Login berhasil!\nEmail: ${email}`);
+
+    try {
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || '/api';
+      const response = await axios.post(`${apiUrl}/auth/login`, {
+        email: formData.email,
+        password: formData.password
+      });
+
+      if (response.data.code === 200) {
+        alert('Login berhasil! Selamat datang kembali.');
+        router.push('/user/dashboard');
+      } else {
+        alert(`Login Gagal`);
+      }
+
+    } catch (error) {
+      console.error('Login error:', error);
+      if (axios.isAxiosError(error)) {
+        alert(error.response?.data?.message || 'Email atau password salah');
+      } else {
+        alert('Terjadi kesalahan pada server');
+      }
+    } finally {
       setIsLoading(false);
-    }, 1500);
+    }
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-500 via-purple-500 to-pink-500 flex items-center justify-center p-4">
-      <div className="w-full max-w-md">
-        <div className="bg-white rounded-2xl shadow-xl p-8 space-y-6">
-          <div className="text-center space-y-2">
-            <div className="flex justify-center mb-4">
-              <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center">
-                <Lock className="w-8 h-8 text-white" />
-              </div>
+    <main className="relative min-h-screen bg-slate-50 flex items-center justify-center p-4 lg:p-8 overflow-hidden">
+      <div aria-hidden="true" className="absolute top-[-10%] left-[-10%] w-96 h-96 bg-blue-400/20 rounded-full blur-[100px] pointer-events-none" />
+      <div aria-hidden="true" className="absolute bottom-[-10%] right-[-10%] w-96 h-96 bg-purple-400/20 rounded-full blur-[100px] pointer-events-none" />
+      <section className="relative z-10 w-full max-w-[400px] bg-white/80 backdrop-blur-xl rounded-xl shadow-sm border border-slate-200 p-8">
+        <header className="mb-8 text-center">
+          <div className="mx-auto w-12 h-12 bg-blue-600 rounded-lg flex items-center justify-center mb-4 shadow-lg shadow-blue-600/20">
+            <LogIn className="w-6 h-6 text-white" />
+          </div>
+          <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Selamat Datang</h1>
+          <p className="text-slate-500 text-sm mt-2">Masuk ke akun Anda untuk melanjutkan</p>
+        </header>
+
+        <form onSubmit={handleSubmit} className="space-y-5">
+          <div className="space-y-1.5">
+            <label htmlFor="email" className="text-sm font-medium text-slate-700">
+              Email
+            </label>
+            <div className="relative group">
+              <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400 group-focus-within:text-blue-600 transition-colors" />
+              <input
+                id="email"
+                name="email"
+                type="email"
+                value={formData.email}
+                onChange={handleChange}
+                className="w-full pl-10 pr-4 py-2.5 bg-white border border-slate-300 rounded-lg text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-600/20 focus:border-blue-600 transition-all text-sm"
+                placeholder="nama@email.com"
+                required
+              />
             </div>
-            <h1 className="text-3xl font-bold text-gray-900">Selamat Datang</h1>
-            <p className="text-gray-500">Masuk ke akun Anda untuk melanjutkan</p>
           </div>
 
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700">
-                Email
-              </label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <Mail className="h-5 w-5 text-gray-400" />
-                </div>
-                <input
-                  id="email"
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-gray-600 focus:border-transparent transition"
-                  placeholder="Email Anda"
-                  required
-                />
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700">
-                Password
-              </label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <Lock className="h-5 w-5 text-gray-400" />
-                </div>
-                <input
-                  id="password"
-                  type={showPassword ? 'text' : 'password'}
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="block w-full pl-10 pr-10 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-gray-600 focus:border-transparent transition"
-                  placeholder="Password Kamu"
-                  required
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute inset-y-0 right-0 pr-3 flex items-center"
-                >
-                  {showPassword ? (
-                    <EyeOff className="h-5 w-5 text-gray-400 hover:text-gray-600" />
-                  ) : (
-                    <Eye className="h-5 w-5 text-gray-400 hover:text-gray-600" />
-                  )}
-                </button>
-              </div>
-            </div>
-
-            <div className="flex items-center justify-between">
-              <label className="flex items-center space-x-2 cursor-pointer">
-                <input
-                  type="checkbox"
-                  className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-                />
-                <span className="text-sm text-gray-600">Ingat saya</span>
-              </label>
+          <div className="space-y-1.5">
+            <label htmlFor="password" className="text-sm font-medium text-slate-700">
+              Password
+            </label>
+            <div className="relative group">
+              <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400 group-focus-within:text-blue-600 transition-colors" />
+              <input
+                id="password"
+                name="password"
+                type={showPassword ? 'text' : 'password'}
+                value={formData.password}
+                onChange={handleChange}
+                className="w-full pl-10 pr-10 py-2.5 bg-white border border-slate-300 rounded-lg text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-600/20 focus:border-blue-600 transition-all text-sm"
+                placeholder="••••••••"
+                required
+              />
               <button
                 type="button"
-                className="text-sm text-blue-600 hover:text-blue-700 font-medium"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 p-1 rounded-md hover:bg-slate-100 transition-colors"
               >
-                <Link href="/auth/forget-password">Lupa password?</Link>
-                
+                {showPassword ? (
+                  <EyeOff className="h-4 w-4 text-slate-400" />
+                ) : (
+                  <Eye className="h-4 w-4 text-slate-400" />
+                )}
               </button>
             </div>
-
-            <button
-              type="button"
-              onClick={handleSubmit}
-              disabled={isLoading}
-              className="w-full bg-gradient-to-r from-blue-500 to-purple-600 text-white py-3 rounded-lg font-semibold hover:from-blue-600 hover:to-purple-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {isLoading ? (
-                <span className="flex items-center justify-center">
-                  <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                  </svg>
-                  Memproses...
-                </span>
-              ) : (
-                'Masuk'
-              )}
-            </button>
           </div>
 
-          <p className="text-center text-sm text-gray-600">
+          <div className="flex items-center justify-between pt-1">
+            <div className="flex items-center space-x-2">
+              <input
+                type="checkbox"
+                id="remember"
+                checked={rememberMe}
+                onChange={(e) => setRememberMe(e.target.checked)}
+                className="w-4 h-4 text-blue-600 border-slate-300 rounded focus:ring-blue-600 cursor-pointer"
+              />
+              <label htmlFor="remember" className="text-sm text-slate-600 cursor-pointer select-none">
+                Ingat saya
+              </label>
+            </div>
+            <Link
+              href="/auth/forget-password"
+              className="text-sm text-blue-600 hover:text-blue-700 font-medium hover:underline"
+            >
+              Lupa password?
+            </Link>
+          </div>
+
+          <button
+            type="submit"
+            disabled={isLoading}
+            className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2.5 rounded-lg transition-all duration-200 flex items-center justify-center space-x-2 disabled:opacity-70 disabled:cursor-not-allowed shadow-sm shadow-blue-600/20 active:scale-[0.98]"
+          >
+            {isLoading ? (
+              <>
+                <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                <span>Memproses...</span>
+              </>
+            ) : (
+              <>
+                <span>Masuk</span>
+                <ArrowRight className="w-4 h-4" />
+              </>
+            )}
+          </button>
+        </form>
+
+        <div className="mt-8 pt-6 border-t border-slate-100 text-center">
+          <p className="text-sm text-slate-600">
             Belum punya akun?{' '}
-            <button className="text-blue-600 hover:text-blue-700 font-semibold">
-              <Link href={'/auth/register'}>Daftar sekarang</Link>
-            </button>
+            <Link href={'/auth/register'} className="text-blue-600 font-semibold hover:text-blue-700 hover:underline transition-all">
+              Daftar sekarang
+            </Link>
           </p>
         </div>
-      </div>
-    </div>
+      </section>
+    </main>
   );
 }

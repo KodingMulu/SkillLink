@@ -8,9 +8,7 @@ import axios, { AxiosError } from "axios";
 function VerifyContent() {
      const router = useRouter();
      const searchParams = useSearchParams();
-
      const emailFromUrl = searchParams.get('email');
-
      const [code, setCode] = useState<string[]>(['', '', '', '']);
      const [isLoading, setIsLoading] = useState(false);
      const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
@@ -23,7 +21,6 @@ function VerifyContent() {
 
      const handleChange = (index: number, value: string) => {
           if (value && !/^\d$/.test(value)) return;
-
           const newCode = [...code];
           newCode[index] = value;
           setCode(newCode);
