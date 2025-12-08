@@ -23,10 +23,10 @@ export default function NavigationHome() {
 
      return (
           <>
-               <nav 
+               <nav
                     className={`fixed z-50 transition-all duration-300 ease-in-out border-slate-200/50
-                         ${isScrolled 
-                              ? "top-0 left-0 right-0 w-full rounded-none border-b bg-white/90 backdrop-blur-md py-3 shadow-sm" 
+                         ${isScrolled
+                              ? "top-0 left-0 right-0 w-full rounded-none border-b bg-white/90 backdrop-blur-md py-3 shadow-sm"
                               : "top-6 left-0 right-0 mx-auto w-[95%] max-w-7xl rounded-full border bg-white/70 backdrop-blur-md py-3 shadow-lg shadow-slate-200/20"
                          }
                     `}
@@ -42,7 +42,7 @@ export default function NavigationHome() {
 
                               <div className="hidden md:flex items-center space-x-8">
                                    {['Cari Pekerjaan', 'Cari Freelancer', 'Cara Kerja', 'Blog'].map((item) => (
-                                        <button 
+                                        <button
                                              key={item}
                                              className="text-sm font-medium text-slate-600 hover:text-blue-600 transition-colors"
                                         >
@@ -52,13 +52,13 @@ export default function NavigationHome() {
                               </div>
 
                               <div className="hidden md:flex items-center space-x-3">
-                                   <Link 
+                                   <Link
                                         href={'/auth/login'}
                                         className="text-sm font-medium text-slate-600 hover:text-slate-900 px-4 py-2 transition-colors"
                                    >
                                         Masuk
                                    </Link>
-                                   <Link 
+                                   <Link
                                         href={'/auth/register'}
                                         className="bg-slate-900 text-white text-sm font-medium px-5 py-2.5 rounded-full hover:bg-slate-800 transition-all shadow-md shadow-slate-900/20 hover:shadow-lg hover:-translate-y-0.5"
                                    >
