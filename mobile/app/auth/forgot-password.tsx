@@ -17,27 +17,19 @@ import { Mail, ArrowLeft, KeyRound, CheckCircle2, ArrowRight, Lock, Check } from
 import { useRouter } from 'expo-router';
 import axios from 'axios';
 
-// Konfigurasi API URL
 const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://10.0.2.2:3000/api';
 
 export default function ForgotPasswordScreen() {
   const router = useRouter();
-  
-  // State Management
   const [step, setStep] = useState<1 | 2 | 3>(1);
   const [isLoading, setIsLoading] = useState(false);
   const [email, setEmail] = useState('');
-  
-  // OTP State & Refs
   const [otp, setOtp] = useState(['', '', '', '']);
   const otpInputRefs = useRef<Array<TextInput | null>>([]);
-
-  // Password State
   const [passwords, setPasswords] = useState({ new: '', confirm: '' });
   const [showPassword, setShowPassword] = useState(false);
   const [focusedInput, setFocusedInput] = useState<string | null>(null);
 
-  // --- LOGIC: STEP 1 (Send Email) ---
   const handleSendEmail = async () => {
     if (!email) { Alert.alert('Error', 'Email wajib diisi'); return; }
     setIsLoading(true);
@@ -60,7 +52,6 @@ export default function ForgotPasswordScreen() {
     }
   };
 
-  // --- LOGIC: STEP 2 (Verify OTP) ---
   const handleVerifyCode = async () => {
     const codeValue = otp.join('');
     if (codeValue.length < 4) {
@@ -87,29 +78,24 @@ export default function ForgotPasswordScreen() {
     }
   };
 
-  // Handle OTP Input Logic for Mobile
   const handleOtpChange = (text: string, index: number) => {
-    // Hanya terima angka
     if (!/^\d*$/.test(text)) return;
 
     const newOtp = [...otp];
     newOtp[index] = text;
     setOtp(newOtp);
 
-    // Auto focus ke kolom berikutnya jika diisi
     if (text && index < 3) {
       otpInputRefs.current[index + 1]?.focus();
     }
   };
 
   const handleOtpKeyPress = (e: NativeSyntheticEvent<TextInputKeyPressEventData>, index: number) => {
-    // Logic Backspace: Jika kolom kosong dan tekan backspace, pindah ke kolom sebelumnya
     if (e.nativeEvent.key === 'Backspace' && !otp[index] && index > 0) {
       otpInputRefs.current[index - 1]?.focus();
     }
   };
 
-  // --- LOGIC: STEP 3 (Reset Password) ---
   const handleResetPassword = async () => {
     if (passwords.new !== passwords.confirm) {
       Alert.alert('Error', 'Password tidak cocok');
@@ -143,7 +129,6 @@ export default function ForgotPasswordScreen() {
 
   return (
     <View style={styles.container}>
-      {/* Background Blobs */}
       <View style={[styles.blob, styles.blobBlue]} />
       <View style={[styles.blob, styles.blobPurple]} />
 
@@ -156,7 +141,6 @@ export default function ForgotPasswordScreen() {
           showsVerticalScrollIndicator={false}
         >
           <View style={styles.card}>
-            {/* Header Dinamis */}
             <View style={styles.header}>
               <View style={styles.iconContainer}>
                 {step === 1 && <KeyRound size={24} color="white" />}
@@ -177,7 +161,6 @@ export default function ForgotPasswordScreen() {
               </Text>
             </View>
 
-            {/* FORM STEP 1: EMAIL */}
             {step === 1 && (
               <View style={styles.formSpace}>
                 <View style={styles.inputGroup}>
@@ -212,7 +195,6 @@ export default function ForgotPasswordScreen() {
               </View>
             )}
 
-            {/* FORM STEP 2: OTP */}
             {step === 2 && (
               <View style={styles.formSpace}>
                 <View style={styles.otpContainer}>
@@ -250,7 +232,6 @@ export default function ForgotPasswordScreen() {
               </View>
             )}
 
-            {/* FORM STEP 3: NEW PASSWORD */}
             {step === 3 && (
               <View style={styles.formSpace}>
                 <View style={styles.inputGroup}>
@@ -285,7 +266,6 @@ export default function ForgotPasswordScreen() {
                   </View>
                 </View>
 
-                {/* Show Password Checkbox */}
                 <View style={styles.checkboxRow}>
                     <TouchableOpacity 
                     style={[styles.checkbox, showPassword && styles.checkboxChecked]} 
@@ -308,7 +288,6 @@ export default function ForgotPasswordScreen() {
               </View>
             )}
 
-            {/* Footer */}
             <View style={styles.footer}>
                 <TouchableOpacity onPress={() => router.replace('/auth/login')} style={styles.backLink}>
                     <ArrowLeft size={16} color="#475569" />
@@ -448,7 +427,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
   },
-  // OTP Styles
   otpContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -477,7 +455,6 @@ const styles = StyleSheet.create({
     color: '#64748B',
     fontSize: 14,
   },
-  // Checkbox Style
   checkboxRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -501,7 +478,6 @@ const styles = StyleSheet.create({
     color: '#475569',
     fontSize: 14,
   },
-  // Footer
   footer: {
     marginTop: 32,
     paddingTop: 24,
