@@ -1,540 +1,522 @@
-import React, { useState } from 'react';
-import { View, ScrollView, StyleSheet, Alert } from 'react-native';
-import {
-  TextInput,
-  Button,
-  Text,
-  Card,
-  IconButton,
-  List,
-  Surface,
-} from 'react-native-paper';
-import { LinearGradient } from 'expo-linear-gradient';
+import React, { useState, useRef } from 'react';
+import { 
+  View, 
+  Text, 
+  TextInput, 
+  TouchableOpacity, 
+  StyleSheet, 
+  KeyboardAvoidingView, 
+  Platform, 
+  ScrollView, 
+  Alert,
+  ActivityIndicator,
+  NativeSyntheticEvent,
+  TextInputKeyPressEventData
+} from 'react-native';
+import { Mail, ArrowLeft, KeyRound, CheckCircle2, ArrowRight, Lock, Check } from 'lucide-react-native';
+import { useRouter } from 'expo-router';
+import axios from 'axios';
 
-export default function ForgetPasswordPage() {
-  const [step, setStep] = useState(1);
+// Konfigurasi API URL
+const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://10.0.2.2:3000/api';
+
+export default function ForgotPasswordScreen() {
+  const router = useRouter();
+  
+  // State Management
+  const [step, setStep] = useState<1 | 2 | 3>(1);
+  const [isLoading, setIsLoading] = useState(false);
   const [email, setEmail] = useState('');
-  const [newPassword, setNewPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [error, setError] = useState('');
-  const [loading, setLoading] = useState(false);
+  
+  // OTP State & Refs
+  const [otp, setOtp] = useState(['', '', '', '']);
+  const otpInputRefs = useRef<Array<TextInput | null>>([]);
+
+  // Password State
+  const [passwords, setPasswords] = useState({ new: '', confirm: '' });
   const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [focusedInput, setFocusedInput] = useState<string | null>(null);
 
-  const handleSendEmail = () => {
-    setError('');
-    
-    if (!email) {
-      setError('Email tidak boleh kosong');
-      return;
-    }
-    
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-      setError('Format email tidak valid');
-      return;
-    }
+  // --- LOGIC: STEP 1 (Send Email) ---
+  const handleSendEmail = async () => {
+    if (!email) { Alert.alert('Error', 'Email wajib diisi'); return; }
+    setIsLoading(true);
 
-    setLoading(true);
-    
-    setTimeout(() => {
-      setLoading(false);
-      setStep(2);
-    }, 1500);
+    try {
+      const response = await axios.post(`${API_URL}/auth/forgot-password`, { email });
+      if (response.data.code === 200) {
+        setStep(2);
+      } else {
+        Alert.alert('Gagal', response.data.message);
+      }
+    } catch (error: any) {
+      if (axios.isAxiosError(error)) {
+        Alert.alert('Gagal', error.response?.data?.message || 'Email tidak ditemukan');
+      } else {
+        Alert.alert('Error', 'Terjadi kesalahan server');
+      }
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const handleResetPassword = () => {
-    setError('');
-    
-    if (!newPassword || !confirmPassword) {
-      setError('Semua field harus diisi');
-      return;
-    }
-    
-    if (newPassword.length < 8) {
-      setError('Password minimal 8 karakter');
-      return;
-    }
-    
-    if (newPassword !== confirmPassword) {
-      setError('Password tidak cocok');
+  // --- LOGIC: STEP 2 (Verify OTP) ---
+  const handleVerifyCode = async () => {
+    const codeValue = otp.join('');
+    if (codeValue.length < 4) {
+      Alert.alert('Peringatan', 'Masukkan 4 digit kode');
       return;
     }
 
-    setLoading(true);
-    
-    setTimeout(() => {
-      setLoading(false);
-      Alert.alert('Sukses', 'Password berhasil diubah!');
-    }, 1500);
+    setIsLoading(true);
+    try {
+      const response = await axios.post(`${API_URL}/auth/verify-reset-code`, {
+        email,
+        code: codeValue
+      });
+
+      if (response.data.code === 200) {
+        setStep(3);
+      } else {
+        Alert.alert('Gagal', response.data.message);
+      }
+    } catch (error) {
+      Alert.alert('Gagal', 'Kode salah atau kadaluwarsa');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Handle OTP Input Logic for Mobile
+  const handleOtpChange = (text: string, index: number) => {
+    // Hanya terima angka
+    if (!/^\d*$/.test(text)) return;
+
+    const newOtp = [...otp];
+    newOtp[index] = text;
+    setOtp(newOtp);
+
+    // Auto focus ke kolom berikutnya jika diisi
+    if (text && index < 3) {
+      otpInputRefs.current[index + 1]?.focus();
+    }
+  };
+
+  const handleOtpKeyPress = (e: NativeSyntheticEvent<TextInputKeyPressEventData>, index: number) => {
+    // Logic Backspace: Jika kolom kosong dan tekan backspace, pindah ke kolom sebelumnya
+    if (e.nativeEvent.key === 'Backspace' && !otp[index] && index > 0) {
+      otpInputRefs.current[index - 1]?.focus();
+    }
+  };
+
+  // --- LOGIC: STEP 3 (Reset Password) ---
+  const handleResetPassword = async () => {
+    if (passwords.new !== passwords.confirm) {
+      Alert.alert('Error', 'Password tidak cocok');
+      return;
+    }
+    if (passwords.new.length < 8) {
+        Alert.alert('Error', 'Password minimal 8 karakter');
+        return;
+    }
+
+    setIsLoading(true);
+    try {
+      const response = await axios.post(`${API_URL}/auth/change-password`, {
+        email,
+        password: passwords.new
+      });
+
+      if (response.data.code === 200) {
+        Alert.alert('Sukses', 'Password berhasil diubah! Silakan login.', [
+            { text: 'Login Sekarang', onPress: () => router.replace('/auth/login') }
+        ]);
+      } else {
+        Alert.alert('Gagal', response.data.message);
+      }
+    } catch (error) {
+      Alert.alert('Error', 'Gagal mengubah password');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
-    <LinearGradient
-      colors={['#3b82f6', '#a855f7', '#ec4899']}
-      style={styles.container}
-    >
-      <ScrollView 
-        contentContainerStyle={styles.scrollContent}
-        keyboardShouldPersistTaps="handled"
+    <View style={styles.container}>
+      {/* Background Blobs */}
+      <View style={[styles.blob, styles.blobBlue]} />
+      <View style={[styles.blob, styles.blobPurple]} />
+
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        style={{ flex: 1 }}
       >
-        <Card style={styles.card}>
-          {/* Step 1: Email Input */}
-          {step === 1 && (
-            <Card.Content>
-              <IconButton
-                icon="arrow-left"
-                size={24}
-                onPress={() => console.log('Back')}
-                style={styles.backButton}
-              />
-
-              <View style={styles.header}>
-                <Surface style={styles.iconContainer}>
-                  <IconButton icon="lock" size={32} iconColor="#fff" />
-                </Surface>
-                <Text variant="headlineMedium" style={styles.title}>
-                  Lupa Password?
-                </Text>
-                <Text variant="bodyMedium" style={styles.subtitle}>
-                  Masukkan email Anda dan kami akan mengirimkan link untuk reset password
-                </Text>
+        <ScrollView 
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+        >
+          <View style={styles.card}>
+            {/* Header Dinamis */}
+            <View style={styles.header}>
+              <View style={styles.iconContainer}>
+                {step === 1 && <KeyRound size={24} color="white" />}
+                {step === 2 && <Mail size={24} color="white" />}
+                {step === 3 && <CheckCircle2 size={24} color="white" />}
               </View>
 
-              {error && (
-                <Surface style={styles.errorContainer}>
-                  <IconButton icon="alert-circle" size={20} iconColor="#ef4444" />
-                  <Text style={styles.errorText}>{error}</Text>
-                </Surface>
-              )}
+              <Text style={styles.title}>
+                {step === 1 && 'Lupa Password?'}
+                {step === 2 && 'Cek Email Anda'}
+                {step === 3 && 'Password Baru'}
+              </Text>
 
-              <TextInput
-                label="Email Address"
-                value={email}
-                onChangeText={(text) => {
-                  setEmail(text);
-                  setError('');
-                }}
-                mode="outlined"
-                left={<TextInput.Icon icon="email" />}
-                keyboardType="email-address"
-                autoCapitalize="none"
-                style={styles.input}
-                placeholder="nama@email.com"
-              />
+              <Text style={styles.subtitle}>
+                {step === 1 && 'Masukkan email Anda untuk menerima kode reset.'}
+                {step === 2 && `Kami telah mengirim kode 4 digit ke ${email}`}
+                {step === 3 && 'Buat password baru yang aman untuk akun Anda.'}
+              </Text>
+            </View>
 
-              <Button
-                mode="contained"
-                onPress={handleSendEmail}
-                loading={loading}
-                disabled={loading}
-                style={styles.button}
-                contentStyle={styles.buttonContent}
-              >
-                {loading ? 'Mengirim...' : 'Konfirmasi'}
-              </Button>
+            {/* FORM STEP 1: EMAIL */}
+            {step === 1 && (
+              <View style={styles.formSpace}>
+                <View style={styles.inputGroup}>
+                  <Text style={styles.label}>Email</Text>
+                  <View style={[styles.inputContainer, focusedInput === 'email' && styles.inputFocused]}>
+                    <Mail size={20} color={focusedInput === 'email' ? '#2563EB' : '#94A3B8'} style={styles.inputIcon} />
+                    <TextInput
+                      value={email}
+                      onChangeText={setEmail}
+                      style={styles.input}
+                      placeholder="nama@email.com"
+                      placeholderTextColor="#94A3B8"
+                      keyboardType="email-address"
+                      autoCapitalize="none"
+                      onFocus={() => setFocusedInput('email')}
+                      onBlur={() => setFocusedInput(null)}
+                    />
+                  </View>
+                </View>
 
-              <View style={styles.footer}>
-                <Text variant="bodySmall" style={styles.footerText}>
-                  Ingat password Anda?{' '}
-                  <Text 
-                    style={styles.link}
-                    onPress={() => console.log('Login')}
-                  >
-                    Masuk di sini
-                  </Text>
-                </Text>
+                <TouchableOpacity
+                  onPress={handleSendEmail}
+                  disabled={isLoading}
+                  style={[styles.button, isLoading && styles.buttonDisabled]}
+                >
+                  {isLoading ? (
+                    <Text style={styles.buttonText}>Mengirim...</Text>
+                  ) : (
+                    <Text style={styles.buttonText}>Kirim Kode</Text>
+                  )}
+                </TouchableOpacity>
               </View>
-            </Card.Content>
-          )}
+            )}
 
-          {/* Step 2: Success Message */}
-          {step === 2 && (
-            <Card.Content>
-              <View style={styles.header}>
-                <Surface style={[styles.iconContainer, styles.successIcon]}>
-                  <IconButton icon="check-circle" size={48} iconColor="#22c55e" />
-                </Surface>
-                <Text variant="headlineMedium" style={styles.title}>
-                  Email Terkirim!
-                </Text>
-                <Text variant="bodyMedium" style={styles.subtitle}>
-                  Kami telah mengirimkan link reset password ke
-                </Text>
-                <Text variant="bodyMedium" style={styles.emailText}>
-                  {email}
-                </Text>
-                <Text variant="bodySmall" style={styles.smallText}>
-                  Silakan cek inbox atau folder spam email Anda. Link akan kadaluarsa dalam 1 jam.
-                </Text>
+            {/* FORM STEP 2: OTP */}
+            {step === 2 && (
+              <View style={styles.formSpace}>
+                <View style={styles.otpContainer}>
+                  {otp.map((digit, index) => (
+                    <TextInput
+                      key={index}
+                      ref={(ref) => otpInputRefs.current[index] = ref}
+                      value={digit}
+                      onChangeText={(text) => handleOtpChange(text, index)}
+                      onKeyPress={(e) => handleOtpKeyPress(e, index)}
+                      style={[
+                        styles.otpInput,
+                        digit ? styles.otpFilled : null,
+                        focusedInput === `otp-${index}` ? styles.inputFocused : null
+                      ]}
+                      keyboardType="number-pad"
+                      maxLength={1}
+                      onFocus={() => setFocusedInput(`otp-${index}`)}
+                      onBlur={() => setFocusedInput(null)}
+                    />
+                  ))}
+                </View>
+
+                <TouchableOpacity
+                  onPress={handleVerifyCode}
+                  disabled={isLoading}
+                  style={[styles.button, isLoading && styles.buttonDisabled]}
+                >
+                  {isLoading ? <Text style={styles.buttonText}>Memverifikasi...</Text> : <Text style={styles.buttonText}>Lanjut</Text>}
+                </TouchableOpacity>
+
+                <TouchableOpacity onPress={() => setStep(1)} style={styles.textBtn}>
+                   <Text style={styles.textBtnText}>Salah email? Kembali</Text>
+                </TouchableOpacity>
               </View>
+            )}
 
-              <Surface style={styles.infoBox}>
-                <Text variant="titleSmall" style={styles.infoTitle}>
-                  Tidak menerima email?
-                </Text>
-                <List.Item
-                  title="Periksa folder spam atau junk mail"
-                  titleNumberOfLines={2}
-                  titleStyle={styles.listItem}
-                  left={props => <List.Icon {...props} icon="circle-small" />}
-                />
-                <List.Item
-                  title="Pastikan email yang dimasukkan benar"
-                  titleNumberOfLines={2}
-                  titleStyle={styles.listItem}
-                  left={props => <List.Icon {...props} icon="circle-small" />}
-                />
-                <List.Item
-                  title="Tunggu beberapa menit, email mungkin terlambat"
-                  titleNumberOfLines={2}
-                  titleStyle={styles.listItem}
-                  left={props => <List.Icon {...props} icon="circle-small" />}
-                />
-              </Surface>
+            {/* FORM STEP 3: NEW PASSWORD */}
+            {step === 3 && (
+              <View style={styles.formSpace}>
+                <View style={styles.inputGroup}>
+                  <Text style={styles.label}>Password Baru</Text>
+                  <View style={[styles.inputContainer, focusedInput === 'new' && styles.inputFocused]}>
+                    <Lock size={20} color={focusedInput === 'new' ? '#2563EB' : '#94A3B8'} style={styles.inputIcon} />
+                    <TextInput
+                      value={passwords.new}
+                      onChangeText={(val) => setPasswords({...passwords, new: val})}
+                      style={styles.input}
+                      placeholder="Minimal 8 karakter"
+                      secureTextEntry={!showPassword}
+                      onFocus={() => setFocusedInput('new')}
+                      onBlur={() => setFocusedInput(null)}
+                    />
+                  </View>
+                </View>
 
-              <Button
-                mode="outlined"
-                onPress={handleSendEmail}
-                loading={loading}
-                disabled={loading}
-                style={styles.outlinedButton}
-                contentStyle={styles.buttonContent}
-              >
-                {loading ? 'Mengirim ulang...' : 'Kirim Ulang Email'}
-              </Button>
+                <View style={styles.inputGroup}>
+                  <Text style={styles.label}>Konfirmasi Password</Text>
+                  <View style={[styles.inputContainer, focusedInput === 'confirm' && styles.inputFocused]}>
+                    <Lock size={20} color={focusedInput === 'confirm' ? '#2563EB' : '#94A3B8'} style={styles.inputIcon} />
+                    <TextInput
+                      value={passwords.confirm}
+                      onChangeText={(val) => setPasswords({...passwords, confirm: val})}
+                      style={styles.input}
+                      placeholder="Ulangi password"
+                      secureTextEntry={!showPassword}
+                      onFocus={() => setFocusedInput('confirm')}
+                      onBlur={() => setFocusedInput(null)}
+                    />
+                  </View>
+                </View>
 
-              <Button
-                mode="contained"
-                onPress={() => setStep(3)}
-                style={styles.button}
-                contentStyle={styles.buttonContent}
-              >
-                Sudah Punya Kode? Reset Password
-              </Button>
-
-              <Button
-                mode="text"
-                onPress={() => console.log('Back to login')}
-                icon="arrow-left"
-                style={styles.textButton}
-              >
-                Kembali ke halaman login
-              </Button>
-            </Card.Content>
-          )}
-
-          {/* Step 3: Reset Password Form */}
-          {step === 3 && (
-            <Card.Content>
-              <IconButton
-                icon="arrow-left"
-                size={24}
-                onPress={() => setStep(2)}
-                style={styles.backButton}
-              />
-
-              <View style={styles.header}>
-                <Surface style={styles.iconContainer}>
-                  <IconButton icon="lock" size={32} iconColor="#fff" />
-                </Surface>
-                <Text variant="headlineMedium" style={styles.title}>
-                  Buat Password Baru
-                </Text>
-                <Text variant="bodyMedium" style={styles.subtitle}>
-                  Password baru harus berbeda dengan password sebelumnya
-                </Text>
-              </View>
-
-              {error && (
-                <Surface style={styles.errorContainer}>
-                  <IconButton icon="alert-circle" size={20} iconColor="#ef4444" />
-                  <Text style={styles.errorText}>{error}</Text>
-                </Surface>
-              )}
-
-              <TextInput
-                label="Password Baru"
-                value={newPassword}
-                onChangeText={(text) => {
-                  setNewPassword(text);
-                  setError('');
-                }}
-                mode="outlined"
-                secureTextEntry={!showPassword}
-                left={<TextInput.Icon icon="lock" />}
-                right={
-                  <TextInput.Icon
-                    icon={showPassword ? 'eye-off' : 'eye'}
+                {/* Show Password Checkbox */}
+                <View style={styles.checkboxRow}>
+                    <TouchableOpacity 
+                    style={[styles.checkbox, showPassword && styles.checkboxChecked]} 
                     onPress={() => setShowPassword(!showPassword)}
-                  />
-                }
-                style={styles.input}
-                placeholder="Minimal 8 karakter"
-              />
-
-              <TextInput
-                label="Konfirmasi Password"
-                value={confirmPassword}
-                onChangeText={(text) => {
-                  setConfirmPassword(text);
-                  setError('');
-                }}
-                mode="outlined"
-                secureTextEntry={!showConfirmPassword}
-                left={<TextInput.Icon icon="lock" />}
-                right={
-                  <TextInput.Icon
-                    icon={showConfirmPassword ? 'eye-off' : 'eye'}
-                    onPress={() => setShowConfirmPassword(!showConfirmPassword)}
-                  />
-                }
-                style={styles.input}
-                placeholder="Ulangi password baru"
-              />
-
-              <Surface style={styles.requirementsBox}>
-                <Text variant="titleSmall" style={styles.requirementsTitle}>
-                  Password harus mengandung:
-                </Text>
-                <View style={styles.requirement}>
-                  <Surface
-                    style={[
-                      styles.requirementDot,
-                      newPassword.length >= 8 && styles.requirementDotActive
-                    ]}
-                  >
-                    {newPassword.length >= 8 && (
-                      <IconButton icon="check" size={12} iconColor="#fff" />
-                    )}
-                  </Surface>
-                  <Text
-                    style={[
-                      styles.requirementText,
-                      newPassword.length >= 8 && styles.requirementTextActive
-                    ]}
-                  >
-                    Minimal 8 karakter
-                  </Text>
+                    >
+                    {showPassword && <Check size={12} color="white" />}
+                    </TouchableOpacity>
+                    <Text style={styles.checkboxLabel} onPress={() => setShowPassword(!showPassword)}>
+                        Tampilkan password
+                    </Text>
                 </View>
-                <View style={styles.requirement}>
-                  <Surface
-                    style={[
-                      styles.requirementDot,
-                      /[A-Z]/.test(newPassword) && styles.requirementDotActive
-                    ]}
-                  >
-                    {/[A-Z]/.test(newPassword) && (
-                      <IconButton icon="check" size={12} iconColor="#fff" />
-                    )}
-                  </Surface>
-                  <Text
-                    style={[
-                      styles.requirementText,
-                      /[A-Z]/.test(newPassword) && styles.requirementTextActive
-                    ]}
-                  >
-                    Huruf kapital (A-Z)
-                  </Text>
-                </View>
-                <View style={styles.requirement}>
-                  <Surface
-                    style={[
-                      styles.requirementDot,
-                      /[0-9]/.test(newPassword) && styles.requirementDotActive
-                    ]}
-                  >
-                    {/[0-9]/.test(newPassword) && (
-                      <IconButton icon="check" size={12} iconColor="#fff" />
-                    )}
-                  </Surface>
-                  <Text
-                    style={[
-                      styles.requirementText,
-                      /[0-9]/.test(newPassword) && styles.requirementTextActive
-                    ]}
-                  >
-                    Angka (0-9)
-                  </Text>
-                </View>
-              </Surface>
 
-              <Button
-                mode="contained"
-                onPress={handleResetPassword}
-                loading={loading}
-                disabled={loading}
-                style={styles.button}
-                contentStyle={styles.buttonContent}
-              >
-                {loading ? 'Memproses...' : 'Reset Password'}
-              </Button>
-            </Card.Content>
-          )}
-        </Card>
-      </ScrollView>
-    </LinearGradient>
+                <TouchableOpacity
+                  onPress={handleResetPassword}
+                  disabled={isLoading}
+                  style={[styles.button, isLoading && styles.buttonDisabled]}
+                >
+                  {isLoading ? <Text style={styles.buttonText}>Menyimpan...</Text> : <Text style={styles.buttonText}>Reset Password</Text>}
+                </TouchableOpacity>
+              </View>
+            )}
+
+            {/* Footer */}
+            <View style={styles.footer}>
+                <TouchableOpacity onPress={() => router.replace('/auth/login')} style={styles.backLink}>
+                    <ArrowLeft size={16} color="#475569" />
+                    <Text style={styles.backLinkText}>Kembali ke Login</Text>
+                </TouchableOpacity>
+            </View>
+
+          </View>
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: '#F8FAFC',
+  },
+  blob: {
+    position: 'absolute',
+    width: 300,
+    height: 300,
+    borderRadius: 150,
+    opacity: 0.2,
+  },
+  blobBlue: {
+    backgroundColor: '#60A5FA',
+    top: -50,
+    left: -50,
+  },
+  blobPurple: {
+    backgroundColor: '#C084FC',
+    bottom: -50,
+    right: -50,
   },
   scrollContent: {
     flexGrow: 1,
     justifyContent: 'center',
-    padding: 16,
+    padding: 20,
   },
   card: {
-    width: '100%',
-    maxWidth: 450,
-    alignSelf: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.9)',
     borderRadius: 16,
-    elevation: 8,
-  },
-  backButton: {
-    alignSelf: 'flex-start',
-    marginLeft: -8,
+    padding: 24,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 15,
+    elevation: 3,
   },
   header: {
     alignItems: 'center',
-    marginBottom: 24,
+    marginBottom: 32,
   },
   iconContainer: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
-    backgroundColor: '#a855f7',
-    justifyContent: 'center',
+    width: 48,
+    height: 48,
+    backgroundColor: '#2563EB',
+    borderRadius: 12,
     alignItems: 'center',
+    justifyContent: 'center',
     marginBottom: 16,
-    elevation: 4,
-  },
-  successIcon: {
-    backgroundColor: '#dcfce7',
-    width: 80,
-    height: 80,
-    borderRadius: 40,
+    shadowColor: '#2563EB',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 5,
   },
   title: {
-    fontWeight: 'bold',
+    fontSize: 22,
+    fontWeight: '700',
+    color: '#0F172A',
     marginBottom: 8,
     textAlign: 'center',
   },
   subtitle: {
+    fontSize: 14,
+    color: '#64748B',
     textAlign: 'center',
-    color: '#6b7280',
-    marginBottom: 8,
+    paddingHorizontal: 8,
   },
-  emailText: {
-    color: '#a855f7',
-    fontWeight: 'bold',
-    marginBottom: 8,
+  formSpace: {
+    gap: 20,
   },
-  smallText: {
-    textAlign: 'center',
-    color: '#9ca3af',
-    fontSize: 12,
+  inputGroup: {
+    gap: 6,
   },
-  errorContainer: {
+  label: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: '#334155',
+  },
+  inputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#fef2f2',
-    borderRadius: 8,
-    padding: 8,
-    marginBottom: 16,
+    backgroundColor: '#FFFFFF',
     borderWidth: 1,
-    borderColor: '#fecaca',
+    borderColor: '#CBD5E1',
+    borderRadius: 10,
+    height: 48,
+    paddingHorizontal: 12,
   },
-  errorText: {
-    color: '#dc2626',
-    fontSize: 14,
-    flex: 1,
+  inputFocused: {
+    borderColor: '#2563EB',
+    borderWidth: 1.5,
+    backgroundColor: '#EFF6FF',
+  },
+  inputIcon: {
+    marginRight: 10,
   },
   input: {
-    marginBottom: 16,
+    flex: 1,
+    color: '#0F172A',
+    fontSize: 14,
+    height: '100%',
   },
   button: {
-    marginTop: 8,
-    marginBottom: 8,
-    backgroundColor: '#a855f7',
-  },
-  outlinedButton: {
-    marginTop: 8,
-    marginBottom: 8,
-    borderColor: '#a855f7',
-  },
-  textButton: {
-    marginTop: 8,
-  },
-  buttonContent: {
-    paddingVertical: 8,
-  },
-  footer: {
+    backgroundColor: '#2563EB',
+    height: 48,
+    borderRadius: 10,
     alignItems: 'center',
-    marginTop: 16,
+    justifyContent: 'center',
+    shadowColor: '#2563EB',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 3,
   },
-  footerText: {
-    color: '#6b7280',
+  buttonDisabled: {
+    opacity: 0.7,
   },
-  link: {
-    color: '#a855f7',
-    fontWeight: 'bold',
+  buttonText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: '600',
   },
-  infoBox: {
-    backgroundColor: '#eff6ff',
-    borderRadius: 8,
-    padding: 12,
-    marginBottom: 16,
+  // OTP Styles
+  otpContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingHorizontal: 10,
+  },
+  otpInput: {
+    width: 56,
+    height: 56,
     borderWidth: 1,
-    borderColor: '#bfdbfe',
-  },
-  infoTitle: {
+    borderColor: '#CBD5E1',
+    borderRadius: 12,
+    fontSize: 24,
     fontWeight: 'bold',
-    color: '#1e3a8a',
-    marginBottom: 8,
-    marginLeft: 12,
+    textAlign: 'center',
+    color: '#0F172A',
+    backgroundColor: '#FFFFFF',
   },
-  listItem: {
+  otpFilled: {
+    borderColor: '#2563EB',
+    backgroundColor: '#F8FAFC',
+  },
+  textBtn: {
+    alignItems: 'center',
+  },
+  textBtnText: {
+    color: '#64748B',
     fontSize: 14,
-    color: '#1e40af',
   },
-  requirementsBox: {
-    backgroundColor: '#f9fafb',
-    borderRadius: 8,
-    padding: 16,
-    marginBottom: 16,
-    borderWidth: 1,
-    borderColor: '#e5e7eb',
-  },
-  requirementsTitle: {
-    fontWeight: 'bold',
-    color: '#374151',
-    marginBottom: 12,
-  },
-  requirement: {
+  // Checkbox Style
+  checkboxRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 8,
+    marginTop: -4,
   },
-  requirementDot: {
-    width: 20,
-    height: 20,
-    borderRadius: 10,
-    backgroundColor: '#d1d5db',
-    justifyContent: 'center',
-    alignItems: 'center',
+  checkbox: {
+    width: 18,
+    height: 18,
+    borderWidth: 1.5,
+    borderColor: '#CBD5E1',
+    borderRadius: 4,
     marginRight: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  requirementDotActive: {
-    backgroundColor: '#22c55e',
+  checkboxChecked: {
+    backgroundColor: '#2563EB',
+    borderColor: '#2563EB',
   },
-  requirementText: {
+  checkboxLabel: {
+    color: '#475569',
     fontSize: 14,
-    color: '#6b7280',
   },
-  requirementTextActive: {
-    color: '#22c55e',
+  // Footer
+  footer: {
+    marginTop: 32,
+    paddingTop: 24,
+    borderTopWidth: 1,
+    borderTopColor: '#F1F5F9',
+    alignItems: 'center',
+  },
+  backLink: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  backLinkText: {
+    fontSize: 14,
+    color: '#475569',
+    fontWeight: '500',
   },
 });

@@ -1,13 +1,13 @@
 import React, { useState } from 'react';
-import { 
-  View, 
-  Text, 
-  TextInput, 
-  TouchableOpacity, 
-  StyleSheet, 
-  KeyboardAvoidingView, 
-  Platform, 
-  ScrollView, 
+import {
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  StyleSheet,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
   Alert,
   ActivityIndicator
 } from 'react-native';
@@ -15,13 +15,10 @@ import { Eye, EyeOff, Mail, ArrowRight, Lock, LogIn, Check } from 'lucide-react-
 import { useRouter } from 'expo-router';
 import axios from 'axios';
 
-// Konfigurasi API URL (Gunakan IP komputer Anda jika di emulator: 10.0.2.2 untuk Android)
 const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://10.0.2.2:3000/api';
 
 export default function LoginScreen() {
   const router = useRouter();
-
-  // State Management
   const [formData, setFormData] = useState({
     email: '',
     password: ''
@@ -29,16 +26,12 @@ export default function LoginScreen() {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
-  
-  // State untuk efek UI (Focus border style)
   const [focusedInput, setFocusedInput] = useState<string | null>(null);
 
-  // Handle Input Change
   const handleChange = (field: string, value: string) => {
     setFormData({ ...formData, [field]: value });
   };
 
-  // Handle Submit (Logika sama persis dengan Web)
   const handleSubmit = async () => {
     setIsLoading(true);
 
@@ -50,9 +43,9 @@ export default function LoginScreen() {
 
       if (response.data.code === 200) {
         Alert.alert('Sukses', 'Login berhasil! Selamat datang kembali.', [
-          { 
-            text: 'OK', 
-            onPress: () => router.push('/user/dashboard') // Sesuaikan route dashboard Anda
+          {
+            text: 'OK',
+            onPress: () => router.push('/user/dashboard')
           }
         ]);
       } else {
@@ -73,20 +66,17 @@ export default function LoginScreen() {
 
   return (
     <View style={styles.container}>
-      {/* Background Blobs (Efek Visual seperti Web) */}
       <View style={[styles.blob, styles.blobBlue]} />
       <View style={[styles.blob, styles.blobPurple]} />
-
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={{ flex: 1 }}
       >
-        <ScrollView 
+        <ScrollView
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
         >
           <View style={styles.card}>
-            {/* Header */}
             <View style={styles.header}>
               <View style={styles.iconContainer}>
                 <LogIn size={24} color="white" />
@@ -95,10 +85,7 @@ export default function LoginScreen() {
               <Text style={styles.subtitle}>Masuk ke akun Anda untuk melanjutkan</Text>
             </View>
 
-            {/* Form */}
             <View style={styles.formSpace}>
-              
-              {/* Email Input */}
               <View style={styles.inputGroup}>
                 <Text style={styles.label}>Email</Text>
                 <View style={[
@@ -120,7 +107,6 @@ export default function LoginScreen() {
                 </View>
               </View>
 
-              {/* Password Input */}
               <View style={styles.inputGroup}>
                 <Text style={styles.label}>Password</Text>
                 <View style={[
@@ -148,11 +134,10 @@ export default function LoginScreen() {
                 </View>
               </View>
 
-              {/* Options Row (Remember Me & Forgot Password) */}
               <View style={styles.optionsRow}>
                 <View style={styles.rememberContainer}>
-                  <TouchableOpacity 
-                    style={[styles.checkbox, rememberMe && styles.checkboxChecked]} 
+                  <TouchableOpacity
+                    style={[styles.checkbox, rememberMe && styles.checkboxChecked]}
                     onPress={() => setRememberMe(!rememberMe)}
                   >
                     {rememberMe && <Check size={12} color="white" />}
@@ -161,13 +146,12 @@ export default function LoginScreen() {
                     Ingat saya
                   </Text>
                 </View>
-                
+
                 <TouchableOpacity onPress={() => router.push('/auth/forgot-password')}>
                   <Text style={styles.forgotLink}>Lupa password?</Text>
                 </TouchableOpacity>
               </View>
 
-              {/* Submit Button */}
               <TouchableOpacity
                 onPress={handleSubmit}
                 disabled={isLoading}
@@ -188,11 +172,10 @@ export default function LoginScreen() {
               </TouchableOpacity>
             </View>
 
-            {/* Footer */}
             <View style={styles.footer}>
               <Text style={styles.footerText}>
                 Belum punya akun?{' '}
-                <Text 
+                <Text
                   onPress={() => router.push('/auth/register')}
                   style={styles.linkText}
                 >
@@ -200,7 +183,6 @@ export default function LoginScreen() {
                 </Text>
               </Text>
             </View>
-
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
@@ -211,9 +193,8 @@ export default function LoginScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F8FAFC', // slate-50
+    backgroundColor: '#F8FAFC',
   },
-  // Efek Blob Background
   blob: {
     position: 'absolute',
     width: 300,
@@ -222,12 +203,12 @@ const styles = StyleSheet.create({
     opacity: 0.2,
   },
   blobBlue: {
-    backgroundColor: '#60A5FA', // blue-400
+    backgroundColor: '#60A5FA',
     top: -50,
     left: -50,
   },
   blobPurple: {
-    backgroundColor: '#C084FC', // purple-400
+    backgroundColor: '#C084FC',
     bottom: -50,
     right: -50,
   },
@@ -241,7 +222,7 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     padding: 24,
     borderWidth: 1,
-    borderColor: '#E2E8F0', // slate-200
+    borderColor: '#E2E8F0',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.05,
@@ -255,7 +236,7 @@ const styles = StyleSheet.create({
   iconContainer: {
     width: 48,
     height: 48,
-    backgroundColor: '#2563EB', // blue-600
+    backgroundColor: '#2563EB',
     borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
@@ -269,12 +250,12 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 24,
     fontWeight: '700',
-    color: '#0F172A', // slate-900
+    color: '#0F172A',
     marginBottom: 8,
   },
   subtitle: {
     fontSize: 14,
-    color: '#64748B', // slate-500
+    color: '#64748B',
   },
   formSpace: {
     gap: 20,
@@ -285,22 +266,22 @@ const styles = StyleSheet.create({
   label: {
     fontSize: 14,
     fontWeight: '500',
-    color: '#334155', // slate-700
+    color: '#334155',
   },
   inputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#FFFFFF',
     borderWidth: 1,
-    borderColor: '#CBD5E1', // slate-300
+    borderColor: '#CBD5E1',
     borderRadius: 10,
     height: 48,
     paddingHorizontal: 12,
   },
   inputFocused: {
-    borderColor: '#2563EB', // blue-600
+    borderColor: '#2563EB',
     borderWidth: 1.5,
-    backgroundColor: '#EFF6FF', // optional tint
+    backgroundColor: '#EFF6FF',
   },
   inputIcon: {
     marginRight: 10,
@@ -341,14 +322,13 @@ const styles = StyleSheet.create({
   },
   rememberText: {
     fontSize: 13,
-    color: '#475569', // slate-600
+    color: '#475569',
   },
   forgotLink: {
     fontSize: 13,
-    color: '#2563EB', // blue-600
+    color: '#2563EB',
     fontWeight: '500',
   },
-  // Button Styling
   button: {
     backgroundColor: '#2563EB',
     height: 48,
@@ -380,12 +360,11 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
   },
-  // Footer Styling
   footer: {
     marginTop: 32,
     paddingTop: 24,
     borderTopWidth: 1,
-    borderTopColor: '#F1F5F9', // slate-100 equivalent
+    borderTopColor: '#F1F5F9',
     alignItems: 'center',
   },
   footerText: {
