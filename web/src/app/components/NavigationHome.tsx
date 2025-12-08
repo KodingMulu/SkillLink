@@ -40,7 +40,6 @@ export default function NavigationHome() {
                                    <span className="ml-3 text-lg font-bold text-slate-800 tracking-tight">SkillLink</span>
                               </Link>
 
-                              {/* Desktop Menu */}
                               <div className="hidden md:flex items-center space-x-8">
                                    {['Cari Pekerjaan', 'Cari Freelancer', 'Cara Kerja', 'Blog'].map((item) => (
                                         <button 
@@ -67,7 +66,6 @@ export default function NavigationHome() {
                                    </Link>
                               </div>
 
-                              {/* Mobile Toggle */}
                               <button
                                    onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
                                    className="md:hidden p-2 text-slate-600 hover:bg-slate-100 rounded-lg transition"
