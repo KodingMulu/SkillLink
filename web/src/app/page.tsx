@@ -2,9 +2,10 @@
 import NavigationHome from './components/NavigationHome';
 import HeroHome from './components/HeroHome';
 import CategoriesHome from './components/TrustedBy';
-import TabsHome from './components/Features';
+import Features from './components/Features';
 import CTAHome from './components/CTAHome';
 import FooterHome from './components/FooterHome';
+import HowItWorks from './components/HowItWorks';
 
 export default function FreelancePlatform() {
   return (
@@ -12,7 +13,8 @@ export default function FreelancePlatform() {
       <NavigationHome />
       <HeroHome />
       <CategoriesHome />
-      <TabsHome />
+      <Features />
+      <HowItWorks />
       <CTAHome />
       <FooterHome />
     </div>
