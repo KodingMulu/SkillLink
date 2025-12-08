@@ -2,7 +2,7 @@
 import NavigationHome from './components/NavigationHome';
 import HeroHome from './components/HeroHome';
 import CategoriesHome from './components/TrustedBy';
-import TabsHome from './components/TabsHome';
+import TabsHome from './components/Features';
 import CTAHome from './components/CTAHome';
 import FooterHome from './components/FooterHome';
 
