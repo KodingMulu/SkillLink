@@ -1,32 +1,39 @@
 'use client';
-import { useState, useRef, KeyboardEvent } from "react";
 
-interface VerifyCodeProps {
-     backgroundImage?: string;
-     backgroundColor?: string;
-}
+import React, { useState, useRef, useEffect, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { ShieldCheck, ArrowRight, RotateCcw } from "lucide-react";
+import axios, { AxiosError } from "axios";
 
-export default function VerifyCode({ backgroundImage, backgroundColor }: VerifyCodeProps) {
-     const defaultBackground = '/images/bg.webp';
-     
-     const backgroundStyle = backgroundImage 
-          ? { backgroundImage: `url(${backgroundImage})`, backgroundSize: 'cover', backgroundPosition: 'center', backgroundRepeat: 'no-repeat' }
-          : backgroundColor 
-               ? { backgroundColor: backgroundColor }
-               : { backgroundImage: `url(${defaultBackground})`, backgroundSize: 'cover', backgroundPosition: 'center', backgroundRepeat: 'no-repeat' };
-     
+function VerifyContent() {
+     const router = useRouter();
+     const searchParams = useSearchParams();
+
+     const emailFromUrl = searchParams.get('email');
+
      const [code, setCode] = useState<string[]>(['', '', '', '']);
+     const [isLoading, setIsLoading] = useState(false);
      const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
+
+     useEffect(() => {
+          if (inputRefs.current[0]) {
+               inputRefs.current[0].focus();
+          }
+     }, []);
 
      const handleChange = (index: number, value: string) => {
           if (value && !/^\d$/.test(value)) return;
+
           const newCode = [...code];
           newCode[index] = value;
           setCode(newCode);
-          if (value && index < 3) inputRefs.current[index + 1]?.focus();
+
+          if (value && index < 3) {
+               inputRefs.current[index + 1]?.focus();
+          }
      };
 
-     const handleKeyDown = (index: number, e: KeyboardEvent<HTMLInputElement>) => {
+     const handleKeyDown = (index: number, e: React.KeyboardEvent<HTMLInputElement>) => {
           if (e.key === 'Backspace' && !code[index] && index > 0) {
                inputRefs.current[index - 1]?.focus();
           }
@@ -47,82 +54,130 @@ export default function VerifyCode({ backgroundImage, backgroundColor }: VerifyC
           inputRefs.current[lastIndex]?.focus();
      };
 
-     const handleVerify = () => {
+     const handleVerify = async (e: React.FormEvent) => {
+          e.preventDefault();
+
           const verificationCode = code.join('');
-          if (verificationCode.length === 4) {
-               alert(`Kode verifikasi: ${verificationCode}`);
-          } else {
-               alert('Silakan isi semua kode verifikasi');
+          if (verificationCode.length < 4) {
+               alert('Silakan lengkapi kode verifikasi');
+               return;
+          }
+
+          if (!emailFromUrl) {
+               alert('Email tidak ditemukan. Silakan daftar ulang atau login.');
+               return;
+          }
+
+          setIsLoading(true);
+
+          try {
+               const apiUrl = process.env.NEXT_PUBLIC_API_URL || '/api';
+
+               const payload = {
+                    email: emailFromUrl,
+                    code: verificationCode
+               };
+
+               const response = await axios.post(`${apiUrl}/auth/verify`, payload); // Asumsi endpoint di backend folder Anda verify/route.ts atau auth/route.ts sesuaikan
+
+               if (response.data.code === 200) {
+                    alert('Verifikasi Berhasil! Silakan login.');
+                    router.push('/auth/login');
+               } else {
+                    alert(`Gagal: ${response.data.message}`);
+               }
+
+          } catch (error) {
+               console.error('Verification error:', error);
+               if (axios.isAxiosError(error)) {
+                    alert(error.response?.data?.message || 'Kode verifikasi salah atau kedaluwarsa');
+               } else {
+                    alert('Terjadi kesalahan sistem');
+               }
+          } finally {
+               setIsLoading(false);
           }
      };
 
      const handleResendCode = () => {
-          alert('Kode verifikasi telah dikirim ulang');
+          alert('Fitur kirim ulang kode akan segera hadir.');
      };
 
      return (
-          <div className="min-h-screen flex items-center justify-center p-4" style={backgroundStyle}>
-               
-               {/* CARD HITAM GLOSSY */}
-               <div className="bg-black/40 backdrop-blur-xl shadow-2xl rounded-2xl p-8 max-w-md w-full border border-white/10">
-                    
-                    <div className="mb-6">
-                         <div className="w-14 h-14 bg-black/60 border border-gray-600 shadow-inner shadow-black/70 rounded-full flex items-center justify-center mx-auto mb-4">
-                              <svg className="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                              </svg>
+          <main className="relative min-h-screen bg-slate-50 flex items-center justify-center p-4 lg:p-8 overflow-hidden">
+               <div aria-hidden="true" className="absolute top-[-10%] right-[-5%] w-96 h-96 bg-blue-400/20 rounded-full blur-[100px] pointer-events-none" />
+               <div aria-hidden="true" className="absolute bottom-[-10%] left-[-5%] w-96 h-96 bg-purple-400/20 rounded-full blur-[100px] pointer-events-none" />
+               <section className="relative z-10 w-full max-w-[400px] bg-white/80 backdrop-blur-xl rounded-xl shadow-sm border border-slate-200 p-8">
+                    <header className="mb-8 text-center">
+                         <div className="mx-auto w-12 h-12 bg-blue-600 rounded-lg flex items-center justify-center mb-4 shadow-lg shadow-blue-600/20">
+                              <ShieldCheck className="w-6 h-6 text-white" />
+                         </div>
+                         <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Verifikasi Email</h1>
+                         <p className="text-slate-500 text-sm mt-2">
+                              Masukkan 4 digit kode yang dikirim ke <br />
+                              <span className="font-medium text-slate-700">{emailFromUrl || 'email Anda'}</span>
+                         </p>
+                    </header>
+
+                    <form onSubmit={handleVerify} className="space-y-6">
+                         <div className="flex justify-between gap-2 px-2">
+                              {code.map((digit, index) => (
+                                   <input
+                                        key={index}
+                                        ref={(el) => { inputRefs.current[index] = el }}
+                                        type="text"
+                                        maxLength={1}
+                                        inputMode="numeric"
+                                        value={digit}
+                                        onChange={(e) => handleChange(index, e.target.value)}
+                                        onKeyDown={(e) => handleKeyDown(index, e)}
+                                        onPaste={handlePaste}
+                                        className="w-14 h-14 sm:w-16 sm:h-16 text-center text-2xl font-bold bg-white border border-slate-300 rounded-xl text-slate-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-600/20 focus:border-blue-600 focus:-translate-y-1 transition-all duration-200"
+                                   />
+                              ))}
                          </div>
 
-                         <h2 className="text-2xl font-bold text-center text-white mb-2">Verifikasi Kode</h2>
-                         <p className="text-center text-gray-300 text-sm">Masukkan 4 digit kode yang telah dikirim</p>
-                    </div>
+                         <button
+                              type="submit"
+                              disabled={isLoading}
+                              className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2.5 rounded-lg transition-all duration-200 flex items-center justify-center space-x-2 disabled:opacity-70 disabled:cursor-not-allowed shadow-sm shadow-blue-600/20 active:scale-[0.98]"
+                         >
+                              {isLoading ? (
+                                   <>
+                                        <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                                        <span>Memvalidasi...</span>
+                                   </>
+                              ) : (
+                                   <>
+                                        <span>Verifikasi Akun</span>
+                                        <ArrowRight className="w-4 h-4" />
+                                   </>
+                              )}
+                         </button>
+                    </form>
 
-                    {/* INPUT HITAM GLOSSY */}
-                    <div className="flex justify-center gap-3 mb-6">
-                         {code.map((digit, index) => (
-                              <input
-                                   key={index}
-                                   ref={(el) => (inputRefs.current[index] = el)}
-                                   type="text"
-                                   maxLength={1}
-                                   inputMode="numeric"
-                                   value={digit}
-                                   onChange={(e) => handleChange(index, e.target.value)}
-                                   onKeyDown={(e) => handleKeyDown(index, e)}
-                                   onPaste={handlePaste}
-                                   className="
-                                        w-16 h-16 text-center text-2xl font-bold 
-                                        rounded-xl 
-                                        bg-black/50 
-                                        text-white 
-                                        border border-gray-600 
-                                        shadow-md shadow-black/50 
-                                        focus:border-white focus:shadow-xl 
-                                        transition-all duration-200
-                                   "
-                              />
-                         ))}
-                    </div>
-
-                    {/* BUTTON GLOSSY */}
-                    <button
-                         onClick={handleVerify}
-                         className="w-full bg-black/70 text-white py-3 rounded-lg font-semibold border border-gray-700 shadow-md shadow-black/70 hover:bg-black/90 transition"
-                    >
-                         Verify
-                    </button>
-
-                    <div className="text-center mt-4">
-                         <p className="text-gray-300 text-sm mb-2">Tidak menerima kode?</p>
+                    <div className="mt-8 pt-6 border-t border-slate-100 text-center">
+                         <p className="text-sm text-slate-600 mb-3">
+                              Tidak menerima kode?
+                         </p>
                          <button
                               onClick={handleResendCode}
-                              className="text-blue-300 font-semibold hover:underline"
+                              type="button"
+                              className="inline-flex items-center text-sm text-blue-600 font-semibold hover:text-blue-700 transition-colors"
                          >
-                              Kirim ulang kode
+                              <RotateCcw className="w-4 h-4 mr-1.5" />
+                              Kirim Ulang Kode
                          </button>
                     </div>
+               </section>
+          </main>
+     );
+}
 
-               </div>
-          </div>
+export default function VerifyPage() {
+     return (
+          <Suspense fallback={<div className="min-h-screen bg-slate-50 flex items-center justify-center">Loading...</div>}>
+               <VerifyContent />
+          </Suspense>
      );
 }
