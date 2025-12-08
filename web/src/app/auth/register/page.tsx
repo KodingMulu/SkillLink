@@ -1,17 +1,21 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Eye, EyeOff, Lock, Mail, User, Phone } from 'lucide-react';
+import { Eye, EyeOff, Lock, Mail, User } from 'lucide-react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation'; // Import yang benar untuk App Router
+import axios, { AxiosError } from 'axios'; // Import Axios dan tipe error-nya
 
 export default function RegisterPage() {
+  const router = useRouter();
+  
+  // State tanpa confirmPassword
   const [formData, setFormData] = useState({
     fullName: '',
     email: '',
-    phone: '',
-    password: '',
-    confirmPassword: ''
+    password: ''
   });
+  
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [acceptTerms, setAcceptTerms] = useState(false);
@@ -23,26 +27,51 @@ export default function RegisterPage() {
     });
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (formData.password !== formData.confirmPassword) {
-      alert('Password tidak cocok!');
-      return;
-    }
 
+    // Validasi Terms (Hanya ini validasi manual yang tersisa)
     if (!acceptTerms) {
       alert('Anda harus menyetujui syarat dan ketentuan');
       return;
     }
 
     setIsLoading(true);
-    
-    setTimeout(() => {
-      console.log('Register attempt:', formData);
-      alert(`Registrasi berhasil!\nNama: ${formData.fullName}\nEmail: ${formData.email}`);
+
+    try {
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || '/api';
+
+      // Mapping data: Backend (username) <- Frontend (fullName)
+      const payload = {
+        email: formData.email,
+        username: formData.fullName, 
+        password: formData.password
+      };
+
+      const response = await axios.post(`${apiUrl}/auth/register`, payload);
+
+      // Cek logika respon custom dari backend (status 200 tapi ada code di body)
+      if (response.data.code === 200) {
+        alert(`Registrasi Berhasil! Cek email Anda untuk kode verifikasi.`);
+        router.push('/auth/verify'); 
+      } else {
+        // Handle error logic dari backend (misal: user already exists)
+        alert(`Gagal: ${response.data.message}`);
+      }
+
+    } catch (error) {
+      console.error('Register error:', error);
+      
+      // Handle error jaringan/server dengan tipe yang aman (tanpa any)
+      if (axios.isAxiosError(error)) {
+        const errorMessage = error.response?.data?.message || 'Terjadi kesalahan pada server';
+        alert(errorMessage);
+      } else {
+        alert('Terjadi kesalahan yang tidak terduga');
+      }
+    } finally {
       setIsLoading(false);
-    }, 1500);
+    }
   };
 
   return (
@@ -59,7 +88,7 @@ export default function RegisterPage() {
             <p className="text-gray-500">Daftar untuk memulai perjalanan Anda</p>
           </div>
 
-          <div className="space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
               <label htmlFor="fullName" className="block text-sm font-medium text-gray-700">
                 User Name
@@ -155,8 +184,7 @@ export default function RegisterPage() {
             </div>
 
             <button
-              type="button"
-              onClick={handleSubmit}
+              type="submit"
               disabled={isLoading}
               className="w-full bg-gradient-to-r from-blue-500 to-purple-600 text-white py-3 rounded-lg font-semibold hover:from-blue-600 hover:to-purple-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition disabled:opacity-50 disabled:cursor-not-allowed"
             >
@@ -172,13 +200,13 @@ export default function RegisterPage() {
                 'Daftar'
               )}
             </button>
-          </div>
+          </form>
 
           <p className="text-center text-sm text-gray-600">
             Sudah punya akun?{' '}
-            <button className="text-blue-600 hover:text-blue-700 font-semibold">
-              <Link href={'/auth/login'}>Masuk</Link>
-            </button>
+            <Link href={'/auth/login'} className="text-blue-600 hover:text-blue-700 font-semibold">
+              Masuk
+            </Link>
           </p>
         </div>
       </div>
