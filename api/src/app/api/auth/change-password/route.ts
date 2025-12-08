@@ -1,58 +1,41 @@
-import { hashPassword } from "@/lib/auth";
 import prisma from "@/lib/prisma";
 import { NextResponse } from "next/server";
+import bcrypt from "bcryptjs";
 
 export async function POST(req: Request) {
-     try {
-          const { email, code, newPassword } = await req.json();
+  try {
+    const { email, password } = await req.json();
 
-          const user = await prisma.user.findUnique({
-               where: {
-                    email
-               }
-          });
+    if (!email || !password) {
+      return NextResponse.json({ message: "Data tidak lengkap", code: 400 });
+    }
 
-          if (!user) {
-               return NextResponse.json({
-                    message: "Email not found",
-                    code: 404
-               });
-          }
+    const user = await prisma.user.findUnique({
+      where: { email }
+    });
 
-          if (user.verificationCode !== code) {
-               return NextResponse.json({
-                    message: "Invalid verification code",
-                    code: 400
-               });
-          }
+    if (!user) {
+      return NextResponse.json({ message: "User tidak ditemukan", code: 404 });
+    }
 
-          if (!user.verificationExpires || user.verificationExpires < new Date()) {
-               return NextResponse.json({
-                    message: "Verification code expired",
-                    code: 400
-               });
-          }
+    const hashedPassword = await bcrypt.hash(password, 10);
 
-          const hashed = await hashPassword(newPassword);
+    await prisma.user.update({
+      where: { email },
+      data: {
+        password: hashedPassword,
+        verificationCode: null,     
+        verificationExpires: null   
+      }
+    });
 
-          await prisma.user.update({
-               where: { email },
-               data: {
-                    password: hashed,
-                    verificationCode: null,
-                    verificationExpires: null
-               }
-          });
+    return NextResponse.json({
+      message: "Password berhasil diubah",
+      code: 200
+    });
 
-          return NextResponse.json({
-               message: "Password changed successfully",
-               code: 200
-          });
-     } catch (error) {
-          console.log("CHANGE PASS ERROR:", error);
-          return NextResponse.json({
-               message: "Something went wrong",
-               code: 500
-          });
-     }
+  } catch (error) {
+    console.log("RESET_PASSWORD_ERROR:", error);
+    return NextResponse.json({ message: "Internal Server Error", code: 500 });
+  }
 }

@@ -27,10 +27,7 @@ export async function POST(req: Request) {
                });
           };
 
-          //Generate 4 Digit Random Number
           const code = Math.floor(1000 + Math.random() * 9000).toString();
-
-          //Hashing Password Before Save to Database
           const hashed = await hashPassword(password);
 
           await prisma.user.create({
