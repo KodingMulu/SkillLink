@@ -35,9 +35,9 @@ export default function ProfilePage() {
 
   // Data Profil
   const [profile, setProfile] = useState({
-    name: 'Ahmad Rizki',
+    name: 'Saipul Bahri',
     title: 'Frontend Developer',
-    email: 'ahmad.rizki@email.com',
+    email: 'saipul.bahri@email.com',
     phone: '+62 812-3456-7890',
     location: 'Jakarta, Indonesia',
     joinDate: 'Januari 2024',
@@ -46,9 +46,10 @@ export default function ProfilePage() {
     completedProjects: 24,
     rating: 4.8,
     responseTime: '2 jam',
-    website: 'https://ahmadrizki.dev',
-    github: 'github.com/ahmadrizki',
-    linkedin: 'linkedin.com/in/ahmadrizki'
+    website: 'https://saipulbahri.dev',
+    github: 'github.com/saipulbahri',
+    linkedin: 'linkedin.com/in/saipulbahri',
+    avatar: 'https://ui-avatars.com/api/?name=Saipul+Bahri&background=4F46E5&color=fff&size=200'
   });
 
   const [skills, setSkills] = useState<Skill[]>([
@@ -143,11 +144,13 @@ export default function ProfilePage() {
             <div className="flex items-start space-x-6">
               {/* Avatar */}
               <div className="relative">
-                <div className="w-24 h-24 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white text-3xl font-bold">
-                  AR
-                </div>
+                <img 
+                  src={profile.avatar}
+                  alt={profile.name}
+                  className="w-24 h-24 rounded-full object-cover border-4 border-white shadow-lg"
+                />
                 {isEditing && (
-                  <button className="absolute bottom-0 right-0 bg-blue-500 text-white p-2 rounded-full hover:bg-blue-600 transition">
+                  <button className="absolute bottom-0 right-0 bg-blue-500 text-white p-2 rounded-full hover:bg-blue-600 transition shadow-md">
                     <Upload className="w-4 h-4" />
                   </button>
                 )}
