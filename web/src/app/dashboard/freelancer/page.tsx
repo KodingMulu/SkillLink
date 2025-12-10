@@ -1,9 +1,13 @@
 'use client';
 
+import { useState } from 'react'; // ← TAMBAHKAN INI
 import DashboardLayout from "../DashboardLayout";
+import ProfilePopup from "../../components/ProfilePopup"; // ← TAMBAHKAN INI
 import { Wallet, Clock, CheckCircle2, Star, TrendingUp, MoreHorizontal } from "lucide-react";
 
 export default function FreelancerDashboard() {
+  const [isProfileOpen, setIsProfileOpen] = useState(false); // ← TAMBAHKAN INI
+
   const stats = [
     { label: "Total Pendapatan", value: "Rp 12.500.000", icon: Wallet, color: "text-emerald-600", bg: "bg-emerald-50" },
     { label: "Proyek Aktif", value: "3", icon: Clock, color: "text-blue-600", bg: "bg-blue-50" },
@@ -19,6 +23,16 @@ export default function FreelancerDashboard() {
 
   return (
     <DashboardLayout role="freelancer">
+      {/* ← TAMBAHKAN BUTTON INI */}
+      <div className="fixed top-4 right-4 z-40">
+        <button
+          onClick={() => setIsProfileOpen(true)}
+          className="w-12 h-12 bg-purple-600 text-white rounded-full font-bold hover:bg-purple-700 transition-all shadow-lg hover:shadow-xl flex items-center justify-center text-sm"
+        >
+          ME
+        </button>
+      </div>
+
       <div className="mb-8">
         <h1 className="text-2xl font-bold text-slate-900">Halo, Nazril! 👋</h1>
         <p className="text-slate-500">Berikut adalah aktivitas terbaru proyekmu.</p>
@@ -107,6 +121,17 @@ export default function FreelancerDashboard() {
         </div>
 
       </div>
+
+      {/* ← TAMBAHKAN COMPONENT INI DI AKHIR, SEBELUM PENUTUP </DashboardLayout> */}
+      <ProfilePopup 
+        isOpen={isProfileOpen}
+        onClose={() => setIsProfileOpen(false)}
+        userName="Nazril"
+        userInitial="N"
+        completedProjects={12}
+        rating="4.9/5.0"
+        activeProjects={activeProjects}
+      />
     </DashboardLayout>
   );
 }
