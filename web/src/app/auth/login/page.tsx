@@ -132,7 +132,7 @@ export default function LoginPage() {
               </label>
             </div>
             <Link
-              href="/auth/forget-password"
+              href="/auth/forgot-password"
               className="text-sm text-blue-600 hover:text-blue-700 font-medium hover:underline"
             >
               Lupa password?
