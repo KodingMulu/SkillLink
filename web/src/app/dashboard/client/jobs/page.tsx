@@ -1,45 +1,79 @@
 'use client';
 
-import React, { useState, ChangeEvent, KeyboardEvent } from 'react';
-import { Briefcase, DollarSign, Calendar, FileText, MapPin, Clock, Plus, X } from 'lucide-react';
+import { useState } from 'react';
+import DashboardLayout from "../../DashboardLayout";
+import { Briefcase, MapPin, Calendar, DollarSign, Clock, Edit, Trash2, Eye, Users, X, Upload, Plus } from "lucide-react";
 
-interface FormData {
-  judulProyek: string;
-  kategori: string;
-  deskripsi: string;
-  budget: string;
-  deadline: string;
-  lokasi: string;
-  durasi: string;
-  skills: string[];
-}
-
-export default function PostingProyek() {
-  const [formData, setFormData] = useState<FormData>({
-    judulProyek: '',
-    kategori: '',
-    deskripsi: '',
+export default function JobsPage() {
+  const [showPostJobModal, setShowPostJobModal] = useState(false);
+  const [formData, setFormData] = useState({
+    title: '',
+    category: '',
+    description: '',
     budget: '',
     deadline: '',
-    lokasi: '',
-    durasi: '',
-    skills: []
+    location: '',
+    skills: '',
+    duration: '',
+    experienceLevel: 'intermediate'
   });
-  
-  const [currentSkill, setCurrentSkill] = useState<string>('');
 
-  const kategoriOptions = [
-    'Web Development',
-    'Mobile Development',
-    'UI/UX Design',
-    'Content Writing',
-    'Digital Marketing',
-    'Data Entry',
-    'Graphic Design',
-    'Video Editing'
+  const jobs = [
+    {
+      id: 1,
+      title: "Pembuatan Dashboard V2",
+      category: "Web Development",
+      budget: "Rp 5.000.000",
+      deadline: "20 Des 2024",
+      location: "Remote",
+      duration: "2 Bulan",
+      applicants: 12,
+      status: "active",
+      postedDate: "2 hari yang lalu",
+      skills: ["React", "Node.js", "PostgreSQL"]
+    },
+    {
+      id: 2,
+      title: "Logo Rebranding",
+      category: "Graphic Design",
+      budget: "Rp 1.500.000",
+      deadline: "25 Des 2024",
+      location: "Jakarta",
+      duration: "3 Minggu",
+      applicants: 8,
+      status: "active",
+      postedDate: "5 hari yang lalu",
+      skills: ["Adobe Illustrator", "Branding", "Logo Design"]
+    },
+    {
+      id: 3,
+      title: "Redesain Aplikasi Mobile E-commerce",
+      category: "UI/UX Design",
+      budget: "Rp 7.500.000",
+      deadline: "15 Jan 2025",
+      location: "Remote",
+      duration: "1.5 Bulan",
+      applicants: 15,
+      status: "active",
+      postedDate: "1 minggu yang lalu",
+      skills: ["Figma", "UI Design", "Prototyping"]
+    },
+    {
+      id: 4,
+      title: "Content Writer untuk Blog SEO",
+      category: "Content Writing",
+      budget: "Rp 3.000.000",
+      deadline: "10 Des 2024",
+      location: "Remote",
+      duration: "1 Bulan",
+      applicants: 5,
+      status: "closed",
+      postedDate: "2 minggu yang lalu",
+      skills: ["SEO Writing", "Content Strategy", "Copywriting"]
+    }
   ];
 
-  const handleInputChange = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+  const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({
       ...prev,
@@ -47,241 +81,348 @@ export default function PostingProyek() {
     }));
   };
 
-  const handleAddSkill = () => {
-    if (currentSkill.trim() && !formData.skills.includes(currentSkill.trim())) {
-      setFormData(prev => ({
-        ...prev,
-        skills: [...prev.skills, currentSkill.trim()]
-      }));
-      setCurrentSkill('');
-    }
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    console.log('Form Data:', formData);
+    alert('Pekerjaan berhasil diposting!');
+    setShowPostJobModal(false);
+    setFormData({
+      title: '',
+      category: '',
+      description: '',
+      budget: '',
+      deadline: '',
+      location: '',
+      skills: '',
+      duration: '',
+      experienceLevel: 'intermediate'
+    });
   };
 
-  const handleRemoveSkill = (skillToRemove: string) => {
-    setFormData(prev => ({
-      ...prev,
-      skills: prev.skills.filter(skill => skill !== skillToRemove)
-    }));
+  const getStatusBadge = (status) => {
+    return status === 'active' 
+      ? 'bg-emerald-100 text-emerald-700'
+      : 'bg-slate-100 text-slate-700';
   };
 
-  const handleSubmit = () => {
-    console.log('Data Proyek:', formData);
-    alert('Proyek berhasil diposting!');
-  };
-
-  const handleKeyPress = (e: KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter') {
-      e.preventDefault();
-      handleAddSkill();
-    }
+  const getStatusText = (status) => {
+    return status === 'active' ? 'Aktif' : 'Ditutup';
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-teal-50">
-      <div className="bg-white shadow-sm border-b">
-        <div className="max-w-6xl mx-auto px-6 py-4">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-teal-500 rounded-lg flex items-center justify-center">
-              <Briefcase className="w-6 h-6 text-white" />
-            </div>
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900">Posting Proyek</h1>
-              <p className="text-sm text-gray-600">Temukan talenta terbaik untuk proyek Anda</p>
-            </div>
-          </div>
+    <DashboardLayout role="client">
+      <div className="flex justify-between items-end mb-8">
+        <div>
+          <h1 className="text-2xl font-bold text-slate-900">Posting Proyek</h1>
+          <p className="text-slate-500">Kelola semua lowongan pekerjaan Anda</p>
+        </div>
+        <button 
+          onClick={() => setShowPostJobModal(true)}
+          className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-lg text-sm font-medium shadow-lg shadow-blue-600/20 transition-all"
+        >
+          + Posting Pekerjaan Baru
+        </button>
+      </div>
+
+      {/* Stats Summary */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+        <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+          <p className="text-sm text-slate-500 mb-1">Total Lowongan</p>
+          <p className="text-3xl font-bold text-slate-900">{jobs.length}</p>
+        </div>
+        <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+          <p className="text-sm text-slate-500 mb-1">Lowongan Aktif</p>
+          <p className="text-3xl font-bold text-emerald-600">{jobs.filter(j => j.status === 'active').length}</p>
+        </div>
+        <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+          <p className="text-sm text-slate-500 mb-1">Total Pelamar</p>
+          <p className="text-3xl font-bold text-blue-600">{jobs.reduce((sum, j) => sum + j.applicants, 0)}</p>
+        </div>
+        <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+          <p className="text-sm text-slate-500 mb-1">Lowongan Ditutup</p>
+          <p className="text-3xl font-bold text-slate-600">{jobs.filter(j => j.status === 'closed').length}</p>
         </div>
       </div>
 
-      <div className="max-w-4xl mx-auto px-6 py-8">
-        <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
-          <div className="bg-gradient-to-r from-teal-500 to-blue-500 px-6 py-4">
-            <h2 className="text-xl font-semibold text-white">Detail Proyek</h2>
-            <p className="text-teal-50 text-sm mt-1">Lengkapi informasi proyek Anda dengan detail</p>
-          </div>
+      {/* Jobs List */}
+      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+        <div className="p-6 border-b border-slate-100">
+          <h2 className="font-bold text-slate-900">Daftar Lowongan Pekerjaan</h2>
+        </div>
 
-          <div className="p-6 space-y-6">
-            <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">
-                <FileText className="w-4 h-4 inline mr-2" />
-                Judul Proyek
-              </label>
-              <input
-                type="text"
-                name="judulProyek"
-                value={formData.judulProyek}
-                onChange={handleInputChange}
-                placeholder="Contoh: Redesain Aplikasi Mobile E-commerce"
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent transition"
-              />
-            </div>
+        <div className="divide-y divide-slate-100">
+          {jobs.map((job) => (
+            <div key={job.id} className="p-6 hover:bg-slate-50 transition-colors">
+              <div className="flex items-start justify-between mb-4">
+                <div className="flex-1">
+                  <div className="flex items-center gap-3 mb-2">
+                    <h3 className="text-lg font-bold text-slate-900">{job.title}</h3>
+                    <span className={`px-3 py-1 rounded-full text-xs font-semibold ${getStatusBadge(job.status)}`}>
+                      {getStatusText(job.status)}
+                    </span>
+                  </div>
+                  <p className="text-sm text-slate-500 mb-3">{job.category} • Diposting {job.postedDate}</p>
+                  
+                  {/* Skills */}
+                  <div className="flex flex-wrap gap-2 mb-4">
+                    {job.skills.map((skill, idx) => (
+                      <span key={idx} className="px-3 py-1 bg-blue-50 text-blue-700 rounded-full text-xs font-medium">
+                        {skill}
+                      </span>
+                    ))}
+                  </div>
 
-            <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">
-                <Briefcase className="w-4 h-4 inline mr-2" />
-                Kategori
-              </label>
-              <select
-                name="kategori"
-                value={formData.kategori}
-                onChange={handleInputChange}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent transition"
-              >
-                <option value="">Pilih kategori proyek</option>
-                {kategoriOptions.map(kat => (
-                  <option key={kat} value={kat}>{kat}</option>
-                ))}
-              </select>
-            </div>
+                  {/* Job Details */}
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                    <div className="flex items-center gap-2 text-slate-600">
+                      <DollarSign className="w-4 h-4 text-slate-400" />
+                      <span>{job.budget}</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-slate-600">
+                      <Calendar className="w-4 h-4 text-slate-400" />
+                      <span>{job.deadline}</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-slate-600">
+                      <MapPin className="w-4 h-4 text-slate-400" />
+                      <span>{job.location}</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-slate-600">
+                      <Clock className="w-4 h-4 text-slate-400" />
+                      <span>{job.duration}</span>
+                    </div>
+                  </div>
+                </div>
 
-            <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">
-                Deskripsi Proyek
-              </label>
-              <textarea
-                name="deskripsi"
-                value={formData.deskripsi}
-                onChange={handleInputChange}
-                placeholder="Jelaskan detail proyek, tujuan, dan ekspektasi hasil..."
-                rows={6}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent transition resize-none"
-              />
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  <DollarSign className="w-4 h-4 inline mr-2" />
-                  Budget (Rp)
-                </label>
-                <input
-                  type="number"
-                  name="budget"
-                  value={formData.budget}
-                  onChange={handleInputChange}
-                  placeholder="5000000"
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent transition"
-                />
+                {/* Actions */}
+                <div className="flex items-center gap-2 ml-4">
+                  <button className="p-2 hover:bg-blue-50 text-blue-600 rounded-lg transition-colors">
+                    <Eye className="w-4 h-4" />
+                  </button>
+                  <button className="p-2 hover:bg-emerald-50 text-emerald-600 rounded-lg transition-colors">
+                    <Edit className="w-4 h-4" />
+                  </button>
+                  <button className="p-2 hover:bg-red-50 text-red-600 rounded-lg transition-colors">
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                </div>
               </div>
 
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  <Calendar className="w-4 h-4 inline mr-2" />
-                  Deadline
-                </label>
-                <input
-                  type="date"
-                  name="deadline"
-                  value={formData.deadline}
-                  onChange={handleInputChange}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent transition"
-                />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  <MapPin className="w-4 h-4 inline mr-2" />
-                  Lokasi
-                </label>
-                <input
-                  type="text"
-                  name="lokasi"
-                  value={formData.lokasi}
-                  onChange={handleInputChange}
-                  placeholder="Remote / Jakarta / Bandung"
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent transition"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  <Clock className="w-4 h-4 inline mr-2" />
-                  Durasi Proyek
-                </label>
-                <input
-                  type="text"
-                  name="durasi"
-                  value={formData.durasi}
-                  onChange={handleInputChange}
-                  placeholder="Contoh: 2 Bulan, 3 Minggu"
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent transition"
-                />
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">
-                Skill yang Dibutuhkan
-              </label>
-              <div className="flex gap-2 mb-3">
-                <input
-                  type="text"
-                  value={currentSkill}
-                  onChange={(e) => setCurrentSkill(e.target.value)}
-                  onKeyPress={handleKeyPress}
-                  placeholder="Contoh: React, Figma, SEO"
-                  className="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent transition"
-                />
-                <button
-                  type="button"
-                  onClick={handleAddSkill}
-                  className="px-4 py-3 bg-teal-500 text-white rounded-lg hover:bg-teal-600 transition flex items-center gap-2"
-                >
-                  <Plus className="w-4 h-4" />
-                  Tambah
+              {/* Applicants */}
+              <div className="flex items-center justify-between pt-4 border-t border-slate-100">
+                <div className="flex items-center gap-2">
+                  <Users className="w-4 h-4 text-slate-400" />
+                  <span className="text-sm font-semibold text-slate-700">{job.applicants} Pelamar</span>
+                </div>
+                <button className="text-sm text-blue-600 hover:underline font-medium">
+                  Lihat Pelamar
                 </button>
               </div>
-              
-              {formData.skills.length > 0 && (
-                <div className="flex flex-wrap gap-2">
-                  {formData.skills.map((skill, index) => (
-                    <span
-                      key={index}
-                      className="inline-flex items-center gap-2 px-3 py-1.5 bg-teal-100 text-teal-700 rounded-full text-sm font-medium"
-                    >
-                      {skill}
-                      <button
-                        type="button"
-                        onClick={() => handleRemoveSkill(skill)}
-                        className="hover:bg-teal-200 rounded-full p-0.5 transition"
-                      >
-                        <X className="w-3.5 h-3.5" />
-                      </button>
-                    </span>
-                  ))}
-                </div>
-              )}
             </div>
-          </div>
-
-          <div className="bg-gray-50 px-6 py-4 flex justify-end gap-3 border-t">
-            <button
-              type="button"
-              onClick={() => setFormData({
-                judulProyek: '',
-                kategori: '',
-                deskripsi: '',
-                budget: '',
-                deadline: '',
-                lokasi: '',
-                durasi: '',
-                skills: []
-              })}
-              className="px-6 py-2.5 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-100 transition font-medium"
-            >
-              Batalkan
-            </button>
-            <button
-              type="button"
-              onClick={handleSubmit}
-              className="px-6 py-2.5 bg-gradient-to-r from-teal-500 to-blue-500 text-white rounded-lg hover:from-teal-600 hover:to-blue-600 transition font-medium shadow-lg shadow-teal-500/30"
-            >
-              Posting Proyek
-            </button>
-          </div>
+          ))}
         </div>
       </div>
-    </div>
+
+      {/* Modal Posting Pekerjaan */}
+      {showPostJobModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            {/* Modal Header */}
+            <div className="sticky top-0 bg-white border-b border-slate-200 p-6 flex items-center justify-between">
+              <div>
+                <h2 className="text-2xl font-bold text-slate-900">Posting Pekerjaan Baru</h2>
+                <p className="text-sm text-slate-500 mt-1">Temukan talenta terbaik untuk proyek Anda</p>
+              </div>
+              <button
+                onClick={() => setShowPostJobModal(false)}
+                className="p-2 hover:bg-slate-100 rounded-lg transition"
+              >
+                <X className="w-6 h-6 text-slate-400" />
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <div className="p-6 space-y-6">
+              <div>
+                <label className="block text-sm font-semibold text-slate-700 mb-2">
+                  Judul Pekerjaan <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  name="title"
+                  value={formData.title}
+                  onChange={handleInputChange}
+                  placeholder="Contoh: Frontend Developer untuk Aplikasi E-Commerce"
+                  className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-slate-700 mb-2">
+                  Kategori <span className="text-red-500">*</span>
+                </label>
+                <select
+                  name="category"
+                  value={formData.category}
+                  onChange={handleInputChange}
+                  className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                >
+                  <option value="">Pilih Kategori</option>
+                  <option value="web-development">Web Development</option>
+                  <option value="mobile-development">Mobile Development</option>
+                  <option value="ui-ux-design">UI/UX Design</option>
+                  <option value="graphic-design">Graphic Design</option>
+                  <option value="content-writing">Content Writing</option>
+                  <option value="digital-marketing">Digital Marketing</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-slate-700 mb-2">
+                  Deskripsi Pekerjaan <span className="text-red-500">*</span>
+                </label>
+                <textarea
+                  name="description"
+                  value={formData.description}
+                  onChange={handleInputChange}
+                  placeholder="Jelaskan detail pekerjaan, tanggung jawab, dan deliverables..."
+                  rows={5}
+                  className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-semibold text-slate-700 mb-2">
+                    Budget (Rp) <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    name="budget"
+                    value={formData.budget}
+                    onChange={handleInputChange}
+                    placeholder="5.000.000"
+                    className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-slate-700 mb-2">
+                    Deadline <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="date"
+                    name="deadline"
+                    value={formData.deadline}
+                    onChange={handleInputChange}
+                    className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-semibold text-slate-700 mb-2">
+                    Lokasi
+                  </label>
+                  <input
+                    type="text"
+                    name="location"
+                    value={formData.location}
+                    onChange={handleInputChange}
+                    placeholder="Remote / Jakarta"
+                    className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-slate-700 mb-2">
+                    Durasi Proyek
+                  </label>
+                  <input
+                    type="text"
+                    name="duration"
+                    value={formData.duration}
+                    onChange={handleInputChange}
+                    placeholder="2 Bulan"
+                    className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-slate-700 mb-2">
+                  Skills yang Dibutuhkan <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  name="skills"
+                  value={formData.skills}
+                  onChange={handleInputChange}
+                  placeholder="React, Next.js, TypeScript"
+                  className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+                <p className="text-xs text-slate-500 mt-2">Pisahkan dengan koma</p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-slate-700 mb-2">
+                  Level Pengalaman
+                </label>
+                <div className="flex gap-4">
+                  <label className="flex items-center space-x-2 cursor-pointer">
+                    <input
+                      type="radio"
+                      name="experienceLevel"
+                      value="beginner"
+                      checked={formData.experienceLevel === 'beginner'}
+                      onChange={handleInputChange}
+                      className="w-4 h-4 text-blue-600"
+                    />
+                    <span className="text-sm text-slate-700">Pemula</span>
+                  </label>
+                  <label className="flex items-center space-x-2 cursor-pointer">
+                    <input
+                      type="radio"
+                      name="experienceLevel"
+                      value="intermediate"
+                      checked={formData.experienceLevel === 'intermediate'}
+                      onChange={handleInputChange}
+                      className="w-4 h-4 text-blue-600"
+                    />
+                    <span className="text-sm text-slate-700">Menengah</span>
+                  </label>
+                  <label className="flex items-center space-x-2 cursor-pointer">
+                    <input
+                      type="radio"
+                      name="experienceLevel"
+                      value="expert"
+                      checked={formData.experienceLevel === 'expert'}
+                      onChange={handleInputChange}
+                      className="w-4 h-4 text-blue-600"
+                    />
+                    <span className="text-sm text-slate-700">Expert</span>
+                  </label>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-end space-x-3 pt-4 border-t border-slate-200">
+                <button
+                  type="button"
+                  onClick={() => setShowPostJobModal(false)}
+                  className="px-6 py-2.5 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 transition font-medium"
+                >
+                  Batal
+                </button>
+                <button
+                  type="button"
+                  onClick={handleSubmit}
+                  className="px-6 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-medium shadow-lg shadow-blue-600/20"
+                >
+                  Posting Pekerjaan
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+    </DashboardLayout>
   );
 }
