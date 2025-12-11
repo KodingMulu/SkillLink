@@ -1,7 +1,8 @@
 'use client';
 
-import React, { useState } from 'react';
-import { Search, Star, MapPin, Briefcase, DollarSign, Filter, X, ChevronDown } from 'lucide-react';
+import { useState } from 'react';
+import DashboardLayout from "../../DashboardLayout";
+import { Search, Star, MapPin, Briefcase, DollarSign, Filter, ChevronDown, MessageSquare, Heart } from 'lucide-react';
 
 interface Talent {
   id: number;
@@ -18,7 +19,7 @@ interface Talent {
   availability: 'available' | 'busy' | 'unavailable';
 }
 
-export default function TalentaPage() {
+export default function TalentsPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [showFilters, setShowFilters] = useState(false);
@@ -126,11 +127,11 @@ export default function TalentaPage() {
   const getAvailabilityColor = (status: string) => {
     switch (status) {
       case 'available':
-        return 'bg-green-100 text-green-700 border-green-300';
+        return 'bg-emerald-100 text-emerald-700';
       case 'busy':
-        return 'bg-yellow-100 text-yellow-700 border-yellow-300';
+        return 'bg-yellow-100 text-yellow-700';
       default:
-        return 'bg-gray-100 text-gray-700 border-gray-300';
+        return 'bg-slate-100 text-slate-700';
     }
   };
 
@@ -146,215 +147,208 @@ export default function TalentaPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-teal-50">
-      {/* Header */}
-      <div className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-6 py-6">
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900">Temukan Talenta Terbaik</h1>
-              <p className="text-gray-600 mt-1">Jelajahi {talents.length} profesional berbakat siap membantu proyek Anda</p>
-            </div>
-            
-            {/* Search Bar */}
-            <div className="relative flex-1 max-w-md">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Cari talenta, skill, atau kategori..."
-                className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent"
-              />
-            </div>
-          </div>
-
-          {/* Categories */}
-          <div className="flex gap-2 mt-4 overflow-x-auto pb-2">
-            {categories.map((cat, idx) => (
-              <button
-                key={idx}
-                onClick={() => setSelectedCategory(cat.toLowerCase().replace(' ', '-'))}
-                className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition ${
-                  selectedCategory === cat.toLowerCase().replace(' ', '-')
-                    ? 'bg-teal-500 text-white'
-                    : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
-                }`}
-              >
-                {cat}
-              </button>
-            ))}
-          </div>
-        </div>
+    <DashboardLayout role="client">
+      <div className="mb-8">
+        <h1 className="text-2xl font-bold text-slate-900">Temukan Talenta Terbaik</h1>
+        <p className="text-slate-500">Jelajahi {talents.length} profesional berbakat siap membantu proyek Anda</p>
       </div>
 
-      {/* Filter Bar */}
-      <div className="bg-white border-b">
-        <div className="max-w-7xl mx-auto px-6 py-3">
-          <div className="flex items-center justify-between">
-            <div className="text-sm text-gray-600">
-              Menampilkan <span className="font-semibold text-gray-900">{talents.length}</span> talenta
-            </div>
-            
-            <button
-              onClick={() => setShowFilters(!showFilters)}
-              className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition"
-            >
-              <Filter className="w-4 h-4" />
-              Filter
-              <ChevronDown className={`w-4 h-4 transition-transform ${showFilters ? 'rotate-180' : ''}`} />
-            </button>
+      {/* Search & Filter Bar */}
+      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 mb-6">
+        <div className="flex flex-col md:flex-row gap-4">
+          {/* Search */}
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 w-5 h-5" />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Cari talenta, skill, atau kategori..."
+              className="w-full pl-10 pr-4 py-2.5 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            />
           </div>
 
-          {/* Filter Panel */}
-          {showFilters && (
-            <div className="mt-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Price Range</label>
-                  <select
-                    value={priceRange}
-                    onChange={(e) => setPriceRange(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500"
-                  >
-                    <option value="all">All Prices</option>
-                    <option value="0-100k">Rp 0 - 100k</option>
-                    <option value="100k-200k">Rp 100k - 200k</option>
-                    <option value="200k+">Rp 200k+</option>
-                  </select>
-                </div>
+          {/* Filter Button */}
+          <button
+            onClick={() => setShowFilters(!showFilters)}
+            className="flex items-center justify-center gap-2 px-5 py-2.5 border border-slate-300 rounded-lg hover:bg-slate-50 transition whitespace-nowrap"
+          >
+            <Filter className="w-4 h-4" />
+            Filter
+            <ChevronDown className={`w-4 h-4 transition-transform ${showFilters ? 'rotate-180' : ''}`} />
+          </button>
+        </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Rating</label>
-                  <select
-                    value={ratingFilter}
-                    onChange={(e) => setRatingFilter(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500"
-                  >
-                    <option value="all">All Ratings</option>
-                    <option value="5">5 Stars</option>
-                    <option value="4+">4+ Stars</option>
-                    <option value="3+">3+ Stars</option>
-                  </select>
-                </div>
+        {/* Categories */}
+        <div className="flex gap-2 mt-4 overflow-x-auto pb-2">
+          {categories.map((cat, idx) => (
+            <button
+              key={idx}
+              onClick={() => setSelectedCategory(cat.toLowerCase().replace(' ', '-'))}
+              className={`px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition ${
+                selectedCategory === cat.toLowerCase().replace(' ', '-')
+                  ? 'bg-blue-600 text-white'
+                  : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+              }`}
+            >
+              {cat}
+            </button>
+          ))}
+        </div>
 
-                <div className="flex items-end">
-                  <button
-                    onClick={() => {
-                      setPriceRange('all');
-                      setRatingFilter('all');
-                    }}
-                    className="w-full px-4 py-2 text-teal-600 border border-teal-600 rounded-lg hover:bg-teal-50 transition"
-                  >
-                    Reset Filters
-                  </button>
-                </div>
+        {/* Filter Panel */}
+        {showFilters && (
+          <div className="mt-4 pt-4 border-t border-slate-200">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <label className="block text-sm font-semibold text-slate-700 mb-2">Price Range</label>
+                <select
+                  value={priceRange}
+                  onChange={(e) => setPriceRange(e.target.value)}
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="all">All Prices</option>
+                  <option value="0-100k">Rp 0 - 100k</option>
+                  <option value="100k-200k">Rp 100k - 200k</option>
+                  <option value="200k+">Rp 200k+</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-slate-700 mb-2">Rating</label>
+                <select
+                  value={ratingFilter}
+                  onChange={(e) => setRatingFilter(e.target.value)}
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="all">All Ratings</option>
+                  <option value="5">5 Stars</option>
+                  <option value="4+">4+ Stars</option>
+                  <option value="3+">3+ Stars</option>
+                </select>
+              </div>
+
+              <div className="flex items-end">
+                <button
+                  onClick={() => {
+                    setPriceRange('all');
+                    setRatingFilter('all');
+                  }}
+                  className="w-full px-4 py-2 text-blue-600 border border-blue-600 rounded-lg hover:bg-blue-50 transition font-medium"
+                >
+                  Reset Filters
+                </button>
               </div>
             </div>
-          )}
+          </div>
+        )}
+
+        {/* Results Count */}
+        <div className="mt-4 pt-4 border-t border-slate-200 text-sm text-slate-600">
+          Menampilkan <span className="font-semibold text-slate-900">{talents.length}</span> talenta
         </div>
       </div>
 
       {/* Talent Grid */}
-      <div className="max-w-7xl mx-auto px-6 py-8">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {talents.map((talent) => (
-            <div
-              key={talent.id}
-              className="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden hover:shadow-xl transition-all duration-300 hover:-translate-y-1"
-            >
-              {/* Card Header */}
-              <div className="p-6">
-                <div className="flex items-start justify-between mb-4">
-                  <div className="flex items-center gap-3">
-                    <div className="w-14 h-14 bg-gradient-to-br from-teal-400 to-blue-500 rounded-full flex items-center justify-center text-white text-xl font-bold">
-                      {talent.avatar}
-                    </div>
-                    <div>
-                      <h3 className="font-bold text-gray-900 text-lg">{talent.name}</h3>
-                      <p className="text-gray-600 text-sm">{talent.title}</p>
-                    </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-6">
+        {talents.map((talent) => (
+          <div
+            key={talent.id}
+            className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden hover:shadow-lg transition-all duration-300 hover:-translate-y-1"
+          >
+            <div className="p-6">
+              {/* Header */}
+              <div className="flex items-start justify-between mb-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-14 h-14 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white text-xl font-bold shadow-lg">
+                    {talent.avatar}
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-slate-900 text-lg">{talent.name}</h3>
+                    <p className="text-slate-600 text-sm">{talent.title}</p>
                   </div>
                 </div>
+                <button className="p-2 hover:bg-slate-100 rounded-lg transition">
+                  <Heart className="w-5 h-5 text-slate-400" />
+                </button>
+              </div>
 
-                {/* Rating & Location */}
-                <div className="flex items-center justify-between mb-3">
-                  <div className="flex items-center gap-1">
-                    <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
-                    <span className="font-semibold text-gray-900">{talent.rating}</span>
-                    <span className="text-gray-500 text-sm">({talent.reviews})</span>
-                  </div>
-                  <span className={`px-3 py-1 rounded-full text-xs font-medium border ${getAvailabilityColor(talent.availability)}`}>
-                    {getAvailabilityText(talent.availability)}
+              {/* Rating & Status */}
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-1">
+                  <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
+                  <span className="font-semibold text-slate-900">{talent.rating}</span>
+                  <span className="text-slate-500 text-sm">({talent.reviews})</span>
+                </div>
+                <span className={`px-3 py-1 rounded-full text-xs font-semibold ${getAvailabilityColor(talent.availability)}`}>
+                  {getAvailabilityText(talent.availability)}
+                </span>
+              </div>
+
+              {/* Location */}
+              <div className="flex items-center gap-1 text-sm text-slate-600 mb-4">
+                <MapPin className="w-4 h-4 text-slate-400" />
+                <span>{talent.location}</span>
+              </div>
+
+              {/* Description */}
+              <p className="text-slate-600 text-sm mb-4 line-clamp-2">{talent.description}</p>
+
+              {/* Skills */}
+              <div className="flex flex-wrap gap-2 mb-4">
+                {talent.skills.slice(0, 3).map((skill, idx) => (
+                  <span
+                    key={idx}
+                    className="px-3 py-1 bg-blue-50 text-blue-700 rounded-lg text-xs font-medium"
+                  >
+                    {skill}
                   </span>
-                </div>
+                ))}
+                {talent.skills.length > 3 && (
+                  <span className="px-3 py-1 bg-slate-100 text-slate-600 rounded-lg text-xs font-medium">
+                    +{talent.skills.length - 3}
+                  </span>
+                )}
+              </div>
 
-                <div className="flex items-center gap-4 text-sm text-gray-600 mb-4">
-                  <div className="flex items-center gap-1">
-                    <MapPin className="w-4 h-4" />
-                    <span>{talent.location}</span>
+              {/* Stats */}
+              <div className="grid grid-cols-2 gap-4 mb-4 pt-4 border-t border-slate-100">
+                <div>
+                  <div className="flex items-center gap-1 text-slate-500 text-xs mb-1">
+                    <Briefcase className="w-3.5 h-3.5" />
+                    Projects
                   </div>
+                  <div className="font-bold text-slate-900">{talent.completedProjects}</div>
                 </div>
-
-                {/* Description */}
-                <p className="text-gray-600 text-sm mb-4 line-clamp-2">{talent.description}</p>
-
-                {/* Skills */}
-                <div className="flex flex-wrap gap-2 mb-4">
-                  {talent.skills.slice(0, 3).map((skill, idx) => (
-                    <span
-                      key={idx}
-                      className="px-3 py-1 bg-teal-50 text-teal-700 rounded-full text-xs font-medium"
-                    >
-                      {skill}
-                    </span>
-                  ))}
-                  {talent.skills.length > 3 && (
-                    <span className="px-3 py-1 bg-gray-100 text-gray-600 rounded-full text-xs font-medium">
-                      +{talent.skills.length - 3}
-                    </span>
-                  )}
-                </div>
-
-                {/* Stats */}
-                <div className="grid grid-cols-2 gap-4 mb-4 pt-4 border-t">
-                  <div>
-                    <div className="flex items-center gap-1 text-gray-500 text-xs mb-1">
-                      <Briefcase className="w-3.5 h-3.5" />
-                      Projects
-                    </div>
-                    <div className="font-bold text-gray-900">{talent.completedProjects}</div>
+                <div>
+                  <div className="flex items-center gap-1 text-slate-500 text-xs mb-1">
+                    <DollarSign className="w-3.5 h-3.5" />
+                    Hourly Rate
                   </div>
-                  <div>
-                    <div className="flex items-center gap-1 text-gray-500 text-xs mb-1">
-                      <DollarSign className="w-3.5 h-3.5" />
-                      Hourly Rate
-                    </div>
-                    <div className="font-bold text-gray-900">{talent.hourlyRate}</div>
-                  </div>
-                </div>
-
-                {/* Actions */}
-                <div className="flex gap-2">
-                  <button className="flex-1 px-4 py-2.5 bg-gradient-to-r from-teal-500 to-blue-500 text-white rounded-lg hover:from-teal-600 hover:to-blue-600 transition font-medium">
-                    Hire Now
-                  </button>
-                  <button className="px-4 py-2.5 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition">
-                    View Profile
-                  </button>
+                  <div className="font-bold text-slate-900">{talent.hourlyRate}</div>
                 </div>
               </div>
-            </div>
-          ))}
-        </div>
 
-        {/* Load More */}
-        <div className="text-center mt-8">
-          <button className="px-6 py-3 border-2 border-teal-500 text-teal-600 rounded-lg hover:bg-teal-50 transition font-medium">
-            Load More Talents
-          </button>
-        </div>
+              {/* Actions */}
+              <div className="flex gap-2">
+                <button className="flex-1 px-4 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-medium shadow-lg shadow-blue-600/20">
+                  Hire Now
+                </button>
+                <button className="p-2.5 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 transition">
+                  <MessageSquare className="w-5 h-5" />
+                </button>
+              </div>
+            </div>
+          </div>
+        ))}
       </div>
-    </div>
+
+      {/* Load More */}
+      <div className="text-center">
+        <button className="px-6 py-3 border-2 border-blue-600 text-blue-600 rounded-lg hover:bg-blue-50 transition font-medium">
+          Load More Talents
+        </button>
+      </div>
+    </DashboardLayout>
   );
 }
