@@ -281,16 +281,6 @@ export default function PostingProyek() {
             </button>
           </div>
         </div>
-
-        <div className="mt-6 bg-blue-50 border border-blue-200 rounded-lg p-4">
-          <h3 className="font-semibold text-blue-900 mb-2">💡 Tips Posting Proyek:</h3>
-          <ul className="text-sm text-blue-800 space-y-1">
-            <li>• Tulis judul yang jelas dan spesifik</li>
-            <li>• Deskripsikan proyek dengan detail untuk menarik talenta yang tepat</li>
-            <li>• Tentukan budget yang realistis sesuai kompleksitas proyek</li>
-            <li>• Cantumkan skill yang benar-benar dibutuhkan</li>
-          </ul>
-        </div>
       </div>
     </div>
   );
