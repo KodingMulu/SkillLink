@@ -82,7 +82,7 @@ export default function TalentsPage() {
     },
     {
       id: 4,
-      name: 'Dewi Lestari',
+      name: 'egy',
       title: 'Digital Marketing Specialist',
       avatar: 'D',
       rating: 4.9,
@@ -96,7 +96,7 @@ export default function TalentsPage() {
     },
     {
       id: 5,
-      name: 'Rudi Hartono',
+      name: 'fatoni',
       title: 'Mobile App Developer',
       avatar: 'R',
       rating: 4.7,
