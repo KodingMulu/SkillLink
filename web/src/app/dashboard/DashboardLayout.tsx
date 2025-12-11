@@ -63,7 +63,11 @@ export default function DashboardLayout({
           </nav>
 
           <div className="p-4 border-t border-slate-100 space-y-1">
-            <Link href="/settings" className="flex items-center px-4 py-3 text-sm font-medium text-slate-600 hover:bg-slate-50 rounded-xl transition-colors">
+            {/* ← BAGIAN INI YANG DIPERBAIKI */}
+            <Link 
+              href={role === 'freelancer' ? '/dashboard/freelancer/settings' : '/dashboard/client/settings'} 
+              className="flex items-center px-4 py-3 text-sm font-medium text-slate-600 hover:bg-slate-50 rounded-xl transition-colors"
+            >
               <Settings className="w-5 h-5 mr-3 text-slate-400" />
               Pengaturan
             </Link>
