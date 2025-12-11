@@ -40,7 +40,7 @@ export default function TalentsPage() {
   const talents: Talent[] = [
     {
       id: 1,
-      name: 'Budi Santoso',
+      name: 'Saipul Bahri',
       title: 'UI/UX Designer',
       avatar: 'B',
       rating: 4.9,
@@ -54,7 +54,7 @@ export default function TalentsPage() {
     },
     {
       id: 2,
-      name: 'Siti Aminah',
+      name: 'Nazril Afandi',
       title: 'Content Writer',
       avatar: 'S',
       rating: 5.0,
@@ -68,7 +68,7 @@ export default function TalentsPage() {
     },
     {
       id: 3,
-      name: 'Ahmad Rizki',
+      name: 'deviter Aya Bima Laka',
       title: 'Full Stack Developer',
       avatar: 'A',
       rating: 4.8,
