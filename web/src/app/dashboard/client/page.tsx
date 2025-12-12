@@ -169,7 +169,7 @@ export default function ClientDashboard() {
                   <div className="flex justify-between items-start mb-2">
                       <div className="flex items-center gap-2">
                           <div className="w-8 h-8 rounded-full bg-purple-100 flex items-center justify-center text-xs font-bold text-purple-600">AD</div>
-                          <span className="text-sm font-semibold text-slate-900">Aditya D.</span>
+                          <span className="text-sm font-semibold text-slate-900">Saipul Bahri</span>
                       </div>
                       <button className="text-slate-400"><MoreVertical className="w-4 h-4"/></button>
                   </div>
