@@ -4,7 +4,8 @@ import React, { useState, useRef, useEffect } from 'react';
 import { 
   Briefcase, LayoutDashboard, MessageSquare, 
   Settings, LogOut, Bell, Search, Menu, X, User,
-  CheckCircle, AlertCircle, Clock, FileText
+  CheckCircle, AlertCircle, Clock, FileText,
+  CreditCard, HelpCircle, Shield
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -17,13 +18,18 @@ export default function DashboardLayout({
 }) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isNotificationOpen, setIsNotificationOpen] = useState(false);
+  const [isProfileOpen, setIsProfileOpen] = useState(false);
   const notificationRef = useRef<HTMLDivElement>(null);
+  const profileRef = useRef<HTMLDivElement>(null);
 
-  // Close notification dropdown when clicking outside
+  // Close dropdowns when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (notificationRef.current && !notificationRef.current.contains(event.target as Node)) {
         setIsNotificationOpen(false);
+      }
+      if (profileRef.current && !profileRef.current.contains(event.target as Node)) {
+        setIsProfileOpen(false);
       }
     };
 
@@ -95,7 +101,6 @@ export default function DashboardLayout({
 
   const handleMarkAllRead = () => {
     console.log('Mark all as read');
-    // Implementasi mark all as read di sini
   };
 
   return (
@@ -229,16 +234,112 @@ export default function DashboardLayout({
 
                   {/* Footer */}
                   <div className="p-3 border-t border-slate-100 bg-slate-50">
-                    <button className="w-full text-center text-sm font-medium text-blue-600 hover:text-blue-700 py-2">
+                    <Link 
+                      href={role === 'freelancer' ? '/dashboard/freelancer/notifications' : '/dashboard/client/notifications'}
+                      className="block w-full text-center text-sm font-medium text-blue-600 hover:text-blue-700 py-2"
+                      onClick={() => setIsNotificationOpen(false)}
+                    >
                       Lihat Semua Notifikasi
-                    </button>
+                    </Link>
                   </div>
                 </div>
               )}
             </div>
 
-            <div className="h-8 w-8 rounded-full bg-gradient-to-r from-blue-500 to-purple-500 flex items-center justify-center text-white text-xs font-bold ring-2 ring-white shadow-sm">
-              {role === 'freelancer' ? 'ME' : 'CL'}
+            {/* Profile Dropdown */}
+            <div className="relative" ref={profileRef}>
+              <button
+                onClick={() => setIsProfileOpen(!isProfileOpen)}
+                className="h-8 w-8 rounded-full bg-gradient-to-r from-blue-500 to-purple-500 flex items-center justify-center text-white text-xs font-bold ring-2 ring-white shadow-sm hover:ring-slate-200 transition-all"
+              >
+                {role === 'freelancer' ? 'ME' : 'CL'}
+              </button>
+
+              {/* Profile Dropdown Panel */}
+              {isProfileOpen && (
+                <div className="absolute right-0 mt-2 w-72 bg-white rounded-2xl shadow-2xl border border-slate-200 z-50 overflow-hidden animate-in slide-in-from-top-2 duration-200">
+                  {/* Profile Header */}
+                  <div className="p-5 bg-gradient-to-br from-blue-500 to-purple-600">
+                    <div className="flex items-center gap-3">
+                      <div className="w-14 h-14 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center text-white text-xl font-bold ring-2 ring-white/30">
+                        {role === 'freelancer' ? 'ME' : 'CL'}
+                      </div>
+                      <div className="flex-1">
+                        <h3 className="font-bold text-white">
+                          {role === 'freelancer' ? 'Nazril Afandi' : 'PT Digital Innovation'}
+                        </h3>
+                        <p className="text-sm text-blue-100">
+                          {role === 'freelancer' ? 'Frontend Developer' : 'nazril@company.com'}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Menu Items */}
+                  <div className="p-2">
+                    <Link
+                      href={role === 'freelancer' ? '/dashboard/freelancer/profile' : '/dashboard/client/profile'}
+                      onClick={() => setIsProfileOpen(false)}
+                      className="flex items-center gap-3 px-4 py-3 text-slate-700 hover:bg-slate-50 rounded-xl transition-colors"
+                    >
+                      <User className="w-5 h-5 text-slate-400" />
+                      <span className="font-medium text-sm">Profil Saya</span>
+                    </Link>
+
+                    <Link
+                      href={role === 'freelancer' ? '/dashboard/freelancer/settings' : '/dashboard/client/settings'}
+                      onClick={() => setIsProfileOpen(false)}
+                      className="flex items-center gap-3 px-4 py-3 text-slate-700 hover:bg-slate-50 rounded-xl transition-colors"
+                    >
+                      <Settings className="w-5 h-5 text-slate-400" />
+                      <span className="font-medium text-sm">Pengaturan</span>
+                    </Link>
+
+                    {role === 'client' && (
+                      <Link
+                        href="/dashboard/client/billing"
+                        onClick={() => setIsProfileOpen(false)}
+                        className="flex items-center gap-3 px-4 py-3 text-slate-700 hover:bg-slate-50 rounded-xl transition-colors"
+                      >
+                        <CreditCard className="w-5 h-5 text-slate-400" />
+                        <span className="font-medium text-sm">Billing & Pembayaran</span>
+                      </Link>
+                    )}
+
+                    <Link
+                      href="/help"
+                      onClick={() => setIsProfileOpen(false)}
+                      className="flex items-center gap-3 px-4 py-3 text-slate-700 hover:bg-slate-50 rounded-xl transition-colors"
+                    >
+                      <HelpCircle className="w-5 h-5 text-slate-400" />
+                      <span className="font-medium text-sm">Bantuan & Dukungan</span>
+                    </Link>
+
+                    <Link
+                      href="/privacy"
+                      onClick={() => setIsProfileOpen(false)}
+                      className="flex items-center gap-3 px-4 py-3 text-slate-700 hover:bg-slate-50 rounded-xl transition-colors"
+                    >
+                      <Shield className="w-5 h-5 text-slate-400" />
+                      <span className="font-medium text-sm">Privacy & Keamanan</span>
+                    </Link>
+                  </div>
+
+                  {/* Footer - Logout */}
+                  <div className="p-2 border-t border-slate-100">
+                    <button
+                      onClick={() => {
+                        setIsProfileOpen(false);
+                        console.log('Logout');
+                      }}
+                      className="flex items-center gap-3 px-4 py-3 text-red-600 hover:bg-red-50 rounded-xl transition-colors w-full"
+                    >
+                      <LogOut className="w-5 h-5" />
+                      <span className="font-medium text-sm">Keluar</span>
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </header>
