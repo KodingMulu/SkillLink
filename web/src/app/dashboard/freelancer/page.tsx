@@ -1,38 +1,53 @@
 'use client';
 
-import { useState } from 'react'; // ← TAMBAHKAN INI
 import DashboardLayout from "../DashboardLayout";
-import ProfilePopup from "../../components/ProfilePopup"; // ← TAMBAHKAN INI
-import { Wallet, Clock, CheckCircle2, Star, TrendingUp, MoreHorizontal } from "lucide-react";
+import { Wallet, Clock, CheckCircle2, Star, TrendingUp } from "lucide-react";
+
+interface Stat {
+  label: string;
+  value: string;
+  icon: React.ElementType;
+  color: string;
+  bg: string;
+}
+
+interface Project {
+  title: string;
+  client: string;
+  deadline: string;
+  progress: number;
+  status: string;
+}
 
 export default function FreelancerDashboard() {
-  const [isProfileOpen, setIsProfileOpen] = useState(false); // ← TAMBAHKAN INI
-
-  const stats = [
+  const stats: Stat[] = [
     { label: "Total Pendapatan", value: "Rp 12.500.000", icon: Wallet, color: "text-emerald-600", bg: "bg-emerald-50" },
     { label: "Proyek Aktif", value: "3", icon: Clock, color: "text-blue-600", bg: "bg-blue-50" },
     { label: "Selesai", value: "12", icon: CheckCircle2, color: "text-purple-600", bg: "bg-purple-50" },
     { label: "Rating", value: "4.9/5.0", icon: Star, color: "text-amber-500", bg: "bg-amber-50" },
   ];
 
-  const activeProjects = [
+  const activeProjects: Project[] = [
     { title: "Redesain UI/UX Aplikasi E-Wallet", client: "FinTech Asia", deadline: "2 Hari lagi", progress: 75, status: "Revisi" },
     { title: "Backend API untuk LMS Kampus", client: "Univ. Teknokrat", deadline: "1 Minggu lagi", progress: 40, status: "On Progress" },
     { title: "Artikel SEO Teknologi AI", client: "Media Tech", deadline: "Hari ini", progress: 90, status: "Review" },
   ];
 
+  const getStatusStyle = (status: string) => {
+    switch (status) {
+      case 'Revisi':
+        return 'bg-orange-100 text-orange-600';
+      case 'Review':
+        return 'bg-blue-100 text-blue-600';
+      case 'On Progress':
+        return 'bg-emerald-100 text-emerald-600';
+      default:
+        return 'bg-slate-100 text-slate-600';
+    }
+  };
+
   return (
     <DashboardLayout role="freelancer">
-      {/* ← TAMBAHKAN BUTTON INI */}
-      <div className="fixed top-4 right-4 z-40">
-        <button
-          onClick={() => setIsProfileOpen(true)}
-          className="w-12 h-12 bg-purple-600 text-white rounded-full font-bold hover:bg-purple-700 transition-all shadow-lg hover:shadow-xl flex items-center justify-center text-sm"
-        >
-          ME
-        </button>
-      </div>
-
       <div className="mb-8">
         <h1 className="text-2xl font-bold text-slate-900">Halo, Nazril! 👋</h1>
         <p className="text-slate-500">Berikut adalah aktivitas terbaru proyekmu.</p>
@@ -71,11 +86,11 @@ export default function FreelancerDashboard() {
                   <div className="flex justify-between items-start mb-2">
                     <div>
                       <h4 className="font-semibold text-slate-900">{project.title}</h4>
-                      <p className="text-sm text-slate-500">{project.client} • Deadline: <span className="text-red-500 font-medium">{project.deadline}</span></p>
+                      <p className="text-sm text-slate-500">
+                        {project.client} • Deadline: <span className="text-red-500 font-medium">{project.deadline}</span>
+                      </p>
                     </div>
-                    <span className={`px-3 py-1 rounded-full text-xs font-medium 
-                      ${project.status === 'Revisi' ? 'bg-orange-100 text-orange-600' : 
-                        project.status === 'Review' ? 'bg-blue-100 text-blue-600' : 'bg-emerald-100 text-emerald-600'}`}>
+                    <span className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusStyle(project.status)}`}>
                       {project.status}
                     </span>
                   </div>
@@ -86,7 +101,10 @@ export default function FreelancerDashboard() {
                       <span className="font-medium text-slate-700">{project.progress}%</span>
                     </div>
                     <div className="w-full bg-slate-100 rounded-full h-2">
-                      <div className="bg-blue-600 h-2 rounded-full transition-all duration-500" style={{ width: `${project.progress}%` }}></div>
+                      <div 
+                        className="bg-blue-600 h-2 rounded-full transition-all duration-500" 
+                        style={{ width: `${project.progress}%` }}
+                      ></div>
                     </div>
                   </div>
                 </div>
@@ -108,8 +126,8 @@ export default function FreelancerDashboard() {
                   </div>
                   <p className="text-xs text-slate-500 mt-1 line-clamp-2">Membuat dashboard admin menggunakan Next.js dan Tailwind CSS...</p>
                   <div className="mt-3 flex gap-2">
-                    <span className="px-2 py-1 bg-slate-100 text-slate-600 text-[10px] rounded-md">Remote</span>
-                    <span className="px-2 py-1 bg-slate-100 text-slate-600 text-[10px] rounded-md">Project</span>
+                    <span className="px-2 py-1 bg-slate-100 text-slate-600 text-xs rounded-md">Remote</span>
+                    <span className="px-2 py-1 bg-slate-100 text-slate-600 text-xs rounded-md">Project</span>
                   </div>
                 </div>
               ))}
@@ -121,17 +139,6 @@ export default function FreelancerDashboard() {
         </div>
 
       </div>
-
-      {/* ← TAMBAHKAN COMPONENT INI DI AKHIR, SEBELUM PENUTUP </DashboardLayout> */}
-      <ProfilePopup 
-        isOpen={isProfileOpen}
-        onClose={() => setIsProfileOpen(false)}
-        userName="Nazril"
-        userInitial="N"
-        completedProjects={12}
-        rating="4.9/5.0"
-        activeProjects={activeProjects}
-      />
     </DashboardLayout>
   );
 }
