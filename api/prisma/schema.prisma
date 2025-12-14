@@ -17,6 +17,7 @@ datasource db {
 enum Role {
   FREELANCER
   CLIENT
+  ADMIN
 }
 
 model User {
@@ -24,7 +25,7 @@ model User {
   email               String    @unique
   username            String?
   password            String
-  role                Role
+  role                Role      @default(FREELANCER)
 
   verificationCode    String?
   verificationExpires DateTime?
