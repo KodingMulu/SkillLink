@@ -20,12 +20,30 @@ enum Role {
   ADMIN
 }
 
+enum JobStatus {
+  OPEN
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+enum ProposalStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+}
+
 model User {
   id                  String    @id @default(cuid())
   email               String    @unique
   username            String?
   password            String
   role                Role      @default(FREELANCER)
+  skills    String[]
+
+  proposals Proposal[]
+  projects  Project[]
+  wallet    Wallet?
 
   verificationCode    String?
   verificationExpires DateTime?
@@ -33,4 +51,59 @@ model User {
 
   createdAt           DateTime @default(now())
   updatedAt           DateTime @updatedAt
+}
+
+model Job {
+  id          String   @id @default(cuid())
+  title       String
+  description String
+  budget      Float
+  status      JobStatus @default(OPEN)
+  tags        String[]
+  
+  clientId    String
+  proposals   Proposal[]
+  project     Project?
+
+  createdAt   DateTime @default(now())
+}
+
+model Proposal {
+  id           String         @id @default(cuid())
+  coverLetter  String
+  bidAmount    Float
+  status       ProposalStatus @default(PENDING)
+  
+  jobId        String
+  job          Job    @relation(fields: [jobId], references: [id])
+  freelancerId String
+  freelancer   User   @relation(fields: [freelancerId], references: [id])
+}
+
+model Project {
+  id           String    @id @default(cuid())
+  status       JobStatus @default(IN_PROGRESS)
+  progress     Int       @default(0)
+  
+  jobId        String    @unique
+  job          Job       @relation(fields: [jobId], references: [id])
+  freelancerId String
+  freelancer   User      @relation(fields: [freelancerId], references: [id])
+}
+
+model Wallet {
+  id           String @id @default(cuid())
+  balance      Float  @default(0)
+  userId       String @unique
+  user         User   @relation(fields: [userId], references: [id])
+  transactions Transaction[]
+}
+
+model Transaction {
+  id        String   @id @default(cuid())
+  amount    Float
+  type      String   // "DEPOSIT", "WITHDRAWAL", "PAYMENT_IN"
+  walletId  String
+  wallet    Wallet   @relation(fields: [walletId], references: [id])
+  createdAt DateTime @default(now())
 }
