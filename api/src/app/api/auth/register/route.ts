@@ -13,13 +13,21 @@ import { NextResponse } from "next/server";
 
 export async function POST(req: Request) {
      try {
-          const { email, username, password } = await req.json();
+          const { email, username, password, role } = await req.json();
+
+          if (!role || (role !== "FREELANCER" && role !== "CLIENT")) {
+               return NextResponse.json({
+                    message: "Invalid role. Please select either FREELANCER or CLIENT.",
+                    code: 400
+               });
+          }
 
           const exists = await prisma.user.findUnique({
                where: {
                     email
                }
           });
+
           if (exists) {
                return NextResponse.json({
                     message: "User already exists",
@@ -35,6 +43,7 @@ export async function POST(req: Request) {
                     email,
                     username,
                     password: hashed,
+                    role: role,
                     verificationCode: code,
                     verificationExpires: new Date(Date.now() + 15 * 60 * 1000),
                     isVerified: false
