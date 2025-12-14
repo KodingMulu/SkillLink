@@ -20,5 +20,10 @@ export function signToken(payload:object) {
 
 //Verify Token Before Logging
 export function verifyToken(token:string) {
-     return jwt.verify(token, JWT_SECRET)
+     try {
+          return jwt.verify(token, JWT_SECRET) as { id: string; email: string; role: string };
+     } catch (error) {
+          console.error(error)
+          return null
+     }
 };
