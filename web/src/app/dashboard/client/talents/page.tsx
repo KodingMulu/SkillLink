@@ -110,7 +110,7 @@ export default function TalentsPage() {
     },
     {
       id: 6,
-      name: 'Lisa Permata',
+      name: 'very',
       title: 'Graphic Designer',
       avatar: 'L',
       rating: 5.0,
