@@ -25,9 +25,9 @@ export default function ClientDashboard() {
   ];
 
   const recentApplicants = [
-    { name: "Budi Santoso", role: "UI/UX Designer", appliedFor: "Redesain Aplikasi Mobile", date: "2 Jam lalu", match: 95 },
-    { name: "Siti Aminah", role: "Content Writer", appliedFor: "Artikel Blog SEO", date: "5 Jam lalu", match: 88 },
-    { name: "Rizky Febian", role: "Backend Dev", appliedFor: "API Integration", date: "1 Hari lalu", match: 70 },
+    { name: "sapta wahyu tirta", role: "UI/UX Designer", appliedFor: "Redesain Aplikasi Mobile", date: "2 Jam lalu", match: 95 },
+    { name: "deni himawan", role: "Content Writer", appliedFor: "Artikel Blog SEO", date: "5 Jam lalu", match: 88 },
+    { name: "m.fito", role: "Backend Dev", appliedFor: "API Integration", date: "1 Hari lalu", match: 70 },
   ];
 
   const handleInputChange = (e) => {
