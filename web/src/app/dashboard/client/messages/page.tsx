@@ -31,7 +31,7 @@ export default function MessagesPage() {
   const chats: Chat[] = [
     {
       id: 1,
-      name: 'Budi Santoso',
+      name: 'saipul bahri',
       avatar: 'B',
       lastMessage: 'Baik, saya akan segera kirim revisi desainnya',
       time: '10:30',
@@ -41,7 +41,7 @@ export default function MessagesPage() {
     },
     {
       id: 2,
-      name: 'Siti Aminah',
+      name: 'nazril afandi',
       avatar: 'S',
       lastMessage: 'Artikel sudah selesai, mohon dicek',
       time: '09:15',
@@ -51,7 +51,7 @@ export default function MessagesPage() {
     },
     {
       id: 3,
-      name: 'Ahmad Rizki',
+      name: 'deviter arya bima laka ',
       avatar: 'A',
       lastMessage: 'Kapan kita bisa meeting untuk discuss project?',
       time: 'Yesterday',
@@ -61,7 +61,7 @@ export default function MessagesPage() {
     },
     {
       id: 4,
-      name: 'Dewi Lestari',
+      name: 'egy',
       avatar: 'D',
       lastMessage: 'Campaign report sudah saya kirim via email',
       time: 'Yesterday',
@@ -71,7 +71,7 @@ export default function MessagesPage() {
     },
     {
       id: 5,
-      name: 'Rudi Hartono',
+      name: 'fatoni',
       avatar: 'R',
       lastMessage: 'Terima kasih atas reviewnya!',
       time: '2 days ago',
