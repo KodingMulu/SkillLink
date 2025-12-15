@@ -4,7 +4,8 @@ import React, { useState, useRef, useEffect } from 'react';
 import { 
   Briefcase, LayoutDashboard, MessageSquare, 
   Settings, LogOut, Bell, Search, Menu, X, User,
-  CheckCircle, AlertCircle, Clock, FileText
+  CheckCircle, AlertCircle, Clock, FileText,
+  CreditCard, HelpCircle, Shield
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -245,7 +246,7 @@ export default function DashboardLayout({
               )}
             </div>
 
-            {/* Avatar (Display Only - Not Clickable) */}
+            {/* Profile Dropdown */}
             <div className="relative" ref={profileRef}>
               <button
                 onClick={() => setIsProfileOpen(!isProfileOpen)}
@@ -268,7 +269,7 @@ export default function DashboardLayout({
                           {role === 'freelancer' ? 'Nazril Afandi' : 'PT Digital Innovation'}
                         </h3>
                         <p className="text-sm text-blue-100">
-                          {role === 'freelancer' ? 'Frontend Developer' : 'Client Account'}
+                          {role === 'freelancer' ? 'Frontend Developer' : 'nazril@company.com'}
                         </p>
                       </div>
                     </div>
@@ -292,6 +293,35 @@ export default function DashboardLayout({
                     >
                       <Settings className="w-5 h-5 text-slate-400" />
                       <span className="font-medium text-sm">Pengaturan</span>
+                    </Link>
+
+                    {role === 'client' && (
+                      <Link
+                        href="/dashboard/client/billing"
+                        onClick={() => setIsProfileOpen(false)}
+                        className="flex items-center gap-3 px-4 py-3 text-slate-700 hover:bg-slate-50 rounded-xl transition-colors"
+                      >
+                        <CreditCard className="w-5 h-5 text-slate-400" />
+                        <span className="font-medium text-sm">Billing & Pembayaran</span>
+                      </Link>
+                    )}
+
+                    <Link
+                      href="/help"
+                      onClick={() => setIsProfileOpen(false)}
+                      className="flex items-center gap-3 px-4 py-3 text-slate-700 hover:bg-slate-50 rounded-xl transition-colors"
+                    >
+                      <HelpCircle className="w-5 h-5 text-slate-400" />
+                      <span className="font-medium text-sm">Bantuan & Dukungan</span>
+                    </Link>
+
+                    <Link
+                      href="/privacy"
+                      onClick={() => setIsProfileOpen(false)}
+                      className="flex items-center gap-3 px-4 py-3 text-slate-700 hover:bg-slate-50 rounded-xl transition-colors"
+                    >
+                      <Shield className="w-5 h-5 text-slate-400" />
+                      <span className="font-medium text-sm">Privacy & Keamanan</span>
                     </Link>
                   </div>
 
