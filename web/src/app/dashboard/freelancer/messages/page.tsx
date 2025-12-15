@@ -44,7 +44,7 @@ export default function MessagesPage() {
     },
     {
       id: '2',
-      name: 'Kopi Senja',
+      name: 'CodeFront Indonesia',
       avatar: '',
       initial: 'KS',
       color: 'from-orange-500 to-amber-500',
