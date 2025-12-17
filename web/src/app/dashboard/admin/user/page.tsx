@@ -3,13 +3,12 @@
 import { useState } from 'react';
 import { 
   Users, UserPlus, Search, Filter, 
-  MoreVertical, Mail, Shield, UserCheck, 
-  Ban, Edit2, Trash2, ChevronLeft, ChevronRight,
-  Download, CheckCircle2, Clock, AlertCircle
+  Mail, UserCheck, Ban, Edit2, 
+  ChevronLeft, ChevronRight, Download, 
+  CheckCircle2, Clock
 } from 'lucide-react';
 import DashboardLayout from '../../DashboardLayout';
 
-// Mock Data untuk User
 const USERS_DATA = [
   { id: 1, name: "Budi Santoso", email: "budi@email.com", role: "Freelancer", status: "active", joined: "2023-10-12", projects: 12, rating: 4.8 },
   { id: 2, name: "PT Digital Innovation", email: "contact@digital.com", role: "Client", status: "active", joined: "2023-11-05", projects: 5, rating: 4.9 },
@@ -24,7 +23,6 @@ export default function UserManagementPage() {
   const [statusFilter, setStatusFilter] = useState('all');
   const [selectedUsers, setSelectedUsers] = useState<number[]>([]);
 
-  // Filter Logic
   const filteredUsers = USERS_DATA.filter(user => {
     const matchesSearch = user.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
                          user.email.toLowerCase().includes(searchTerm.toLowerCase());
@@ -50,9 +48,8 @@ export default function UserManagementPage() {
   };
 
   return (
-    <DashboardLayout role="client"> {/* Menggunakan layout yang sudah ada */}
+    <DashboardLayout role="admin">
       <div className="space-y-6">
-        {/* Header Section */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
             <h1 className="text-2xl font-bold text-slate-900">Manajemen User</h1>
@@ -70,7 +67,6 @@ export default function UserManagementPage() {
           </div>
         </div>
 
-        {/* Quick Stats */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div className="bg-white p-4 rounded-2xl border border-slate-200 flex items-center gap-4">
             <div className="w-12 h-12 bg-blue-50 rounded-xl flex items-center justify-center">
@@ -101,9 +97,7 @@ export default function UserManagementPage() {
           </div>
         </div>
 
-        {/* Table & Filters Card */}
         <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-          {/* Filter Bar */}
           <div className="p-4 border-b border-slate-100 flex flex-col lg:flex-row gap-4 justify-between items-center bg-slate-50/50">
             <div className="flex items-center gap-2 w-full lg:w-auto">
               <div className="relative flex-1 lg:w-80">
@@ -138,7 +132,6 @@ export default function UserManagementPage() {
             </div>
           </div>
 
-          {/* Table Area */}
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse">
               <thead>
@@ -206,14 +199,14 @@ export default function UserManagementPage() {
                     <td className="px-6 py-4 text-right">
                       <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                         {user.status === 'pending' && (
-                          <button className="p-2 text-emerald-600 hover:bg-emerald-50 rounded-lg transition shadow-sm border border-emerald-100 bg-white" title="Verifikasi">
+                          <button className="p-2 text-emerald-600 hover:bg-emerald-50 rounded-lg transition shadow-sm border border-emerald-100 bg-white">
                             <UserCheck className="w-4 h-4" />
                           </button>
                         )}
-                        <button className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition shadow-sm border border-blue-100 bg-white" title="Edit">
+                        <button className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition shadow-sm border border-blue-100 bg-white">
                           <Edit2 className="w-4 h-4" />
                         </button>
-                        <button className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition shadow-sm border border-red-100 bg-white" title="Suspend">
+                        <button className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition shadow-sm border border-red-100 bg-white">
                           <Ban className="w-4 h-4" />
                         </button>
                       </div>
@@ -224,7 +217,6 @@ export default function UserManagementPage() {
             </table>
           </div>
 
-          {/* Pagination Footer */}
           <div className="px-6 py-4 border-t border-slate-100 flex items-center justify-between bg-slate-50/30">
             <p className="text-sm text-slate-500">
               Menampilkan <span className="font-medium text-slate-900">{filteredUsers.length}</span> dari <span className="font-medium text-slate-900">{USERS_DATA.length}</span> user
