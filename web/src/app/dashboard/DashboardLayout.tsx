@@ -42,7 +42,7 @@ export default function DashboardLayout({
         return [
           { icon: TrendingUp, label: 'Overview', href: '/dashboard/admin', active: true },
           { icon: Users, label: 'Manajemen User', href: '/dashboard/admin/user' },
-          { icon: Briefcase, label: 'Manajemen Proyek', href: '/dashboard/admin/projects' },
+          { icon: Briefcase, label: 'Manajemen Proyek', href: '/dashboard/admin/project' },
           { icon: DollarSign, label: 'Transaksi', href: '/dashboard/admin/transactions' },
           { icon: Flag, label: 'Laporan', href: '/dashboard/admin/reports' },
         ];
