@@ -94,36 +94,7 @@ export default function AdminDashboard() {
       bg: "bg-blue-50",
       detail: "245 user baru bulan ini"
     },
-    { 
-      label: "Proyek Aktif", 
-      value: "1,234", 
-      change: "+8.2%", 
-      trend: "up",
-      icon: Briefcase, 
-      color: "text-emerald-600", 
-      bg: "bg-emerald-50",
-      detail: "156 proyek baru"
-    },
-    { 
-      label: "Total Transaksi", 
-      value: "Rp 2.4M", 
-      change: "+23.1%", 
-      trend: "up",
-      icon: DollarSign, 
-      color: "text-purple-600", 
-      bg: "bg-purple-50",
-      detail: "Revenue bulan ini"
-    },
-    { 
-      label: "Laporan Pending", 
-      value: "23", 
-      change: "-5.3%", 
-      trend: "down",
-      icon: AlertTriangle, 
-      color: "text-orange-600", 
-      bg: "bg-orange-50",
-      detail: "Perlu ditinjau"
-    },
+    
   ];
 
   const recentUsers: Array<{
