@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef } from 'react';
 import { 
   View, 
   Text, 
@@ -9,11 +9,10 @@ import {
   Platform, 
   ScrollView, 
   Alert,
-  ActivityIndicator,
   NativeSyntheticEvent,
   TextInputKeyPressEventData
 } from 'react-native';
-import { ShieldCheck, ArrowRight, RotateCcw } from 'lucide-react-native';
+import { ShieldCheck, RefreshCw } from 'lucide-react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import axios from 'axios';
 
@@ -22,82 +21,82 @@ const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://10.0.2.2:3000/api';
 export default function VerifyEmailScreen() {
   const router = useRouter();
   const params = useLocalSearchParams();
-  const emailFromUrl = params.email as string;
-  const [code, setCode] = useState<string[]>(['', '', '', '']);
+  const email = params.email as string;
+  
   const [isLoading, setIsLoading] = useState(false);
-  const [focusedIndex, setFocusedIndex] = useState<number | null>(null);
-  const inputRefs = useRef<Array<TextInput | null>>([]);
+  const [otp, setOtp] = useState(['', '', '', '']);
+  const otpInputRefs = useRef<Array<TextInput | null>>([]);
+  const [focusedInput, setFocusedInput] = useState<number | null>(null);
 
-  useEffect(() => {
-    const timer = setTimeout(() => {
-        inputRefs.current[0]?.focus();
-    }, 500);
-    return () => clearTimeout(timer);
-  }, []);
-
-  const handleChange = (text: string, index: number) => {
-    if (!/^\d*$/.test(text)) return;
-
-    const newCode = [...code];
-    newCode[index] = text;
-    setCode(newCode);
-
-    if (text && index < 3) {
-      inputRefs.current[index + 1]?.focus();
-    }
-  };
-
-  const handleKeyPress = (e: NativeSyntheticEvent<TextInputKeyPressEventData>, index: number) => {
-    if (e.nativeEvent.key === 'Backspace' && !code[index] && index > 0) {
-      inputRefs.current[index - 1]?.focus();
-    }
-  };
-
-  const handleVerify = async () => {
-    const verificationCode = code.join('');
-
-    if (verificationCode.length < 4) {
-      Alert.alert('Peringatan', 'Silakan lengkapi kode verifikasi');
-      return;
-    }
-
-    if (!emailFromUrl) {
-      Alert.alert('Error', 'Email tidak ditemukan. Silakan daftar ulang atau login.');
+  const handleVerifyCode = async () => {
+    const codeValue = otp.join('');
+    if (codeValue.length < 4) {
+      Alert.alert('Peringatan', 'Masukkan 4 digit kode');
       return;
     }
 
     setIsLoading(true);
-
     try {
-      const payload = {
-        email: emailFromUrl,
-        code: verificationCode
-      };
-
-      const response = await axios.post(`${API_URL}/auth/verify`, payload);
+      const response = await axios.post(`${API_URL}/auth/verify-email`, {
+        email,
+        code: codeValue
+      });
 
       if (response.data.code === 200) {
-        Alert.alert('Sukses', 'Verifikasi Berhasil! Silakan login.', [
-            { text: 'Login', onPress: () => router.replace('/auth/login') }
+        Alert.alert('Sukses', 'Email berhasil diverifikasi!', [
+          { text: 'Login Sekarang', onPress: () => router.replace('/auth/login') }
         ]);
       } else {
-        Alert.alert('Gagal', response.data.message || 'Verifikasi gagal');
+        Alert.alert('Gagal', response.data.message);
       }
-
     } catch (error: any) {
-      console.error('Verification error:', error);
       if (axios.isAxiosError(error)) {
-        Alert.alert('Gagal', error.response?.data?.message || 'Kode verifikasi salah atau kedaluwarsa');
+        Alert.alert('Gagal', error.response?.data?.message || 'Kode salah atau kadaluwarsa');
       } else {
-        Alert.alert('Error', 'Terjadi kesalahan sistem');
+        Alert.alert('Error', 'Terjadi kesalahan server');
       }
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleResendCode = () => {
-    Alert.alert('Info', 'Fitur kirim ulang kode akan segera hadir.');
+  const handleResendCode = async () => {
+    setIsLoading(true);
+    try {
+      const response = await axios.post(`${API_URL}/auth/resend-verification`, {
+        email
+      });
+
+      if (response.data.code === 200) {
+        Alert.alert('Sukses', 'Kode verifikasi telah dikirim ulang ke email Anda');
+        setOtp(['', '', '', '']);
+        otpInputRefs.current[0]?.focus();
+      } else {
+        Alert.alert('Gagal', response.data.message);
+      }
+    } catch (error) {
+      Alert.alert('Error', 'Gagal mengirim ulang kode');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleOtpChange = (text: string, index: number) => {
+    if (!/^\d*$/.test(text)) return;
+
+    const newOtp = [...otp];
+    newOtp[index] = text;
+    setOtp(newOtp);
+
+    if (text && index < 3) {
+      otpInputRefs.current[index + 1]?.focus();
+    }
+  };
+
+  const handleOtpKeyPress = (e: NativeSyntheticEvent<TextInputKeyPressEventData>, index: number) => {
+    if (e.nativeEvent.key === 'Backspace' && !otp[index] && index > 0) {
+      otpInputRefs.current[index - 1]?.focus();
+    }
   };
 
   return (
@@ -112,71 +111,65 @@ export default function VerifyEmailScreen() {
         <ScrollView 
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
-          keyboardShouldPersistTaps="handled"
         >
           <View style={styles.card}>
             <View style={styles.header}>
               <View style={styles.iconContainer}>
-                <ShieldCheck size={28} color="white" />
+                <ShieldCheck size={32} color="white" strokeWidth={2.5} />
               </View>
+
               <Text style={styles.title}>Verifikasi Email</Text>
+
               <Text style={styles.subtitle}>
                 Masukkan 4 digit kode yang dikirim ke{'\n'}
-                <Text style={styles.emailHighlight}>{emailFromUrl || 'email Anda'}</Text>
+                <Text style={styles.emailText}>{email || 'email Anda'}</Text>
               </Text>
             </View>
 
             <View style={styles.formSpace}>
               <View style={styles.otpContainer}>
-                {code.map((digit, index) => (
+                {otp.map((digit, index) => (
                   <TextInput
                     key={index}
-                    ref={(el) => inputRefs.current[index] = el}
+                    ref={(ref) => otpInputRefs.current[index] = ref}
+                    value={digit}
+                    onChangeText={(text) => handleOtpChange(text, index)}
+                    onKeyPress={(e) => handleOtpKeyPress(e, index)}
                     style={[
                       styles.otpInput,
-                      digit ? styles.otpFilled : null, 
-                      focusedIndex === index ? styles.otpFocused : null 
+                      digit ? styles.otpFilled : null,
+                      focusedInput === index ? styles.otpFocused : null
                     ]}
-                    value={digit}
-                    onChangeText={(text) => handleChange(text, index)}
-                    onKeyPress={(e) => handleKeyPress(e, index)}
                     keyboardType="number-pad"
                     maxLength={1}
-                    onFocus={() => setFocusedIndex(index)}
-                    onBlur={() => setFocusedIndex(null)}
-                    selectTextOnFocus
+                    onFocus={() => setFocusedInput(index)}
+                    onBlur={() => setFocusedInput(null)}
                   />
                 ))}
               </View>
 
               <TouchableOpacity
-                onPress={handleVerify}
+                onPress={handleVerifyCode}
                 disabled={isLoading}
-                activeOpacity={0.8}
                 style={[styles.button, isLoading && styles.buttonDisabled]}
               >
-                {isLoading ? (
-                  <View style={styles.loadingContent}>
-                    <ActivityIndicator color="white" size="small" />
-                    <Text style={styles.buttonText}>Memvalidasi...</Text>
-                  </View>
-                ) : (
-                  <View style={styles.buttonContent}>
-                    <Text style={styles.buttonText}>Verifikasi Akun</Text>
-                    <ArrowRight size={18} color="white" />
-                  </View>
-                )}
+                <Text style={styles.buttonText}>
+                  {isLoading ? 'Memverifikasi...' : 'Verifikasi Akun'}
+                </Text>
               </TouchableOpacity>
-            </View>
 
-            <View style={styles.footer}>
-              <Text style={styles.footerText}>Tidak menerima kode?</Text>
-              <TouchableOpacity onPress={handleResendCode} style={styles.resendBtn}>
-                <RotateCcw size={14} color="#2563EB" style={{ marginRight: 6 }} />
-                <Text style={styles.resendText}>Kirim Ulang Kode</Text>
-              </TouchableOpacity>
+              <View style={styles.resendSection}>
+                <Text style={styles.resendText}>Tidak menerima kode?</Text>
+                <TouchableOpacity 
+                  onPress={handleResendCode}
+                  disabled={isLoading}
+                  style={styles.resendButton}
+                >
+                  <RefreshCw size={14} color="#2563EB" />
+                  <Text style={styles.resendButtonText}>Kirim Ulang Kode</Text>
+                </TouchableOpacity>
+              </View>
             </View>
-
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
@@ -187,7 +180,7 @@ export default function VerifyEmailScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F8FAFC', 
+    backgroundColor: '#F8FAFC',
   },
   blob: {
     position: 'absolute',
@@ -197,14 +190,14 @@ const styles = StyleSheet.create({
     opacity: 0.2,
   },
   blobBlue: {
-    backgroundColor: '#60A5FA', 
+    backgroundColor: '#60A5FA',
     top: -50,
-    right: -50,
+    left: -50,
   },
   blobPurple: {
-    backgroundColor: '#C084FC', 
+    backgroundColor: '#C084FC',
     bottom: -50,
-    left: -50,
+    right: -50,
   },
   scrollContent: {
     flexGrow: 1,
@@ -212,135 +205,126 @@ const styles = StyleSheet.create({
     padding: 20,
   },
   card: {
-    backgroundColor: 'rgba(255, 255, 255, 0.9)',
-    borderRadius: 16,
-    padding: 24,
+    backgroundColor: 'rgba(255, 255, 255, 0.95)',
+    borderRadius: 20,
+    padding: 32,
     borderWidth: 1,
-    borderColor: '#E2E8F0', 
+    borderColor: '#E2E8F0',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 15,
-    elevation: 3,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 20,
+    elevation: 5,
   },
   header: {
     alignItems: 'center',
-    marginBottom: 32,
+    marginBottom: 40,
   },
   iconContainer: {
-    width: 56,
-    height: 56,
+    width: 72,
+    height: 72,
     backgroundColor: '#2563EB',
-    borderRadius: 12,
+    borderRadius: 20,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 16,
+    marginBottom: 20,
     shadowColor: '#2563EB',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 5,
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.4,
+    shadowRadius: 12,
+    elevation: 8,
   },
   title: {
-    fontSize: 24,
+    fontSize: 26,
     fontWeight: '700',
-    color: '#0F172A', 
-    marginBottom: 8,
+    color: '#0F172A',
+    marginBottom: 12,
+    textAlign: 'center',
   },
   subtitle: {
-    fontSize: 14,
-    color: '#64748B', 
+    fontSize: 15,
+    color: '#64748B',
     textAlign: 'center',
-    lineHeight: 20,
+    lineHeight: 22,
   },
-  emailHighlight: {
+  emailText: {
     fontWeight: '600',
-    color: '#334155', 
+    color: '#334155',
   },
   formSpace: {
     gap: 24,
   },
   otpContainer: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingHorizontal: 8,
+    justifyContent: 'center',
+    gap: 12,
+    marginBottom: 8,
   },
   otpInput: {
-    width: 60,
-    height: 60,
-    backgroundColor: '#FFFFFF',
-    borderWidth: 1,
-    borderColor: '#CBD5E1', 
-    borderRadius: 12,
-    fontSize: 24,
-    fontWeight: 'bold',
+    width: 64,
+    height: 64,
+    borderWidth: 2,
+    borderColor: '#CBD5E1',
+    borderRadius: 16,
+    fontSize: 28,
+    fontWeight: '700',
     textAlign: 'center',
     color: '#0F172A',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-    elevation: 1,
+    backgroundColor: '#FFFFFF',
   },
   otpFilled: {
     borderColor: '#2563EB',
-    backgroundColor: '#F8FAFC',
+    backgroundColor: '#EFF6FF',
   },
   otpFocused: {
-    borderColor: '#2563EB', 
-    borderWidth: 2,
-    transform: [{ translateY: -2 }], 
-  },
-  button: {
-    backgroundColor: '#2563EB',
-    height: 50,
-    borderRadius: 10,
-    alignItems: 'center',
-    justifyContent: 'center',
+    borderColor: '#2563EB',
+    borderWidth: 2.5,
+    backgroundColor: '#EFF6FF',
     shadowColor: '#2563EB',
-    shadowOffset: { width: 0, height: 4 },
+    shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.2,
     shadowRadius: 8,
     elevation: 3,
   },
+  button: {
+    backgroundColor: '#2563EB',
+    height: 52,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#2563EB',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 10,
+    elevation: 4,
+  },
   buttonDisabled: {
-    opacity: 0.7,
-  },
-  buttonContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  loadingContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
+    opacity: 0.6,
   },
   buttonText: {
     color: 'white',
-    fontSize: 16,
+    fontSize: 17,
     fontWeight: '600',
   },
-  footer: {
-    marginTop: 32,
-    paddingTop: 24,
-    borderTopWidth: 1,
-    borderTopColor: '#F1F5F9',
+  resendSection: {
     alignItems: 'center',
-  },
-  footerText: {
-    fontSize: 14,
-    color: '#475569',
-    marginBottom: 8,
-  },
-  resendBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 4,
+    gap: 10,
+    paddingTop: 8,
   },
   resendText: {
     fontSize: 14,
-    fontWeight: '600',
+    color: '#64748B',
+  },
+  resendButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+  },
+  resendButtonText: {
+    fontSize: 15,
     color: '#2563EB',
+    fontWeight: '600',
   },
 });
