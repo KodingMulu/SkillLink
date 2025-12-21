@@ -104,8 +104,8 @@ export default function AdminDashboard({ backgroundImage, backgroundColor }: Adm
   const recentUsers: User[] = [
     { 
       id: 1,
-      name: "Budi Santoso", 
-      email: "budi@email.com",
+      name: "fatoni", 
+      email: "fatoni@email.com",
       role: "Freelancer", 
       status: "active",
       joined: "2 jam lalu",
@@ -124,8 +124,8 @@ export default function AdminDashboard({ backgroundImage, backgroundColor }: Adm
     },
     { 
       id: 3,
-      name: "Siti Nurhaliza", 
-      email: "siti@email.com",
+      name: "egy", 
+      email: "egy@email.com",
       role: "Freelancer", 
       status: "pending",
       joined: "1 hari lalu",
