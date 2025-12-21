@@ -9,6 +9,7 @@ import {
   CreditCard, Wallet, Landmark
 } from 'lucide-react';
 import DashboardLayout from '../../DashboardLayout';
+import TaxReportModal from './components/TaxReportModal';// Pastikan path import benar
 
 const TRANSACTIONS_DATA = [
   { id: "TX-90210", user: "Budi Santoso", project: "Redesain Aplikasi Mobile", amount: "Rp 15.000.000", method: "Bank Transfer", status: "success", date: "2023-12-15 14:30" },
@@ -22,7 +23,9 @@ const TRANSACTIONS_DATA = [
 export default function TransactionManagementPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
+  const [isTaxModalOpen, setIsTaxModalOpen] = useState(false);
 
+  // Filter Logic
   const filteredTransactions = TRANSACTIONS_DATA.filter(tx => {
     const matchesSearch = tx.id.toLowerCase().includes(searchTerm.toLowerCase()) || 
                          tx.user.toLowerCase().includes(searchTerm.toLowerCase());
@@ -51,6 +54,7 @@ export default function TransactionManagementPage() {
   return (
     <DashboardLayout role="admin">
       <div className="space-y-6">
+        {/* Header Section */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
             <h1 className="text-2xl font-bold text-slate-900">Manajemen Transaksi</h1>
@@ -61,54 +65,27 @@ export default function TransactionManagementPage() {
               <Download className="w-4 h-4" />
               Export CSV
             </button>
-            <button className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition shadow-md text-sm font-medium">
+            <button 
+              onClick={() => setIsTaxModalOpen(true)}
+              className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition shadow-md text-sm font-medium"
+            >
               <FileText className="w-4 h-4" />
               Laporan Pajak
             </button>
           </div>
         </div>
 
+        {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
-            <div className="flex justify-between items-start mb-4">
-              <div className="p-2 bg-blue-50 rounded-lg">
-                <ArrowUpRight className="w-5 h-5 text-blue-600" />
-              </div>
-              <span className="text-xs font-bold text-emerald-600 bg-emerald-50 px-2 py-1 rounded">+12%</span>
-            </div>
-            <p className="text-sm text-slate-500 font-medium">Total Volume</p>
-            <h3 className="text-2xl font-bold text-slate-900">Rp 2.480M</h3>
-          </div>
-          <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
-            <div className="flex justify-between items-start mb-4">
-              <div className="p-2 bg-emerald-50 rounded-lg">
-                <CheckCircle2 className="w-5 h-5 text-emerald-600" />
-              </div>
-            </div>
-            <p className="text-sm text-slate-500 font-medium">Berhasil</p>
-            <h3 className="text-2xl font-bold text-slate-900">1,120</h3>
-          </div>
-          <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
-            <div className="flex justify-between items-start mb-4">
-              <div className="p-2 bg-orange-50 rounded-lg">
-                <Clock className="w-5 h-5 text-orange-600" />
-              </div>
-            </div>
-            <p className="text-sm text-slate-500 font-medium">Menunggu</p>
-            <h3 className="text-2xl font-bold text-slate-900">42</h3>
-          </div>
-          <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
-            <div className="flex justify-between items-start mb-4">
-              <div className="p-2 bg-red-50 rounded-lg">
-                <XCircle className="w-5 h-5 text-red-600" />
-              </div>
-            </div>
-            <p className="text-sm text-slate-500 font-medium">Gagal/Batal</p>
-            <h3 className="text-2xl font-bold text-slate-900">15</h3>
-          </div>
+          <StatCard icon={<ArrowUpRight className="text-blue-600" />} label="Total Volume" value="Rp 2.480M" trend="+12%" color="blue" />
+          <StatCard icon={<CheckCircle2 className="text-emerald-600" />} label="Berhasil" value="1,120" color="emerald" />
+          <StatCard icon={<Clock className="text-orange-600" />} label="Menunggu" value="42" color="orange" />
+          <StatCard icon={<XCircle className="text-red-600" />} label="Gagal/Batal" value="15" color="red" />
         </div>
 
+        {/* Table Section */}
         <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+          {/* Table Filters */}
           <div className="p-4 border-b border-slate-100 flex flex-col lg:flex-row gap-4 justify-between items-center bg-slate-50/50">
             <div className="flex items-center gap-2 w-full lg:w-auto">
               <div className="relative flex-1 lg:w-80">
@@ -143,6 +120,7 @@ export default function TransactionManagementPage() {
             </div>
           </div>
 
+          {/* Table Body */}
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse">
               <thead>
@@ -167,7 +145,7 @@ export default function TransactionManagementPage() {
                       <div className="text-xs text-slate-500 truncate max-w-[180px]">{tx.project}</div>
                     </td>
                     <td className="px-6 py-4">
-                      <div className="flex items-center gap-2 text-xs text-slate-600 bg-slate-100 w-fit px-2 py-1 rounded-md">
+                      <div className="flex items-center gap-2 text-xs text-slate-600 bg-slate-100 w-fit px-2 py-1 rounded-md font-medium">
                         {getMethodIcon(tx.method)}
                         {tx.method}
                       </div>
@@ -191,6 +169,7 @@ export default function TransactionManagementPage() {
             </table>
           </div>
 
+          {/* Pagination */}
           <div className="px-6 py-4 border-t border-slate-100 flex items-center justify-between bg-slate-50/30">
             <p className="text-sm text-slate-500">
               Menampilkan <span className="font-medium text-slate-900">{filteredTransactions.length}</span> transaksi
@@ -207,6 +186,45 @@ export default function TransactionManagementPage() {
           </div>
         </div>
       </div>
+
+      {/* Tax Report Modal */}
+      <TaxReportModal 
+        isOpen={isTaxModalOpen} 
+        onClose={() => setIsTaxModalOpen(false)} 
+        onSuccess={() => {
+            // Logika tambahan jika laporan berhasil di-generate
+            console.log("Report generated successfully!");
+        }}
+      />
     </DashboardLayout>
+  );
+}
+
+/**
+ * Reusable Stat Card Component for cleaner code
+ */
+function StatCard({ icon, label, value, trend, color }: any) {
+  const colorMap: any = {
+    blue: "bg-blue-50",
+    emerald: "bg-emerald-50",
+    orange: "bg-orange-50",
+    red: "bg-red-50"
+  };
+
+  return (
+    <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+      <div className="flex justify-between items-start mb-4">
+        <div className={`p-2 ${colorMap[color]} rounded-lg`}>
+          {icon}
+        </div>
+        {trend && (
+          <span className="text-xs font-bold text-emerald-600 bg-emerald-50 px-2 py-1 rounded">
+            {trend}
+          </span>
+        )}
+      </div>
+      <p className="text-sm text-slate-500 font-medium">{label}</p>
+      <h3 className="text-2xl font-bold text-slate-900">{value}</h3>
+    </div>
   );
 }
