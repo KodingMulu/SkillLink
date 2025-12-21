@@ -11,12 +11,12 @@ import DashboardLayout from '../../DashboardLayout';
 import AddUserModal from '../components/AddUserModal';
 
 const USERS_DATA = [
-  { id: 1, name: "Budi Santoso", email: "budi@email.com", role: "Freelancer", status: "active", joined: "2023-10-12", projects: 12, rating: 4.8 },
+  { id: 1, name: "fatoni", email: "fatoni@email.com", role: "Freelancer", status: "active", joined: "2023-10-12", projects: 12, rating: 4.8 },
   { id: 2, name: "PT Digital Innovation", email: "contact@digital.com", role: "Client", status: "active", joined: "2023-11-05", projects: 5, rating: 4.9 },
-  { id: 3, name: "Sarah Wijaya", email: "sarah@email.com", role: "Freelancer", status: "pending", joined: "2023-12-15", projects: 0, rating: 0 },
-  { id: 4, name: "Ahmad Rizki", email: "ahmad@email.com", role: "Freelancer", status: "suspended", joined: "2023-09-20", projects: 8, rating: 3.2 },
-  { id: 5, name: "Indah Permata", email: "indah@studio.com", role: "Client", status: "active", joined: "2023-12-01", projects: 2, rating: 4.5 },
-  { id: 6, name: "Rizky Fauzi", email: "rizky@email.com", role: "Freelancer", status: "pending", joined: "2023-12-16", projects: 0, rating: 0 },
+  { id: 3, name: "egy", email: "egy@email.com", role: "Freelancer", status: "pending", joined: "2023-12-15", projects: 0, rating: 0 },
+  { id: 4, name: "veri", email: "veri@email.com", role: "Freelancer", status: "suspended", joined: "2023-09-20", projects: 8, rating: 3.2 },
+  { id: 5, name: "bima", email: "bima@studio.com", role: "Client", status: "active", joined: "2023-12-01", projects: 2, rating: 4.5 },
+  { id: 6, name: "sapta", email: "sapta@email.com", role: "Freelancer", status: "pending", joined: "2023-12-16", projects: 0, rating: 0 },
 ];
 
 interface UserManagementPageProps {
