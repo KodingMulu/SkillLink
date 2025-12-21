@@ -9,6 +9,8 @@ import {
   User, Briefcase, Clock
 } from 'lucide-react';
 import DashboardLayout from '../../DashboardLayout';
+// Import komponen modal yang baru dibuat
+import ModerationPolicyModal from '../components/ModerationPolicyModal';
 
 const REPORTS_DATA = [
   { id: "REP-001", reporter: "Budi Santoso", reportedItem: "Nazril Afandi", type: "User", reason: "Penipuan / Scam", date: "2023-12-17 14:30", priority: "high", status: "pending" },
@@ -22,6 +24,9 @@ const REPORTS_DATA = [
 export default function ReportsManagementPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
+  
+  // State untuk mengontrol kemunculan Modal Kebijakan Moderasi
+  const [isPolicyModalOpen, setIsPolicyModalOpen] = useState(false);
 
   const filteredReports = REPORTS_DATA.filter(report => {
     const matchesSearch = report.reporter.toLowerCase().includes(searchTerm.toLowerCase()) || 
@@ -70,52 +75,26 @@ export default function ReportsManagementPage() {
               <Download className="w-4 h-4" />
               Export Laporan
             </button>
-            <button className="flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-xl hover:bg-red-700 transition shadow-md text-sm font-medium">
+            {/* Tombol Kebijakan Moderasi sekarang memiliki onClick untuk membuka modal */}
+            <button 
+              onClick={() => setIsPolicyModalOpen(true)}
+              className="flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-xl hover:bg-red-700 transition shadow-md text-sm font-medium active:scale-95 transition-transform"
+            >
               <ShieldAlert className="w-4 h-4" />
               Kebijakan Moderasi
             </button>
           </div>
         </div>
 
+        {/* Stats Cards Section */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
-            <div className="flex justify-between items-start mb-4">
-              <div className="p-2 bg-red-50 rounded-lg">
-                <Flag className="w-5 h-5 text-red-600" />
-              </div>
-            </div>
-            <p className="text-sm text-slate-500 font-medium">Total Laporan</p>
-            <h3 className="text-2xl font-bold text-slate-900">156</h3>
-          </div>
-          <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
-            <div className="flex justify-between items-start mb-4">
-              <div className="p-2 bg-orange-50 rounded-lg">
-                <AlertTriangle className="w-5 h-5 text-orange-600" />
-              </div>
-            </div>
-            <p className="text-sm text-slate-500 font-medium">Menunggu Tindakan</p>
-            <h3 className="text-2xl font-bold text-slate-900">23</h3>
-          </div>
-          <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
-            <div className="flex justify-between items-start mb-4">
-              <div className="p-2 bg-emerald-50 rounded-lg">
-                <CheckCircle className="w-5 h-5 text-emerald-600" />
-              </div>
-            </div>
-            <p className="text-sm text-slate-500 font-medium">Selesai</p>
-            <h3 className="text-2xl font-bold text-slate-900">128</h3>
-          </div>
-          <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
-            <div className="flex justify-between items-start mb-4">
-              <div className="p-2 bg-slate-50 rounded-lg">
-                <Clock className="w-5 h-5 text-slate-600" />
-              </div>
-            </div>
-            <p className="text-sm text-slate-500 font-medium">Rata-rata Respon</p>
-            <h3 className="text-2xl font-bold text-slate-900">4.2 Jam</h3>
-          </div>
+          <StatCard icon={<Flag className="text-red-600" />} label="Total Laporan" value="156" color="red" />
+          <StatCard icon={<AlertTriangle className="text-orange-600" />} label="Menunggu Tindakan" value="23" color="orange" />
+          <StatCard icon={<CheckCircle className="text-emerald-600" />} label="Selesai" value="128" color="emerald" />
+          <StatCard icon={<Clock className="text-slate-600" />} label="Rata-rata Respon" value="4.2 Jam" color="slate" />
         </div>
 
+        {/* Table Section */}
         <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
           <div className="p-4 border-b border-slate-100 flex flex-col lg:flex-row gap-4 justify-between items-center bg-slate-50/50">
             <div className="flex items-center gap-2 w-full lg:w-auto">
@@ -223,6 +202,36 @@ export default function ReportsManagementPage() {
           </div>
         </div>
       </div>
+
+      {/* Modal Kebijakan Moderasi dipasang di sini */}
+      <ModerationPolicyModal 
+        isOpen={isPolicyModalOpen} 
+        onClose={() => setIsPolicyModalOpen(false)} 
+      />
     </DashboardLayout>
+  );
+}
+
+/**
+ * Komponen lokal untuk merapikan Cards agar tidak duplikasi kode
+ */
+function StatCard({ icon, label, value, color }: any) {
+  const colorMap: any = {
+    red: "bg-red-50",
+    orange: "bg-orange-50",
+    emerald: "bg-emerald-50",
+    slate: "bg-slate-50"
+  };
+
+  return (
+    <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+      <div className="flex justify-between items-start mb-4">
+        <div className={`p-2 ${colorMap[color]} rounded-lg`}>
+          {icon}
+        </div>
+      </div>
+      <p className="text-sm text-slate-500 font-medium">{label}</p>
+      <h3 className="text-2xl font-bold text-slate-900">{value}</h3>
+    </div>
   );
 }
