@@ -123,6 +123,24 @@ export default function SettingsPage() {
         </div>
       </div>
 
+      {/* COMMIT 1: Statistik Pencapaian Freelancer */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+        {[
+          { label: 'Proyek Selesai', value: '24', icon: Briefcase, color: 'text-blue-600', bg: 'bg-blue-50' },
+          { label: 'Rating Rata-rata', value: '4.9', icon: Star, color: 'text-amber-500', bg: 'bg-amber-50' },
+          { label: 'Klien Puas', value: '98%', icon: Check, color: 'text-emerald-600', bg: 'bg-emerald-50' },
+          { label: 'Waktu Respon', value: '< 2 jam', icon: Clock, color: 'text-purple-600', bg: 'bg-purple-50' },
+        ].map((stat, i) => (
+          <div key={i} className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm transition-all hover:shadow-md hover:-translate-y-1">
+            <div className={`w-10 h-10 ${stat.bg} ${stat.color} rounded-xl flex items-center justify-center mb-3`}>
+              <stat.icon size={20} />
+            </div>
+            <p className="text-2xl font-black text-slate-900">{stat.value}</p>
+            <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">{stat.label}</p>
+          </div>
+        ))}
+      </div>
+
       <div className="flex flex-col lg:flex-row gap-6">
         {/* Sidebar Tabs */}
         <div className="w-full lg:w-64 space-y-2">
