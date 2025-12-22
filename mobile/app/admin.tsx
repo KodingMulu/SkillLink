@@ -5,7 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 
-// DATA MOCKUP LAMA
+// DATA MOCKUP LAMA & BARU
 const ADMIN_NOTIFICATIONS = [
   { id: '1', title: 'Pendaftaran Baru', desc: 'Siti Aminah mendaftar sebagai Mobile Dev', time: '5m lalu', icon: 'account-plus', color: '#3b82f6' },
   { id: '2', title: 'Laporan Proyek', desc: 'Nazril memperbarui status proyek E-Wallet', time: '20m lalu', icon: 'file-check', color: '#10b981' },
@@ -16,10 +16,16 @@ const PENDING_USERS = [
   { id: '2', name: 'Rina Amelia', role: 'Web Developer', date: '22 Des', email: 'rina@dev.id', skill: 'React, Node.js', exp: '2 Tahun' },
 ];
 
-// DATA MOCKUP BARU: FEATURED PROJECTS
 const FEATURED_PROJECTS = [
   { id: '1', title: 'E-Commerce App', client: 'PT. Maju Jaya', budget: 'Rp 15jt', priority: 'High', color: '#ef4444' },
   { id: '2', title: 'Sistem POS Resto', client: 'Cafe Kopi', budget: 'Rp 8jt', priority: 'Medium', color: '#f59e0b' },
+];
+
+// DATA MOCKUP BARU: STATUS PROYEK
+const PROJECT_STATUS_STATS = [
+  { label: 'Selesai', count: '124', icon: 'check-circle', color: '#10b981' },
+  { label: 'Berjalan', count: '45', icon: 'progress-clock', color: '#3b82f6' },
+  { label: 'Batal', count: '12', icon: 'close-circle', color: '#ef4444' },
 ];
 
 const PAYOUT_LOGS = [
@@ -55,11 +61,8 @@ export default function AdminDashboard() {
 
   return (
     <SafeAreaView style={styles.container}>
-      {/* --- HEADER --- */}
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()}>
-          <MaterialCommunityIcons name="arrow-left" size={24} color="#1e293b" />
-        </TouchableOpacity>
+        <TouchableOpacity onPress={() => router.back()}><MaterialCommunityIcons name="arrow-left" size={24} color="#1e293b" /></TouchableOpacity>
         <Text style={styles.headerTitle}>Dashboard Admin</Text>
         <MaterialCommunityIcons name="cog-outline" size={24} color="#64748b" />
       </View>
@@ -71,7 +74,7 @@ export default function AdminDashboard() {
           <View style={styles.insightIconBg}><MaterialCommunityIcons name="lightning-bolt" size={20} color="#f59e0b" /></View>
           <View style={{ flex: 1 }}>
             <Text style={styles.insightTitle}>Ringkasan Hari Ini</Text>
-            <Text style={styles.insightDesc}>Tinjau pendaftar dan proyek prioritas hari ini.</Text>
+            <Text style={styles.insightDesc}>Pantau statistik pengerjaan proyek dan verifikasi user.</Text>
           </View>
         </Surface>
 
@@ -116,10 +119,7 @@ export default function AdminDashboard() {
           <TouchableOpacity key={user.id} onPress={() => openUserDetail(user)}>
             <Card style={styles.verifyCard}>
               <Card.Content style={styles.verifyContent}>
-                <View style={styles.userInfo}>
-                  <Text style={styles.userNameText}>{user.name}</Text>
-                  <Text style={styles.userRoleText}>{user.role} • {user.date}</Text>
-                </View>
+                <View style={styles.userInfo}><Text style={styles.userNameText}>{user.name}</Text><Text style={styles.userRoleText}>{user.role} • {user.date}</Text></View>
                 <MaterialCommunityIcons name="chevron-right" size={20} color="#94a3b8" />
               </Card.Content>
             </Card>
@@ -128,28 +128,23 @@ export default function AdminDashboard() {
 
         <View style={{ height: 20 }} />
 
-        {/* --- 5. FITUR BARU: MANAJEMEN PROJECT TERATAS --- */}
+        {/* --- 5. PROYEK PRIORITAS --- */}
         <Text style={styles.sectionTitle}>Proyek Prioritas</Text>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{marginHorizontal: -4}}>
           {FEATURED_PROJECTS.map((project) => (
             <Card key={project.id} style={styles.projectCard}>
-              <View style={[styles.priorityTag, { backgroundColor: project.color }]}>
-                <Text style={styles.priorityText}>{project.priority}</Text>
-              </View>
+              <View style={[styles.priorityTag, { backgroundColor: project.color }]}><Text style={styles.priorityText}>{project.priority}</Text></View>
               <Text style={styles.projectTitle}>{project.title}</Text>
               <Text style={styles.projectClient}>{project.client}</Text>
               <Divider style={{marginVertical: 10}} />
-              <View style={styles.projectFooter}>
-                <Text style={styles.projectBudget}>{project.budget}</Text>
-                <MaterialCommunityIcons name="arrow-right-circle" size={20} color="#3b82f6" />
-              </View>
+              <View style={styles.projectFooter}><Text style={styles.projectBudget}>{project.budget}</Text><MaterialCommunityIcons name="arrow-right-circle" size={20} color="#3b82f6" /></View>
             </Card>
           ))}
         </ScrollView>
 
         <View style={{ height: 20 }} />
 
-        {/* --- 6. LOG PENARIKAN DANA --- */}
+        {/* --- 6. PENARIKAN TERBARU --- */}
         <Text style={styles.sectionTitle}>Penarikan Terbaru</Text>
         <Card style={styles.payoutCard}>
           {PAYOUT_LOGS.map((payout, index) => (
@@ -159,11 +154,25 @@ export default function AdminDashboard() {
 
         <View style={{ height: 20 }} />
 
-        {/* --- 7. STATS & GRAFIK --- */}
+        {/* --- 7. STATS UTAMA --- */}
         <View style={styles.statsGrid}>
           <Surface style={[styles.statBox, { borderLeftColor: '#3b82f6' }]} elevation={1}><Text style={styles.statLabel}>Total User</Text><Text style={styles.statValue}>1,240</Text></Surface>
           <Surface style={[styles.statBox, { borderLeftColor: '#10b981' }]} elevation={1}><Text style={styles.statLabel}>Revenue</Text><Text style={styles.statValue}>Rp 42jt</Text></Surface>
         </View>
+
+        {/* --- 8. FITUR BARU: STATISTIK STATUS PROYEK --- */}
+        <Text style={styles.sectionTitle}>Distribusi Proyek</Text>
+        <View style={styles.statusGrid}>
+          {PROJECT_STATUS_STATS.map((item, index) => (
+            <Surface key={index} style={styles.statusBox} elevation={1}>
+              <MaterialCommunityIcons name={item.icon as any} size={20} color={item.color} />
+              <Text style={styles.statusCount}>{item.count}</Text>
+              <Text style={styles.statusLabel}>{item.label}</Text>
+            </Surface>
+          ))}
+        </View>
+
+        <View style={{ height: 20 }} />
 
         <Text style={styles.sectionTitle}>Statistik Pendapatan</Text>
         <Card style={styles.chartCard}>
@@ -177,7 +186,7 @@ export default function AdminDashboard() {
         <View style={{ height: 40 }} />
       </ScrollView>
 
-      {/* --- MODAL DETAIL USER --- */}
+      {/* MODAL DETAIL USER */}
       <Modal visible={modalVisible} animationType="slide" transparent={true}>
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
@@ -225,7 +234,6 @@ const styles = StyleSheet.create({
   userNameText: { fontSize: 15, fontWeight: 'bold' },
   userRoleText: { fontSize: 12, color: '#64748b' },
 
-  // Project Card Styles Baru
   projectCard: { width: 200, backgroundColor: '#fff', padding: 16, borderRadius: 16, marginRight: 12, marginBottom: 5, elevation: 2 },
   priorityTag: { alignSelf: 'flex-start', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 4, marginBottom: 8 },
   priorityText: { fontSize: 10, color: '#fff', fontWeight: 'bold' },
@@ -244,6 +252,13 @@ const styles = StyleSheet.create({
   statBox: { flex: 1, backgroundColor: '#fff', padding: 16, borderRadius: 12, borderLeftWidth: 4 },
   statLabel: { fontSize: 12, color: '#64748b' },
   statValue: { fontSize: 20, fontWeight: 'bold' },
+
+  // Status Project Styles Baru
+  statusGrid: { flexDirection: 'row', gap: 10 },
+  statusBox: { flex: 1, backgroundColor: '#fff', padding: 12, borderRadius: 12, alignItems: 'center' },
+  statusCount: { fontSize: 16, fontWeight: 'bold', color: '#1e293b', marginTop: 4 },
+  statusLabel: { fontSize: 10, color: '#64748b' },
+
   chartCard: { backgroundColor: '#fff', borderRadius: 12, padding: 16 },
   barChartContainer: { flexDirection: 'row', justifyContent: 'space-around', alignItems: 'flex-end', height: 100 },
   barWrapper: { alignItems: 'center' },
