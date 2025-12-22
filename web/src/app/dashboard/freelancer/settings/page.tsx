@@ -15,11 +15,12 @@ export default function SettingsPage() {
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
 
-  // State tambahan untuk fitur Skill
+  // --- STATE BARU UNTUK TAHAP 2 ---
+  const [availability, setAvailability] = useState('available');
+
   const [skills, setSkills] = useState(['React', 'Next.js', 'Tailwind CSS', 'TypeScript']);
   const [newSkill, setNewSkill] = useState('');
 
-  // State untuk form
   const [profileData, setProfileData] = useState({
     name: 'Saipul Bahri',
     title: 'Frontend Developer',
@@ -61,7 +62,6 @@ export default function SettingsPage() {
     showHourlyRate: true
   });
 
-  // Fungsi tambahan untuk Skill
   const addSkill = () => {
     if (newSkill && !skills.includes(newSkill)) {
       setSkills([...skills, newSkill]);
@@ -109,7 +109,6 @@ export default function SettingsPage() {
           <p className="text-slate-500">Kelola akun dan preferensi Anda</p>
         </div>
 
-        {/* FITUR BARU: Profile Strength Indikator */}
         <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm min-w-[240px]">
           <div className="flex justify-between items-center mb-2">
             <span className="text-xs font-bold text-slate-600 flex items-center gap-1">
@@ -123,7 +122,6 @@ export default function SettingsPage() {
         </div>
       </div>
 
-      {/* COMMIT 1: Statistik Pencapaian Freelancer */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
         {[
           { label: 'Proyek Selesai', value: '24', icon: Briefcase, color: 'text-blue-600', bg: 'bg-blue-50' },
@@ -142,7 +140,6 @@ export default function SettingsPage() {
       </div>
 
       <div className="flex flex-col lg:flex-row gap-6">
-        {/* Sidebar Tabs */}
         <div className="w-full lg:w-64 space-y-2">
           {tabs.map((tab) => (
             <button
@@ -165,7 +162,6 @@ export default function SettingsPage() {
           </button>
         </div>
 
-        {/* Content Area */}
         <div className="flex-1">
           {saveSuccess && (
             <div className="bg-green-50 border border-green-200 rounded-xl p-4 mb-6 flex items-center space-x-3 animate-in fade-in zoom-in duration-300">
@@ -174,33 +170,58 @@ export default function SettingsPage() {
             </div>
           )}
 
-          {/* Profile Tab */}
           {activeTab === 'profile' && (
             <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
               <h2 className="text-xl font-bold text-slate-900 mb-6">Informasi Profil</h2>
               
-              {/* Avatar Section */}
               <div className="mb-6 pb-6 border-b border-slate-200">
-                <label className="block text-sm font-semibold text-slate-700 mb-3">
-                  Foto Profil
-                </label>
-                <div className="flex items-center space-x-4">
-                  <div className="w-20 h-20 bg-gradient-to-br from-blue-600 to-purple-600 rounded-2xl flex items-center justify-center text-white text-2xl font-bold shadow-lg">
-                    SB
-                  </div>
-                  <div className="flex space-x-3">
-                    <button className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition">
-                      <Camera className="w-4 h-4" />
-                      <span>Upload Foto</span>
-                    </button>
-                    <button className="px-4 py-2 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 transition">
-                      Hapus
-                    </button>
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+                  <div className="flex items-center space-x-4">
+                    <div className="w-20 h-20 bg-gradient-to-br from-blue-600 to-purple-600 rounded-2xl flex items-center justify-center text-white text-2xl font-bold shadow-lg">
+                      SB
+                    </div>
+                    <div className="flex flex-col space-y-2">
+                      <div className="flex space-x-2">
+                        <button className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition text-sm font-bold">
+                          <Camera className="w-4 h-4" />
+                          <span>Upload Foto</span>
+                        </button>
+                        <button className="px-4 py-2 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 transition text-sm font-bold">
+                          Hapus
+                        </button>
+                      </div>
+
+                      {/* TAHAP 2: UI Status Selector */}
+                      <div className="flex flex-col gap-1.5 pt-1">
+                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Status Anda</p>
+                        <div className="flex gap-2">
+                          {[
+                            { id: 'available', label: 'Aktif', color: 'bg-emerald-500' },
+                            { id: 'busy', label: 'Sibuk', color: 'bg-amber-500' },
+                            { id: 'away', label: 'Libur', color: 'bg-rose-500' }
+                          ].map((s) => (
+                            <button
+                              key={s.id}
+                              onClick={() => setAvailability(s.id)}
+                              className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-black transition-all border ${
+                                availability === s.id 
+                                ? 'bg-slate-900 text-white border-slate-900 shadow-sm' 
+                                : 'bg-white text-slate-500 border-slate-200 hover:bg-slate-50'
+                              }`}
+                            >
+                              <span className={`w-1.5 h-1.5 rounded-full ${s.color}`}></span>
+                              {s.label}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
 
               <form onSubmit={handleProfileUpdate} className="space-y-5">
+                {/* Form fields tetap sama seperti sebelumnya... */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                   <div>
                     <label className="block text-sm font-semibold text-slate-700 mb-2">Nama Lengkap</label>
@@ -212,7 +233,6 @@ export default function SettingsPage() {
                   </div>
                 </div>
 
-                {/* FITUR BARU: Skill Tags Management */}
                 <div className="py-2">
                   <label className="block text-sm font-semibold text-slate-700 mb-3">Keahlian Utama (Tags)</label>
                   <div className="flex flex-wrap gap-2 mb-3">
@@ -262,7 +282,7 @@ export default function SettingsPage() {
             </div>
           )}
 
-          {/* Security Tab */}
+          {/* Tab lain tetap sama seperti kode sebelumnya... */}
           {activeTab === 'security' && (
             <div className="space-y-6">
               <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
@@ -292,7 +312,6 @@ export default function SettingsPage() {
             </div>
           )}
 
-          {/* Privacy Tab */}
           {activeTab === 'privacy' && (
             <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
               <h2 className="text-xl font-bold text-slate-900 mb-6">Pengaturan Privasi</h2>
@@ -312,7 +331,6 @@ export default function SettingsPage() {
                   </div>
                 </div>
 
-                {/* FITUR BARU: Work Hours Schedule */}
                 <div className="pt-6 border-t border-slate-200">
                   <h3 className="font-semibold text-slate-900 mb-4 flex items-center gap-2">
                     <Clock size={18} className="text-blue-600" /> Jam Kerja & Ketersediaan
@@ -349,7 +367,6 @@ export default function SettingsPage() {
             </div>
           )}
 
-          {/* Payment Tab */}
           {activeTab === 'payment' && (
             <div className="space-y-6">
               <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
