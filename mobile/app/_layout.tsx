@@ -1,12 +1,17 @@
-import { Stack } from "expo-router";
+// mobile/app/_layout.tsx
+import { Stack } from 'expo-router';
 
-export default function RootLayout() {
+export default function Layout() {
   return (
-    <Stack 
-      screenOptions={{
-        // Menonaktifkan header bawaan agar lonceng ganda di atas hilang
-        headerShown: false, 
-      }}
-    />
+    <Stack screenOptions={{ headerShown: false }}>
+      <Stack.Screen name="index" />
+      <Stack.Screen name="messages" />
+      <Stack.Screen name="notifications" />
+      <Stack.Screen name="proyek" /> {/* TAMBAHKAN INI */}
+      <Stack.Screen name="chat/[id]" />
+      
+      {/* Jika ada folder auth */}
+      <Stack.Screen name="auth" options={{ headerShown: false }} />
+    </Stack>
   );
 }
