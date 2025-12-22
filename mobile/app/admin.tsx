@@ -5,7 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 
-// DATA MOCKUP SEMUA FITUR
+// DATA MOCKUP
 const ADMIN_NOTIFICATIONS = [
   { id: '1', title: 'Pendaftaran Baru', desc: 'Siti Aminah mendaftar sebagai Mobile Dev', time: '5m lalu', icon: 'account-plus', color: '#3b82f6' },
   { id: '2', title: 'Laporan Proyek', desc: 'Nazril memperbarui status proyek E-Wallet', time: '20m lalu', icon: 'file-check', color: '#10b981' },
@@ -16,16 +16,15 @@ const PENDING_USERS = [
   { id: '2', name: 'Rina Amelia', role: 'Web Developer', date: '22 Des' },
 ];
 
+const PAYOUT_LOGS = [
+  { id: '1', name: 'Nazril', amount: 'Rp 750.000', time: '12m lalu', status: 'Selesai' },
+  { id: '2', name: 'Budi', amount: 'Rp 1.200.000', time: '1j lalu', status: 'Proses' },
+];
+
 const REVENUE_DATA = [
   { month: 'Jan', value: 45, color: '#e2e8f0' },
   { month: 'Feb', value: 60, color: '#e2e8f0' },
   { month: 'Mar', value: 85, color: '#3b82f6' },
-];
-
-// DATA MOCKUP BARU: LOG PENARIKAN
-const PAYOUT_LOGS = [
-  { id: '1', name: 'Nazril', amount: 'Rp 750.000', time: '12m lalu', status: 'Selesai' },
-  { id: '2', name: 'Budi', amount: 'Rp 1.200.000', time: '1j lalu', status: 'Proses' },
 ];
 
 export default function AdminDashboard() {
@@ -53,7 +52,22 @@ export default function AdminDashboard() {
 
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
         
-        {/* --- 1. NOTIFIKASI AKTIVITAS --- */}
+        {/* --- 1. FITUR BARU: BANNER QUICK INSIGHTS --- */}
+        <Surface style={styles.insightBanner} elevation={0}>
+          <View style={styles.insightIconBg}>
+            <MaterialCommunityIcons name="lightning-bolt" size={20} color="#f59e0b" />
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.insightTitle}>Ringkasan Hari Ini</Text>
+            <Text style={styles.insightDesc}>
+              Ada <Text style={{fontWeight: 'bold'}}>2 user baru</Text> menunggu verifikasi dan <Text style={{fontWeight: 'bold'}}>1 pengerjaan</Text> butuh atensi Anda.
+            </Text>
+          </View>
+        </Surface>
+
+        <View style={{ height: 20 }} />
+
+        {/* --- 2. NOTIFIKASI AKTIVITAS --- */}
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionTitle}>Notifikasi Aktivitas</Text>
           <TouchableOpacity><Text style={styles.clearText}>Tandai Dibaca</Text></TouchableOpacity>
@@ -74,7 +88,7 @@ export default function AdminDashboard() {
 
         <View style={{ height: 20 }} />
 
-        {/* --- 2. QUICK ACTION GRID --- */}
+        {/* --- 3. QUICK ACTION GRID --- */}
         <Text style={styles.sectionTitle}>Aksi Cepat Admin</Text>
         <View style={styles.actionGrid}>
           <TouchableOpacity style={styles.actionItem} onPress={() => alert("Siaran Terkirim")}>
@@ -105,7 +119,7 @@ export default function AdminDashboard() {
 
         <View style={{ height: 20 }} />
 
-        {/* --- 3. VERIFIKASI USER --- */}
+        {/* --- 4. VERIFIKASI USER --- */}
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionTitle}>Verifikasi Pengguna Baru</Text>
           <Badge style={styles.countBadge}>{PENDING_USERS.length}</Badge>
@@ -127,7 +141,7 @@ export default function AdminDashboard() {
 
         <View style={{ height: 20 }} />
 
-        {/* --- 4. FITUR BARU: LOG PENARIKAN DANA (FINANCIAL LOG) --- */}
+        {/* --- 5. LOG PENARIKAN DANA --- */}
         <Text style={styles.sectionTitle}>Penarikan Terbaru</Text>
         <Card style={styles.payoutCard}>
           {PAYOUT_LOGS.map((payout, index) => (
@@ -140,7 +154,7 @@ export default function AdminDashboard() {
                   <Text style={styles.payoutText}>
                     <Text style={{fontWeight: 'bold'}}>{payout.name}</Text> mencairkan <Text style={{color: '#10b981', fontWeight: 'bold'}}>{payout.amount}</Text>
                   </Text>
-                  <Text style={styles.payoutTime}>{payout.time} • Status: {payout.status}</Text>
+                  <Text style={styles.payoutTime}>{payout.time}</Text>
                 </View>
               </View>
               {index < PAYOUT_LOGS.length - 1 && <Divider />}
@@ -150,7 +164,7 @@ export default function AdminDashboard() {
 
         <View style={{ height: 20 }} />
 
-        {/* --- 5. STATS & GRAFIK --- */}
+        {/* --- 6. STATS & GRAFIK --- */}
         <View style={styles.statsGrid}>
           <Surface style={[styles.statBox, { borderLeftColor: '#3b82f6' }]} elevation={1}>
             <Text style={styles.statLabel}>Total User</Text>
@@ -174,25 +188,6 @@ export default function AdminDashboard() {
           </View>
         </Card>
 
-        <View style={{ height: 20 }} />
-
-        {/* --- 6. TABEL MONITOR --- */}
-        <Text style={styles.sectionTitle}>Monitor Proyek</Text>
-        <Card style={styles.tableCard}>
-          <DataTable>
-            <DataTable.Header>
-              <DataTable.Title>Freelancer</DataTable.Title>
-              <DataTable.Title>Status</DataTable.Title>
-              <DataTable.Title numeric>Profit</DataTable.Title>
-            </DataTable.Header>
-            <DataTable.Row>
-              <DataTable.Cell>Nazril</DataTable.Cell>
-              <DataTable.Cell><Text style={{color: '#ef4444', fontWeight: 'bold', fontSize: 10}}>REVISI</Text></DataTable.Cell>
-              <DataTable.Cell numeric>Rp 500k</DataTable.Cell>
-            </DataTable.Row>
-          </DataTable>
-        </Card>
-
         <View style={{ height: 40 }} />
       </ScrollView>
     </SafeAreaView>
@@ -204,6 +199,13 @@ const styles = StyleSheet.create({
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 16, backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: '#f1f5f9' },
   headerTitle: { fontSize: 18, fontWeight: 'bold', color: '#1e293b' },
   content: { padding: 16 },
+
+  // Insight Banner Styles
+  insightBanner: { flexDirection: 'row', backgroundColor: '#fff', padding: 16, borderRadius: 16, alignItems: 'center', gap: 12, borderWidth: 1, borderColor: '#fef3c7' },
+  insightIconBg: { width: 40, height: 40, borderRadius: 20, backgroundColor: '#fffbeb', alignItems: 'center', justifyContent: 'center' },
+  insightTitle: { fontSize: 14, fontWeight: 'bold', color: '#92400e' },
+  insightDesc: { fontSize: 12, color: '#b45309', marginTop: 2, lineHeight: 18 },
+
   sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 },
   sectionTitle: { fontSize: 16, fontWeight: 'bold', color: '#1e293b', marginBottom: 10 },
   clearText: { fontSize: 12, color: '#3b82f6', fontWeight: '600' },
@@ -224,7 +226,6 @@ const styles = StyleSheet.create({
   actionGroup: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   verifyBtn: { backgroundColor: '#10b981' },
 
-  // Payout Styles Baru
   payoutCard: { backgroundColor: '#fff', borderRadius: 12, paddingHorizontal: 12, elevation: 1 },
   payoutRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 12, gap: 12 },
   payoutIconBg: { width: 36, height: 36, borderRadius: 18, backgroundColor: '#ecfdf5', alignItems: 'center', justifyContent: 'center' },
@@ -240,5 +241,4 @@ const styles = StyleSheet.create({
   barWrapper: { alignItems: 'center' },
   barFill: { width: 25, borderRadius: 4 },
   barLabel: { marginTop: 8, fontSize: 10 },
-  tableCard: { backgroundColor: '#fff', borderRadius: 12 },
 });
