@@ -1,11 +1,13 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import DashboardLayout from "../../DashboardLayout";
 import { Search, MoreVertical, Send, Paperclip, Smile, CheckCheck, ChevronLeft } from 'lucide-react';
 
 export default function MessagesPage() {
   const [selectedChat, setSelectedChat] = useState<any>(null);
+  const [newMessage, setNewMessage] = useState('');
+  const scrollRef = useRef<HTMLDivElement>(null);
   
   const [chats] = useState([
     { id: 1, name: "Budi Store", lastMsg: "Bagaimana progres desainnya?", time: "10:30", unread: 2, online: true },
@@ -13,12 +15,35 @@ export default function MessagesPage() {
     { id: 3, name: "TechFlow Solutions", lastMsg: "Bisa kirim invoice-nya?", time: "2 hari lalu", unread: 0, online: true },
   ]);
 
-  const [messages] = useState([
+  const [messages, setMessages] = useState([
     { id: 1, text: "Halo, selamat pagi!", sender: "me", time: "09:00" },
     { id: 2, text: "Pagi juga! Ada update untuk desain landing page?", sender: "them", time: "09:05" },
     { id: 3, text: "Sudah masuk tahap finishing, sore ini saya kirim ya.", sender: "me", time: "09:10" },
     { id: 4, text: "Mantap, ditunggu!", sender: "them", time: "09:12" },
   ]);
+
+  // Fungsi kirim pesan
+  const handleSendMessage = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newMessage.trim()) return;
+
+    const newMsgObj = {
+      id: messages.length + 1,
+      text: newMessage,
+      sender: 'me',
+      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+    };
+
+    setMessages([...messages, newMsgObj]);
+    setNewMessage('');
+  };
+
+  // Auto-scroll ke pesan terbaru
+  useEffect(() => {
+    if (scrollRef.current) {
+      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+    }
+  }, [messages, selectedChat]);
 
   return (
     <DashboardLayout role="freelancer">
@@ -56,35 +81,38 @@ export default function MessagesPage() {
                     <h3 className="font-bold text-slate-900 text-sm truncate">{chat.name}</h3>
                     <span className="text-[10px] text-slate-400 font-medium">{chat.time}</span>
                   </div>
-                  <p className="text-xs text-slate-500 truncate">{chat.lastMsg}</p>
+                  <p className="text-xs text-slate-500 truncate font-medium">{chat.lastMsg}</p>
                 </div>
               </div>
             ))}
           </div>
         </div>
 
-        {/* AREA CHAT AKTIF (TAHAP 2) */}
+        {/* AREA CHAT AKTIF */}
         {selectedChat ? (
           <div className="flex-1 flex flex-col bg-slate-50/30">
             {/* Header Chat */}
-            <div className="p-4 md:p-6 bg-white border-b border-slate-100 flex items-center justify-between">
+            <div className="p-4 md:p-6 bg-white border-b border-slate-100 flex items-center justify-between z-10">
               <div className="flex items-center gap-3">
                 <button onClick={() => setSelectedChat(null)} className="md:hidden p-2 -ml-2 text-slate-400"><ChevronLeft /></button>
-                <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center text-white font-bold text-sm">
+                <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center text-white font-bold text-sm shadow-lg shadow-blue-600/20">
                   {selectedChat.name.charAt(0)}
                 </div>
                 <div>
                   <h3 className="font-bold text-slate-900 text-sm">{selectedChat.name}</h3>
-                  <p className="text-[10px] text-emerald-500 font-bold uppercase tracking-wider">Online</p>
+                  <p className="text-[10px] text-emerald-500 font-bold uppercase tracking-wider flex items-center gap-1">
+                    <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse"></span>
+                    Online
+                  </p>
                 </div>
               </div>
-              <button className="p-2 text-slate-400 hover:bg-slate-50 rounded-lg"><MoreVertical size={20}/></button>
+              <button className="p-2 text-slate-400 hover:bg-slate-50 rounded-lg transition-colors"><MoreVertical size={20}/></button>
             </div>
 
             {/* Bubble Chat Area */}
-            <div className="flex-1 overflow-y-auto p-6 space-y-4 no-scrollbar">
+            <div ref={scrollRef} className="flex-1 overflow-y-auto p-6 space-y-4 no-scrollbar">
               {messages.map((msg) => (
-                <div key={msg.id} className={`flex ${msg.sender === 'me' ? 'justify-end' : 'justify-start'}`}>
+                <div key={msg.id} className={`flex ${msg.sender === 'me' ? 'justify-end' : 'justify-start'} animate-in slide-in-from-bottom-2 duration-300`}>
                   <div className={`max-w-[75%] p-4 rounded-2xl text-sm font-medium shadow-sm ${
                     msg.sender === 'me' 
                     ? 'bg-blue-600 text-white rounded-tr-none' 
@@ -100,20 +128,44 @@ export default function MessagesPage() {
               ))}
             </div>
 
-            {/* Input Placeholder (Akan diaktifkan di Tahap 3) */}
+            {/* AREA INPUT PESAN (TAHAP 3) */}
             <div className="p-4 md:p-6 bg-white border-t border-slate-100">
-               <div className="h-12 bg-slate-50 rounded-2xl border border-slate-100 flex items-center px-4 text-slate-400 text-sm italic">
-                  Menunggu komponen input pesan...
-               </div>
+              <form onSubmit={handleSendMessage} className="flex items-center gap-2 md:gap-4 bg-slate-50 p-2 pl-4 rounded-[20px] border border-slate-100 focus-within:border-blue-400 focus-within:ring-4 focus-within:ring-blue-500/5 transition-all">
+                <button type="button" className="text-slate-400 hover:text-blue-600 transition-colors">
+                  <Paperclip size={20} />
+                </button>
+                <input 
+                  type="text" 
+                  value={newMessage}
+                  onChange={(e) => setNewMessage(e.target.value)}
+                  placeholder="Ketik pesan Anda di sini..." 
+                  className="flex-1 bg-transparent border-none outline-none text-sm font-medium text-slate-700 placeholder:text-slate-400 py-2"
+                />
+                <button type="button" className="hidden sm:block text-slate-400 hover:text-amber-500 transition-colors">
+                  <Smile size={20} />
+                </button>
+                <button 
+                  type="submit"
+                  disabled={!newMessage.trim()}
+                  className={`p-2.5 rounded-xl transition-all shadow-lg ${
+                    newMessage.trim() 
+                    ? 'bg-blue-600 text-white shadow-blue-600/20 hover:scale-105 active:scale-95' 
+                    : 'bg-slate-200 text-slate-400 cursor-not-allowed'
+                  }`}
+                >
+                  <Send size={18} />
+                </button>
+              </form>
             </div>
           </div>
         ) : (
           /* State Kosong */
           <div className="hidden md:flex flex-1 items-center justify-center bg-slate-50/50 flex-col text-slate-400 p-8">
-            <div className="w-16 h-16 bg-white rounded-3xl shadow-sm flex items-center justify-center mb-4">
-              <Send size={24} className="rotate-12 text-slate-200" />
+            <div className="w-20 h-20 bg-white rounded-[32px] shadow-sm flex items-center justify-center mb-6 animate-bounce duration-[3000ms]">
+              <Send size={32} className="rotate-12 text-blue-600/20" />
             </div>
-            <p className="font-bold text-sm">Pilih percakapan untuk memulai chat</p>
+            <h2 className="text-slate-900 font-black text-lg mb-2">Pilih Percakapan</h2>
+            <p className="font-medium text-sm max-w-xs text-center leading-relaxed">Pilih salah satu kontak di samping untuk mulai berdiskusi tentang proyek Anda.</p>
           </div>
         )}
 
