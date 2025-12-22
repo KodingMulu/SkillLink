@@ -1,18 +1,24 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import DashboardLayout from '../../DashboardLayout';
-import { Search, MapPin, DollarSign, Clock, Filter, Briefcase, Bookmark, Building2 } from "lucide-react";
+import { 
+  Search, MapPin, DollarSign, Clock, Filter, 
+  Bookmark, Building2, ChevronDown, Sparkles
+} from "lucide-react";
 
 export default function JobSearchPage() {
+  const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
-  
-  // Dummy Data Pekerjaan
+  const [selectedType, setSelectedType] = useState('All');
+
+  // Dummy Data Pekerjaan (Ditambahkan properti category untuk simulasi filter)
   const jobs = [
     {
       id: 1,
       title: "Frontend Developer (Next.js + Tailwind)",
       client: "TechFlow Startup",
+      category: "Development",
       verified: true,
       location: "Remote",
       budget: "Rp 5.000.000 - Rp 8.000.000",
@@ -25,6 +31,7 @@ export default function JobSearchPage() {
       id: 2,
       title: "Desain Logo & Brand Identity UMKM",
       client: "Kopi Senja",
+      category: "Design",
       verified: false,
       location: "Jakarta (Hybrid)",
       budget: "Rp 1.500.000",
@@ -37,6 +44,7 @@ export default function JobSearchPage() {
       id: 3,
       title: "Content Writer Artikel SEO Teknologi",
       client: "Media Gadget Indo",
+      category: "Writing",
       verified: true,
       location: "Remote",
       budget: "Rp 50.000 / artikel",
@@ -49,6 +57,7 @@ export default function JobSearchPage() {
       id: 4,
       title: "Backend API Golang (Microservices)",
       client: "FinTech Asia",
+      category: "Development",
       verified: true,
       location: "Remote",
       budget: "Rp 10.000.000",
@@ -61,6 +70,7 @@ export default function JobSearchPage() {
       id: 5,
       title: "Videographer & Editor Reels Instagram",
       client: "Beauty Glow",
+      category: "Design",
       verified: false,
       location: "Bandung",
       budget: "Rp 3.000.000 / bulan",
@@ -71,50 +81,77 @@ export default function JobSearchPage() {
     }
   ];
 
+  // Logika Filter Sederhana
+  const filteredJobs = useMemo(() => {
+    return jobs.filter(job => {
+      const matchesSearch = job.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
+                          job.tags.some(t => t.toLowerCase().includes(searchQuery.toLowerCase()));
+      const matchesCategory = selectedCategory === 'All' || job.category === selectedCategory;
+      return matchesSearch && matchesCategory;
+    });
+  }, [searchQuery, selectedCategory]);
+
   return (
     <DashboardLayout role="freelancer">
       {/* Header Section */}
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold text-slate-900">Temukan Pekerjaan</h1>
-        <p className="text-slate-500">Jelajahi proyek yang sesuai dengan skill dan minatmu.</p>
+      <div className="mb-8 flex flex-col md:flex-row md:items-end justify-between gap-4">
+        <div>
+          <div className="flex items-center gap-2 mb-1">
+            <Sparkles className="w-5 h-5 text-blue-600" />
+            <span className="text-blue-600 font-bold text-xs uppercase tracking-wider">Job Feed</span>
+          </div>
+          <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">Temukan Pekerjaan</h1>
+          <p className="text-slate-500 mt-1">Ada {filteredJobs.length} proyek yang menunggu keahlianmu.</p>
+        </div>
       </div>
 
       {/* --- FILTER BAR --- */}
-      <section className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm mb-8 sticky top-4 z-30">
-        <div className="flex flex-col md:flex-row gap-4">
+      <section className="bg-white p-4 rounded-3xl border border-slate-200 shadow-sm mb-8 sticky top-4 z-30 ring-4 ring-slate-50/50">
+        <div className="flex flex-col lg:flex-row gap-4">
           
           {/* Search Input */}
-          <div className="flex-1 relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+          <div className="flex-1 relative group">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 group-focus-within:text-blue-500 transition-colors" />
             <input 
               type="text" 
               placeholder="Cari posisi, skill, atau keyword..." 
-              className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full pl-12 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl text-sm focus:outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 focus:bg-white transition-all"
             />
           </div>
 
-          {/* Dropdowns (Desktop) / Filter Button (Mobile) */}
-          <div className="flex gap-3 overflow-x-auto pb-2 md:pb-0 hide-scrollbar">
-            <select 
-              className="px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm text-slate-600 focus:outline-none focus:border-blue-500 cursor-pointer hover:bg-slate-50"
-              value={selectedCategory}
-              onChange={(e) => setSelectedCategory(e.target.value)}
-            >
-              <option value="All">Semua Kategori</option>
-              <option value="Development">Development</option>
-              <option value="Design">Design</option>
-              <option value="Writing">Writing</option>
-              <option value="Marketing">Marketing</option>
-            </select>
+          {/* Filters */}
+          <div className="flex flex-wrap gap-3">
+            <div className="relative">
+              <select 
+                className="appearance-none pl-4 pr-10 py-3 bg-white border border-slate-200 rounded-2xl text-sm font-semibold text-slate-700 focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 cursor-pointer hover:bg-slate-50 transition-all min-w-[160px]"
+                value={selectedCategory}
+                onChange={(e) => setSelectedCategory(e.target.value)}
+              >
+                <option value="All">Semua Kategori</option>
+                <option value="Development">Development</option>
+                <option value="Design">Design</option>
+                <option value="Writing">Writing</option>
+              </select>
+              <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+            </div>
 
-            <select className="px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm text-slate-600 focus:outline-none focus:border-blue-500 cursor-pointer hover:bg-slate-50">
-              <option value="">Tipe Pekerjaan</option>
-              <option value="Project">Project Based</option>
-              <option value="PartTime">Part Time</option>
-              <option value="FullTime">Full Time</option>
-            </select>
+            <div className="relative">
+              <select 
+                className="appearance-none pl-4 pr-10 py-3 bg-white border border-slate-200 rounded-2xl text-sm font-semibold text-slate-700 focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 cursor-pointer hover:bg-slate-50 transition-all min-w-[150px]"
+                value={selectedType}
+                onChange={(e) => setSelectedType(e.target.value)}
+              >
+                <option value="All">Tipe Pekerjaan</option>
+                <option value="Project">Project Based</option>
+                <option value="PartTime">Part Time</option>
+                <option value="FullTime">Full Time</option>
+              </select>
+              <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+            </div>
 
-            <button className="flex items-center px-4 py-2.5 bg-slate-900 text-white rounded-xl text-sm font-medium hover:bg-slate-800 transition-colors shadow-lg shadow-slate-900/20 whitespace-nowrap">
+            <button className="flex items-center px-6 py-3 bg-slate-900 text-white rounded-2xl text-sm font-bold hover:bg-blue-600 transition-all shadow-xl shadow-slate-900/10 active:scale-95">
               <Filter className="w-4 h-4 mr-2" />
               Filter Lanjutan
             </button>
@@ -123,97 +160,94 @@ export default function JobSearchPage() {
       </section>
 
       {/* --- JOB LIST --- */}
-      <div className="space-y-4">
-        {jobs.map((job) => (
-          <div 
-            key={job.id} 
-            className="group bg-white p-6 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md hover:border-blue-200 transition-all duration-300 relative overflow-hidden"
-          >
-            {/* Hover Indicator (Garis biru di kiri saat hover) */}
-            <div className="absolute left-0 top-0 bottom-0 w-1 bg-blue-600 transform -translate-x-full group-hover:translate-x-0 transition-transform duration-300" />
+      <div className="space-y-5">
+        {filteredJobs.length > 0 ? (
+          filteredJobs.map((job) => (
+            <div 
+              key={job.id} 
+              className="group bg-white p-6 rounded-[2rem] border border-slate-200 shadow-sm hover:shadow-xl hover:shadow-blue-500/5 hover:border-blue-200 transition-all duration-300 relative overflow-hidden"
+            >
+              {/* Garis aksen saat hover */}
+              <div className="absolute left-0 top-0 bottom-0 w-1.5 bg-blue-600 transform -translate-x-full group-hover:translate-x-0 transition-transform duration-500" />
 
-            <div className="flex flex-col md:flex-row gap-6">
-              
-              {/* Client Logo Placeholder */}
-              <div className="flex-shrink-0">
-                <div className="w-12 h-12 md:w-14 md:h-14 rounded-xl bg-gradient-to-br from-slate-100 to-slate-200 border border-slate-300 flex items-center justify-center text-slate-500">
-                  <Building2 className="w-6 h-6 md:w-7 md:h-7" />
+              <div className="flex flex-col md:flex-row gap-6">
+                
+                {/* Client Logo */}
+                <div className="flex-shrink-0">
+                  <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-slate-50 to-slate-100 border border-slate-200 flex items-center justify-center text-slate-400 group-hover:bg-blue-50 group-hover:border-blue-100 group-hover:text-blue-500 transition-all duration-500">
+                    <Building2 className="w-7 h-7" />
+                  </div>
                 </div>
-              </div>
 
-              {/* Job Content */}
-              <div className="flex-1">
-                <div className="flex flex-col md:flex-row md:items-start md:justify-between mb-2">
-                  <div>
-                    <h3 className="text-lg font-bold text-slate-900 group-hover:text-blue-600 transition-colors">
-                      {job.title}
-                    </h3>
-                    <div className="flex items-center gap-2 mt-1 mb-2 md:mb-0">
-                      <span className="text-sm text-slate-600 font-medium">{job.client}</span>
-                      {job.verified && (
-                        <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold bg-blue-50 text-blue-600 border border-blue-100">
-                          VERIFIED
+                {/* Content */}
+                <div className="flex-1">
+                  <div className="flex flex-col md:flex-row md:items-start md:justify-between mb-3">
+                    <div>
+                      <h3 className="text-xl font-bold text-slate-900 group-hover:text-blue-600 transition-colors leading-tight">
+                        {job.title}
+                      </h3>
+                      <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-1.5">
+                        <span className="text-sm text-slate-700 font-bold">{job.client}</span>
+                        {job.verified && (
+                          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-black bg-blue-50 text-blue-600 border border-blue-100 tracking-tighter">
+                            VERIFIED
+                          </span>
+                        )}
+                        <span className="flex items-center text-xs text-slate-400">
+                          <Clock className="w-3 h-3 mr-1" /> {job.posted}
                         </span>
-                      )}
-                      <span className="text-slate-300 text-xs">•</span>
-                      <span className="text-xs text-slate-500">{job.posted}</span>
+                      </div>
+                    </div>
+
+                    <div className="hidden md:flex flex-col items-end shrink-0">
+                      <span className="text-xl font-black text-emerald-600 tracking-tight">{job.budget}</span>
+                      <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">{job.type}</span>
                     </div>
                   </div>
 
-                  {/* Price & Action (Desktop) */}
-                  <div className="hidden md:flex flex-col items-end">
-                    <span className="text-lg font-bold text-emerald-600">{job.budget}</span>
-                    <span className="text-xs text-slate-500 mb-2">{job.type}</span>
-                  </div>
-                </div>
+                  <p className="text-sm text-slate-500 mb-6 line-clamp-2 leading-relaxed max-w-3xl font-medium">
+                    {job.desc}
+                  </p>
 
-                {/* Description Snippet */}
-                <p className="text-sm text-slate-500 mb-4 line-clamp-2 leading-relaxed">
-                  {job.desc}
-                </p>
-
-                {/* Tags & Metadata */}
-                <div className="flex flex-wrap items-center justify-between gap-4 pt-2 border-t border-slate-50 md:border-none">
-                  <div className="flex flex-wrap gap-2">
-                    {/* Location Badge */}
-                    <span className="inline-flex items-center px-2.5 py-1 rounded-lg bg-slate-50 text-slate-600 text-xs font-medium border border-slate-200">
-                      <MapPin className="w-3 h-3 mr-1" />
-                      {job.location}
-                    </span>
-                    
-                    {/* Skill Tags */}
-                    {job.tags.map((tag) => (
-                      <span key={tag} className="inline-flex items-center px-2.5 py-1 rounded-lg bg-blue-50 text-blue-600 text-xs font-medium border border-blue-100">
-                        {tag}
+                  <div className="flex flex-wrap items-center justify-between gap-6">
+                    <div className="flex flex-wrap gap-2">
+                      <span className="inline-flex items-center px-3 py-1.5 rounded-xl bg-slate-50 text-slate-600 text-xs font-bold border border-slate-100">
+                        <MapPin className="w-3.5 h-3.5 mr-1.5 text-slate-400" />
+                        {job.location}
                       </span>
-                    ))}
-                  </div>
+                      {job.tags.map((tag) => (
+                        <span key={tag} className="px-3 py-1.5 rounded-xl bg-blue-50/50 text-blue-700 text-xs font-bold border border-blue-100/50">
+                          {tag}
+                        </span>
+                      ))}
+                    </div>
 
-                  {/* Mobile Price (Shown only on small screens) */}
-                  <div className="md:hidden w-full flex justify-between items-center mt-2">
-                     <span className="font-bold text-emerald-600 text-sm">{job.budget}</span>
-                     <span className="text-xs text-slate-500">{job.type}</span>
-                  </div>
-
-                  {/* Action Buttons */}
-                  <div className="flex items-center gap-3 w-full md:w-auto mt-2 md:mt-0">
-                    <button className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors border border-transparent hover:border-blue-100">
-                      <Bookmark className="w-5 h-5" />
-                    </button>
-                    <button className="flex-1 md:flex-none px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors shadow-lg shadow-blue-600/20 active:scale-95">
-                      Lamar Sekarang
-                    </button>
+                    <div className="flex items-center gap-3 w-full md:w-auto border-t md:border-none pt-4 md:pt-0">
+                      <button className="p-3 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-2xl transition-all border border-slate-100 hover:border-blue-200">
+                        <Bookmark className="w-5 h-5" />
+                      </button>
+                      <button className="flex-1 md:flex-none px-8 py-3 bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold rounded-2xl transition-all shadow-lg shadow-blue-600/20 active:scale-95">
+                        Lamar Sekarang
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
+          ))
+        ) : (
+          <div className="py-20 text-center bg-white rounded-[2rem] border border-dashed border-slate-300">
+            <div className="bg-slate-50 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+              <Search className="w-8 h-8 text-slate-300" />
+            </div>
+            <h3 className="text-lg font-bold text-slate-900">Pekerjaan tidak ditemukan</h3>
+            <p className="text-slate-500 text-sm">Coba gunakan kata kunci atau filter lain.</p>
           </div>
-        ))}
+        )}
 
-        {/* --- LOAD MORE --- */}
-        <div className="pt-8 text-center">
-          <button className="px-6 py-2 border border-slate-300 text-slate-600 text-sm font-medium rounded-full hover:bg-white hover:border-slate-400 hover:shadow-sm transition-all">
-            Muat Lebih Banyak
+        <div className="pt-10 text-center">
+          <button className="px-10 py-3 bg-white border-2 border-slate-200 text-slate-600 text-sm font-bold rounded-2xl hover:bg-slate-50 hover:border-slate-300 transition-all shadow-sm">
+            Muat Lebih Banyak Pekerjaan
           </button>
         </div>
       </div>

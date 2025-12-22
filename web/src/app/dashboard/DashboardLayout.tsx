@@ -4,10 +4,10 @@ import React, { useState, useRef, useEffect } from 'react';
 import { 
   Briefcase, LayoutDashboard, MessageSquare, 
   Settings, LogOut, Bell, Search, Menu, X, User,
-  CheckCircle, FileText, TrendingUp, Users, DollarSign, Flag
+  CheckCircle, FileText, TrendingUp, Users, DollarSign, Flag,
+  ChevronRight
 } from 'lucide-react';
 import Link from 'next/link';
-// 1. Impor usePathname dari next/navigation
 import { usePathname } from 'next/navigation';
 
 export default function DashboardLayout({ 
@@ -21,12 +21,11 @@ export default function DashboardLayout({
   const [isNotificationOpen, setIsNotificationOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   
-  // 2. Inisialisasi pathname
   const pathname = usePathname();
-  
   const notificationRef = useRef<HTMLDivElement>(null);
   const profileRef = useRef<HTMLDivElement>(null);
 
+  // Menutup dropdown saat klik di luar
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (notificationRef.current && !notificationRef.current.contains(event.target as Node)) {
@@ -36,7 +35,6 @@ export default function DashboardLayout({
         setIsProfileOpen(false);
       }
     };
-
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
@@ -49,69 +47,57 @@ export default function DashboardLayout({
           { icon: Users, label: 'Manajemen User', href: '/dashboard/admin/user' },
           { icon: Briefcase, label: 'Manajemen Proyek', href: '/dashboard/admin/project' },
           { icon: DollarSign, label: 'Transaksi', href: '/dashboard/admin/transactions' },
-          { icon: Flag, label: 'Laporan', href: '/dashboard/admin/reports' },
         ];
       case 'client':
         return [
           { icon: LayoutDashboard, label: 'Overview', href: '/dashboard/client' },
-          { icon: Briefcase, label: 'Posting Proyek', href: '/dashboard/client/jobs' },
-          { icon: User, label: 'Talenta', href: '/dashboard/client/talents' },
+          { icon: Briefcase, label: 'Proyek Saya', href: '/dashboard/client/jobs' },
+          { icon: User, label: 'Cari Talenta', href: '/dashboard/client/talents' },
           { icon: MessageSquare, label: 'Pesan', href: '/dashboard/client/messages' },
         ];
-      default:
+      default: // freelancer
         return [
           { icon: LayoutDashboard, label: 'Overview', href: '/dashboard/freelancer' },
-          { icon: Briefcase, label: 'Pekerjaan Saya', href: '/dashboard/freelancer/jobs' },
+          { icon: Search, label: 'Cari Kerja', href: '/dashboard/freelancer/jobs' },
           { icon: MessageSquare, label: 'Pesan', href: '/dashboard/freelancer/messages' },
-          { icon: User, label: 'Profil', href: '/dashboard/freelancer/profile' },
+          { icon: User, label: 'Profil Saya', href: '/dashboard/freelancer/profile' },
         ];
     }
   };
 
   const menuItems = getMenuItems();
 
-  // Data dummy notifikasi (tetap sama)
-  const notifications = [
-    { id: 1, type: 'success', icon: CheckCircle, iconBg: 'bg-emerald-100', iconColor: 'text-emerald-600', title: 'Pekerjaan Selesai', message: 'Nazril Afandi menyelesaikan tugas', time: '2 mnt lalu', unread: true },
-  ];
-
-  const unreadCount = notifications.filter(n => n.unread).length;
-
   return (
-    <div className="min-h-screen bg-slate-50 flex font-sans">
+    <div className="min-h-screen bg-[#F8FAFC] flex font-sans">
+      {/* SIDEBAR */}
       <aside className={`
         fixed inset-y-0 left-0 z-50 w-64 bg-white border-r border-slate-200 transform transition-transform duration-300 ease-in-out
         ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'} md:relative md:translate-x-0
       `}>
         <div className="h-full flex flex-col">
-          <div className="h-16 flex items-center px-6 border-b border-slate-100">
-            <div className="w-8 h-8 bg-gradient-to-br from-emerald-500 to-blue-600 rounded-lg flex items-center justify-center">
-              <Briefcase className="w-4 h-4 text-white" />
+          <div className="h-20 flex items-center px-6">
+            <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center shadow-lg shadow-blue-200">
+              <Briefcase className="w-5 h-5 text-white" />
             </div>
-            <span className="ml-3 text-lg font-bold text-slate-800 tracking-tight">
-              {role === 'admin' ? 'Admin Panel' : 'SkillLink'}
-            </span>
-            <button onClick={() => setIsSidebarOpen(false)} className="md:hidden ml-auto">
-              <X className="w-5 h-5 text-slate-500" />
-            </button>
+            <span className="ml-3 text-xl font-bold text-slate-900 tracking-tight">SkillLink</span>
           </div>
 
-          <nav className="flex-1 px-4 py-6 space-y-1">
+          <nav className="flex-1 px-4 py-4 space-y-1.5">
             {menuItems.map((item) => {
-              // 3. Logika pengecekan apakah link aktif
-              const isActive = pathname === item.href;
+              // LOGIKA ACTIVE: Menggunakan startsWith agar sub-halaman tetap mengaktifkan menu induk
+              const isActive = pathname === item.href || (item.href !== '/dashboard/client' && item.href !== '/dashboard/freelancer' && pathname.startsWith(item.href));
 
               return (
                 <Link 
                   key={item.label} 
                   href={item.href}
-                  className={`flex items-center px-4 py-3 text-sm font-medium rounded-xl transition-colors ${
+                  className={`flex items-center px-4 py-3 text-sm font-semibold rounded-xl transition-all group ${
                     isActive 
-                      ? 'bg-blue-50 text-blue-600' 
-                      : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+                      ? 'bg-blue-600 text-white shadow-md shadow-blue-100' 
+                      : 'text-slate-500 hover:bg-slate-50 hover:text-slate-900'
                   }`}
                 >
-                  <item.icon className={`w-5 h-5 mr-3 ${isActive ? 'text-blue-600' : 'text-slate-400'}`} />
+                  <item.icon className={`w-5 h-5 mr-3 transition-colors ${isActive ? 'text-white' : 'text-slate-400 group-hover:text-slate-600'}`} />
                   {item.label}
                 </Link>
               );
@@ -119,19 +105,16 @@ export default function DashboardLayout({
           </nav>
 
           <div className="p-4 border-t border-slate-100 space-y-1">
-            {/* 4. Terapkan juga untuk Settings */}
             <Link 
               href="/dashboard/settings" 
-              className={`flex items-center px-4 py-3 text-sm font-medium rounded-xl transition-colors ${
-                pathname === '/dashboard/settings' 
-                  ? 'bg-blue-50 text-blue-600' 
-                  : 'text-slate-600 hover:bg-slate-50'
+              className={`flex items-center px-4 py-3 text-sm font-semibold rounded-xl transition-all ${
+                pathname.startsWith('/dashboard/settings') ? 'bg-blue-50 text-blue-600' : 'text-slate-500 hover:bg-slate-50'
               }`}
             >
-              <Settings className={`w-5 h-5 mr-3 ${pathname === '/dashboard/settings' ? 'text-blue-600' : 'text-slate-400'}`} />
+              <Settings className="w-5 h-5 mr-3" />
               Pengaturan
             </Link>
-            <button className="w-full flex items-center px-4 py-3 text-sm font-medium text-red-600 hover:bg-red-50 rounded-xl transition-colors">
+            <button className="w-full flex items-center px-4 py-3 text-sm font-semibold text-red-500 hover:bg-red-50 rounded-xl transition-colors">
               <LogOut className="w-5 h-5 mr-3" />
               Keluar
             </button>
@@ -139,17 +122,85 @@ export default function DashboardLayout({
         </div>
       </aside>
 
-      {/* Sisa Header dan Main Content (tetap sama) */}
+      {/* CONTENT AREA */}
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
-        <header className="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-4 lg:px-8">
-          <button onClick={() => setIsSidebarOpen(true)} className="md:hidden p-2 -ml-2 text-slate-500">
-            <Menu className="w-6 h-6" />
-          </button>
-          {/* ... bagian header lainnya ... */}
+        {/* TOP NAVBAR */}
+        <header className="h-20 bg-white border-b border-slate-200 flex items-center justify-between px-4 lg:px-10 sticky top-0 z-40">
+          <div className="flex items-center gap-4">
+            <button onClick={() => setIsSidebarOpen(true)} className="md:hidden p-2 text-slate-500 hover:bg-slate-100 rounded-lg">
+              <Menu className="w-6 h-6" />
+            </button>
+            <div className="hidden md:flex items-center bg-slate-100 px-4 py-2 rounded-xl w-80 border border-transparent focus-within:border-blue-300 focus-within:bg-white transition-all">
+              <Search className="w-4 h-4 text-slate-400 mr-2" />
+              <input type="text" placeholder="Cari sesuatu..." className="bg-transparent text-sm outline-none w-full text-slate-600" />
+            </div>
+          </div>
+
+          <div className="flex items-center gap-3">
+            {/* NOTIFICATIONS */}
+            <div className="relative" ref={notificationRef}>
+              <button 
+                onClick={() => setIsNotificationOpen(!isNotificationOpen)}
+                className="p-2.5 text-slate-500 hover:bg-slate-50 rounded-xl relative border border-slate-100"
+              >
+                <Bell className="w-5 h-5" />
+                <span className="absolute top-2.5 right-2.5 w-2 h-2 bg-red-500 rounded-full border-2 border-white"></span>
+              </button>
+              
+              {isNotificationOpen && (
+                <div className="absolute right-0 mt-3 w-80 bg-white border border-slate-200 rounded-2xl shadow-xl py-2 overflow-hidden animate-in fade-in slide-in-from-top-2">
+                  <div className="px-4 py-2 border-b border-slate-50 flex justify-between items-center">
+                    <span className="font-bold text-sm text-slate-900">Notifikasi</span>
+                    <button className="text-[10px] text-blue-600 font-bold uppercase">Tandai Baca</button>
+                  </div>
+                  <div className="max-h-64 overflow-y-auto">
+                    <div className="px-4 py-3 hover:bg-slate-50 cursor-pointer border-b border-slate-50">
+                      <p className="text-xs font-bold text-slate-900">Pekerjaan Selesai</p>
+                      <p className="text-[11px] text-slate-500">Nazril Afandi mengirim file milestone.</p>
+                      <p className="text-[10px] text-blue-500 mt-1 font-medium">2 menit lalu</p>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* PROFILE DROPDOWN */}
+            <div className="relative" ref={profileRef}>
+              <button 
+                onClick={() => setIsProfileOpen(!isProfileOpen)}
+                className="flex items-center gap-2 p-1.5 hover:bg-slate-50 rounded-xl border border-transparent hover:border-slate-200 transition-all"
+              >
+                <div className="w-9 h-9 rounded-lg bg-blue-100 flex items-center justify-center text-blue-700 font-bold text-sm shadow-sm">
+                  S
+                </div>
+                <div className="hidden sm:block text-left">
+                  <p className="text-xs font-bold text-slate-900 leading-none">Sapta Wahyu</p>
+                  <p className="text-[10px] text-slate-400 capitalize">{role}</p>
+                </div>
+              </button>
+
+              {isProfileOpen && (
+                <div className="absolute right-0 mt-3 w-56 bg-white border border-slate-200 rounded-2xl shadow-xl py-2 animate-in fade-in slide-in-from-top-2">
+                   <div className="px-4 py-2 border-b border-slate-50 mb-1">
+                      <p className="text-xs font-bold text-slate-900 truncate">sapta.wahyu@email.com</p>
+                   </div>
+                   <Link href="/dashboard/profile" className="flex items-center px-4 py-2 text-sm text-slate-600 hover:bg-slate-50">
+                      <User className="w-4 h-4 mr-3" /> Profil Saya
+                   </Link>
+                   <Link href="/dashboard/settings" className="flex items-center px-4 py-2 text-sm text-slate-600 hover:bg-slate-50">
+                      <Settings className="w-4 h-4 mr-3" /> Pengaturan Akun
+                   </Link>
+                </div>
+              )}
+            </div>
+          </div>
         </header>
 
-        <main className="flex-1 overflow-y-auto p-4 lg:p-8 relative">
-           {children}
+        {/* MAIN SCROLLABLE CONTENT */}
+        <main className="flex-1 overflow-y-auto p-6 lg:p-10">
+          <div className="max-w-7xl mx-auto">
+            {children}
+          </div>
         </main>
       </div>
     </div>
