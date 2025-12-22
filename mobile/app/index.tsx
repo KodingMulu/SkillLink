@@ -1,29 +1,23 @@
 import React, { useState } from 'react';
-import { View, StyleSheet, ScrollView, Modal, TouchableOpacity, Animated, FlatList } from 'react-native';
-import { Text, Card, Divider } from 'react-native-paper';
+import { View, StyleSheet, ScrollView, Modal, TouchableOpacity, Animated } from 'react-native';
+import { Text, Card } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import DrawerMenu from '../components/DrawerMenu';
 
-// Data Mockup: 10 Proyek Aktif
+// Data Mockup: 5 Proyek Aktif agar tampilan lebih ringkas
 const PROJECTS_DATA = [
   { id: '1', title: 'Redesain UI/UX E-Wallet', client: 'FinTech Asia', progress: 0.75, status: 'Revisi', time: '2 Hari lagi', color: '#ef4444' },
   { id: '2', title: 'Mobile App SkillLink', client: 'Internal', progress: 0.45, status: 'Proses', time: '5 Hari lagi', color: '#3b82f6' },
   { id: '3', title: 'Dashboard Admin CMS', client: 'TechStart Inc', progress: 0.90, status: 'Proses', time: '1 Hari lagi', color: '#3b82f6' },
   { id: '4', title: 'Landing Page Kopi', client: 'Nusantara Brew', progress: 1.0, status: 'Selesai', time: 'Selesai', color: '#10b981' },
   { id: '5', title: 'API Integration', client: 'Data Logistic', progress: 0.20, status: 'Baru', time: '10 Hari lagi', color: '#f59e0b' },
-  { id: '6', title: 'E-Commerce Web', client: 'Fashion Style', progress: 0.60, status: 'Proses', time: '4 Hari lagi', color: '#3b82f6' },
-  { id: '7', title: 'Bug Fixing Payment', client: 'Pay-Lo', progress: 0.15, status: 'Revisi', time: '1 Hari lagi', color: '#ef4444' },
-  { id: '8', title: 'Optimasi Database', client: 'Cloud System', progress: 0.85, status: 'Proses', time: '3 Hari lagi', color: '#3b82f6' },
-  { id: '9', title: 'Slicing Figma to RN', client: 'Creative Dev', progress: 0.50, status: 'Proses', time: '6 Hari lagi', color: '#3b82f6' },
-  { id: '10', title: 'Testing & QA', client: 'App Quality', progress: 0.30, status: 'Proses', time: '8 Hari lagi', color: '#3b82f6' },
 ];
 
 export default function HomePage() {
   const router = useRouter();
   const [drawerVisible, setDrawerVisible] = useState(false);
-  const [notificationsVisible, setNotificationsVisible] = useState(false);
   const [slideAnim] = useState(new Animated.Value(-300));
 
   const openDrawer = () => {
@@ -78,7 +72,7 @@ export default function HomePage() {
                 <MaterialCommunityIcons name="clock-outline" size={24} color="#3b82f6" />
               </View>
               <Text style={styles.statLabel}>Proyek Aktif</Text>
-              <Text style={styles.statValue}>10</Text> 
+              <Text style={styles.statValue}>5</Text> 
             </Card.Content>
           </Card>
         </View>
@@ -90,15 +84,15 @@ export default function HomePage() {
           </TouchableOpacity>
         </View>
 
-        {/* List 10 Proyek */}
+        {/* List 5 Proyek */}
         {PROJECTS_DATA.map((item) => (
           <TouchableOpacity key={item.id} onPress={() => router.push('/proyek')}>
             <Card style={styles.projectCard}>
               <Card.Content>
                 <View style={styles.projectHeader}>
                   <Text style={styles.projectTitle}>{item.title}</Text>
-                  <View style={[styles.revisionBadge, { backgroundColor: item.color + '20' }]}>
-                    <Text style={[styles.revisionText, { color: item.color }]}>{item.status}</Text>
+                  <View style={[styles.statusBadge, { backgroundColor: item.color + '20' }]}>
+                    <Text style={[styles.statusText, { color: item.color }]}>{item.status}</Text>
                   </View>
                 </View>
                 <Text style={styles.projectClient}>{item.client} • {item.time}</Text>
@@ -153,7 +147,7 @@ const styles = StyleSheet.create({
   greetingText: { fontSize: 24, fontWeight: 'bold', color: '#1e293b' },
   subtitle: { fontSize: 14, color: '#64748b' },
   statsContainer: { flexDirection: 'row', gap: 12, marginBottom: 24 },
-  statCard: { flex: 1, backgroundColor: '#fff', borderRadius: 12, elevation: 2 },
+  statCard: { flex: 1, backgroundColor: '#fff', borderRadius: 12, elevation: 1 },
   cardContent: { padding: 16 },
   iconContainer: { width: 48, height: 48, borderRadius: 12, alignItems: 'center', justifyContent: 'center', marginBottom: 12 },
   statLabel: { fontSize: 12, color: '#64748b' },
@@ -161,11 +155,11 @@ const styles = StyleSheet.create({
   sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 },
   sectionTitle: { fontSize: 18, fontWeight: 'bold' },
   viewAllText: { color: '#3b82f6', fontWeight: '600' },
-  projectCard: { backgroundColor: '#fff', borderRadius: 12, marginBottom: 12, elevation: 1 },
+  projectCard: { backgroundColor: '#fff', borderRadius: 12, marginBottom: 12, elevation: 0, borderWidth: 1, borderColor: '#f1f5f9' },
   projectHeader: { flexDirection: 'row', justifyContent: 'space-between' },
   projectTitle: { fontSize: 16, fontWeight: '600', flex: 1 },
-  revisionBadge: { paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6, marginLeft: 8 },
-  revisionText: { fontSize: 11, fontWeight: 'bold' },
+  statusBadge: { paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6, marginLeft: 8 },
+  statusText: { fontSize: 11, fontWeight: 'bold' },
   projectClient: { color: '#64748b', marginVertical: 8 },
   progressContainer: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   progressBar: { flex: 1, height: 6, backgroundColor: '#e2e8f0', borderRadius: 3 },
