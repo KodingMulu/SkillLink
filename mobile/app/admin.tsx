@@ -28,8 +28,9 @@ const PROJECT_STATUS_STATS = [
 ];
 
 const PAYOUT_LOGS = [
-  { id: '1', name: 'Nazril', amount: 'Rp 750.000', time: '12m lalu', status: 'Selesai' },
-  { id: '2', name: 'Budi', amount: 'Rp 1.200.000', time: '1j lalu', status: 'Proses' },
+  { id: '1', name: 'Nazril', amount: 'Rp 750.000', time: '12m lalu', status: 'Selesai', color: '#10b981' },
+  { id: '2', name: 'Budi', amount: 'Rp 1.200.000', time: '1j lalu', status: 'Proses', color: '#3b82f6' },
+  { id: '3', name: 'Siti', amount: 'Rp 2.100.000', time: '3j lalu', status: 'Selesai', color: '#10b981' },
 ];
 
 const REVENUE_DATA = [
@@ -46,7 +47,6 @@ const ONLINE_FREELANCERS = [
   { id: '5', name: 'Raka', color: '#3b82f6' },
 ];
 
-// DATA MOCKUP TAMBAHAN: RINGKASAN KEUANGAN
 const REVENUE_SUMMARY = [
   { label: 'Total Payouts', value: 'Rp 28.5M', icon: 'cash-fast', color: '#10b981' },
   { label: 'Platform Fees', value: 'Rp 4.2M', icon: 'clippy', color: '#3b82f6' },
@@ -60,7 +60,6 @@ export default function AdminDashboard() {
   const [selectedUser, setSelectedUser] = useState<any>(null);
   const [modalVisible, setModalVisible] = useState(false);
 
-  // --- LOGIKA TEMA ---
   const theme = {
     bg: isDark ? '#0f172a' : '#f8fafc',
     surface: isDark ? '#1e293b' : '#ffffff',
@@ -230,7 +229,7 @@ export default function AdminDashboard() {
 
         <View style={{ height: 25 }} />
 
-        {/* --- FITUR BARU 9: RINGKASAN KEUANGAN --- */}
+        {/* --- 9. RINGKASAN KEUANGAN --- */}
         <Text style={[styles.sectionTitle, { color: theme.text }]}>Ringkasan Keuangan</Text>
         <View style={{ gap: 10 }}>
           {REVENUE_SUMMARY.map((stat, index) => (
@@ -263,6 +262,30 @@ export default function AdminDashboard() {
             </View>
           ))}
         </ScrollView>
+
+        <View style={{ height: 25 }} />
+
+        {/* --- FITUR BARU 11: RIWAYAT PEMBAYARAN (Hanya Ditambahkan) --- */}
+        <Text style={[styles.sectionTitle, { color: theme.text }]}>Pembayaran Terbaru</Text>
+        <Card style={[styles.card, { backgroundColor: theme.surface }]}>
+          {PAYOUT_LOGS.map((log, index) => (
+            <React.Fragment key={log.id}>
+              <List.Item
+                title={log.name}
+                titleStyle={{ color: theme.text, fontWeight: 'bold' }}
+                description={`${log.amount} • ${log.time}`}
+                descriptionStyle={{ color: theme.subText }}
+                left={p => <Avatar.Text size={35} label={log.name.substring(0,1)} style={{ alignSelf: 'center', marginLeft: 10, backgroundColor: log.color }} />}
+                right={p => (
+                  <View style={styles.logStatusWrapper}>
+                    <Text style={[styles.logStatusText, { color: log.color }]}>{log.status}</Text>
+                  </View>
+                )}
+              />
+              {index < PAYOUT_LOGS.length - 1 && <Divider style={{ backgroundColor: theme.border }} />}
+            </React.Fragment>
+          ))}
+        </Card>
 
         <View style={{ height: 40 }} />
       </ScrollView>
@@ -344,15 +367,17 @@ const styles = StyleSheet.create({
   statLabel: { fontSize: 12 },
   statValue: { fontSize: 20, fontWeight: 'bold' },
 
-  // STYLE REVENUE SUMMARY
   revenueCard: { padding: 12, borderRadius: 12, elevation: 1 },
   revenueRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   revenueIconBg: { width: 45, height: 45, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
   revenueLabel: { fontSize: 11 },
   revenueValue: { fontSize: 18, fontWeight: 'bold' },
 
-  // STYLE ONLINE STATUS
   onlineStatusDot: { position: 'absolute', bottom: 2, right: 2, width: 12, height: 12, borderRadius: 6, backgroundColor: '#10b981', borderWidth: 2 },
+
+  // STYLE BARU UNTUK LOG PEMBAYARAN
+  logStatusWrapper: { alignSelf: 'center', marginRight: 10 },
+  logStatusText: { fontSize: 12, fontWeight: 'bold' },
 
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'flex-end' },
   modalContent: { borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 24, minHeight: 400 },
