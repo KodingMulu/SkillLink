@@ -34,9 +34,9 @@ const PAYOUT_LOGS = [
 ];
 
 const REVENUE_DATA = [
-  { month: 'Jan', value: 45, color: '#e2e8f0' },
-  { month: 'Feb', value: 60, color: '#e2e8f0' },
-  { month: 'Mar', value: 85, color: '#3b82f6' },
+  { month: 'Jan', value: 45, color: '#94a3b8' },
+  { month: 'Feb', value: 65, color: '#94a3b8' },
+  { month: 'Mar', value: 95, color: '#3b82f6' },
 ];
 
 const ONLINE_FREELANCERS = [
@@ -229,7 +229,22 @@ export default function AdminDashboard() {
 
         <View style={{ height: 25 }} />
 
-        {/* --- 9. RINGKASAN KEUANGAN --- */}
+        {/* --- FITUR BARU 9: GRAFIK PENDAPATAN (REVENUE CHART) --- */}
+        <Text style={[styles.sectionTitle, { color: theme.text }]}>Performa Bulanan</Text>
+        <Surface style={[styles.chartContainer, { backgroundColor: theme.surface }]} elevation={1}>
+          <View style={styles.barGrid}>
+            {REVENUE_DATA.map((data, index) => (
+              <View key={index} style={styles.barWrapper}>
+                <View style={[styles.bar, { height: data.value, backgroundColor: data.color }]} />
+                <Text style={[styles.barLabel, { color: theme.subText }]}>{data.month}</Text>
+              </View>
+            ))}
+          </View>
+        </Surface>
+
+        <View style={{ height: 25 }} />
+
+        {/* --- 10. RINGKASAN KEUANGAN --- */}
         <Text style={[styles.sectionTitle, { color: theme.text }]}>Ringkasan Keuangan</Text>
         <View style={{ gap: 10 }}>
           {REVENUE_SUMMARY.map((stat, index) => (
@@ -249,7 +264,7 @@ export default function AdminDashboard() {
 
         <View style={{ height: 25 }} />
 
-        {/* --- 10. FREELANCER ONLINE --- */}
+        {/* --- 11. FREELANCER ONLINE --- */}
         <Text style={[styles.sectionTitle, { color: theme.text }]}>Freelancer Online</Text>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginHorizontal: -4 }}>
           {ONLINE_FREELANCERS.map((item) => (
@@ -265,7 +280,7 @@ export default function AdminDashboard() {
 
         <View style={{ height: 25 }} />
 
-        {/* --- FITUR BARU 11: RIWAYAT PEMBAYARAN (Hanya Ditambahkan) --- */}
+        {/* --- 12. PEMBAYARAN TERBARU --- */}
         <Text style={[styles.sectionTitle, { color: theme.text }]}>Pembayaran Terbaru</Text>
         <Card style={[styles.card, { backgroundColor: theme.surface }]}>
           {PAYOUT_LOGS.map((log, index) => (
@@ -367,6 +382,13 @@ const styles = StyleSheet.create({
   statLabel: { fontSize: 12 },
   statValue: { fontSize: 20, fontWeight: 'bold' },
 
+  // STYLE BARU UNTUK CHART
+  chartContainer: { padding: 20, borderRadius: 16, height: 160, justifyContent: 'flex-end' },
+  barGrid: { flexDirection: 'row', justifyContent: 'space-around', alignItems: 'flex-end', height: 100 },
+  barWrapper: { alignItems: 'center' },
+  bar: { width: 30, borderRadius: 6 },
+  barLabel: { fontSize: 10, marginTop: 8, fontWeight: 'bold' },
+
   revenueCard: { padding: 12, borderRadius: 12, elevation: 1 },
   revenueRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   revenueIconBg: { width: 45, height: 45, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
@@ -374,8 +396,6 @@ const styles = StyleSheet.create({
   revenueValue: { fontSize: 18, fontWeight: 'bold' },
 
   onlineStatusDot: { position: 'absolute', bottom: 2, right: 2, width: 12, height: 12, borderRadius: 6, backgroundColor: '#10b981', borderWidth: 2 },
-
-  // STYLE BARU UNTUK LOG PEMBAYARAN
   logStatusWrapper: { alignSelf: 'center', marginRight: 10 },
   logStatusText: { fontSize: 12, fontWeight: 'bold' },
 
