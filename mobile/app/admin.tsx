@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, StyleSheet, ScrollView, TouchableOpacity, Modal, TextInput } from 'react-native';
+import { View, StyleSheet, ScrollView, TouchableOpacity, Modal, TextInput, Switch } from 'react-native';
 import { Text, Card, Surface, Button, Badge, Divider, List, Avatar } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
@@ -55,6 +55,7 @@ const REVENUE_SUMMARY = [
 export default function AdminDashboard() {
   const router = useRouter();
   const [isDark, setIsDark] = useState(false);
+  const [isMaintenance, setIsMaintenance] = useState(false); // State baru
   const [searchQuery, setSearchQuery] = useState('');
   const [verifying, setVerifying] = useState<string | null>(null);
   const [selectedUser, setSelectedUser] = useState<any>(null);
@@ -126,6 +127,31 @@ export default function AdminDashboard() {
 
         <View style={{ height: 20 }} />
 
+        {/* --- FITUR BARU: QUICK SYSTEM ACTIONS --- */}
+        <View style={styles.sectionHeader}>
+          <Text style={[styles.sectionTitle, { color: theme.text }]}>Kontrol Sistem</Text>
+        </View>
+        <Surface style={[styles.systemControl, { backgroundColor: theme.surface }]} elevation={1}>
+          <View style={styles.controlRow}>
+            <View style={{ flex: 1 }}>
+              <Text style={{ color: theme.text, fontWeight: 'bold', fontSize: 14 }}>Mode Perawatan</Text>
+              <Text style={{ color: theme.subText, fontSize: 11 }}>Batasi akses user sementara</Text>
+            </View>
+            <Switch 
+              value={isMaintenance} 
+              onValueChange={setIsMaintenance}
+              trackColor={{ false: '#cbd5e1', true: '#f87171' }}
+            />
+          </View>
+          <Divider style={{ marginVertical: 12, backgroundColor: theme.border }} />
+          <TouchableOpacity style={styles.broadcastBtn}>
+            <MaterialCommunityIcons name="bullhorn-variant" size={18} color="#fff" />
+            <Text style={styles.broadcastText}>Kirim Notifikasi Massal</Text>
+          </TouchableOpacity>
+        </Surface>
+
+        <View style={{ height: 25 }} />
+
         {/* --- 3. NOTIFIKASI --- */}
         <View style={styles.sectionHeader}>
           <Text style={[styles.sectionTitle, { color: theme.text }]}>Notifikasi Aktivitas</Text>
@@ -146,7 +172,7 @@ export default function AdminDashboard() {
           ))}
         </Card>
 
-        <View style={{ height: 20 }} />
+        <View style={{ height: 25 }} />
 
         {/* --- 4. ACTION GRID --- */}
         <View style={styles.actionGrid}>
@@ -229,7 +255,7 @@ export default function AdminDashboard() {
 
         <View style={{ height: 25 }} />
 
-        {/* --- FITUR BARU 9: GRAFIK PENDAPATAN (REVENUE CHART) --- */}
+        {/* --- 9. GRAFIK PENDAPATAN --- */}
         <Text style={[styles.sectionTitle, { color: theme.text }]}>Performa Bulanan</Text>
         <Surface style={[styles.chartContainer, { backgroundColor: theme.surface }]} elevation={1}>
           <View style={styles.barGrid}>
@@ -349,6 +375,12 @@ const styles = StyleSheet.create({
   insightTitle: { fontSize: 14, fontWeight: 'bold' },
   insightDesc: { fontSize: 12, marginTop: 2 },
 
+  // STYLE BARU SYSTEM CONTROL
+  systemControl: { padding: 16, borderRadius: 16 },
+  controlRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  broadcastBtn: { backgroundColor: '#3b82f6', flexDirection: 'row', alignItems: 'center', justifyContent: 'center', padding: 12, borderRadius: 12, gap: 8 },
+  broadcastText: { color: '#fff', fontWeight: 'bold', fontSize: 13 },
+
   sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 },
   sectionTitle: { fontSize: 16, fontWeight: 'bold' },
   card: { borderRadius: 12, elevation: 1 },
@@ -382,7 +414,6 @@ const styles = StyleSheet.create({
   statLabel: { fontSize: 12 },
   statValue: { fontSize: 20, fontWeight: 'bold' },
 
-  // STYLE BARU UNTUK CHART
   chartContainer: { padding: 20, borderRadius: 16, height: 160, justifyContent: 'flex-end' },
   barGrid: { flexDirection: 'row', justifyContent: 'space-around', alignItems: 'flex-end', height: 100 },
   barWrapper: { alignItems: 'center' },
