@@ -55,11 +55,19 @@ const REVENUE_SUMMARY = [
 export default function AdminDashboard() {
   const router = useRouter();
   const [isDark, setIsDark] = useState(false);
-  const [isMaintenance, setIsMaintenance] = useState(false); // State baru
+  const [isMaintenance, setIsMaintenance] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [verifying, setVerifying] = useState<string | null>(null);
   const [selectedUser, setSelectedUser] = useState<any>(null);
   const [modalVisible, setModalVisible] = useState(false);
+
+  // Ambil tanggal hari ini
+  const today = new Date().toLocaleDateString('id-ID', { 
+    weekday: 'long', 
+    year: 'numeric', 
+    month: 'long', 
+    day: 'numeric' 
+  });
 
   const theme = {
     bg: isDark ? '#0f172a' : '#f8fafc',
@@ -97,6 +105,14 @@ export default function AdminDashboard() {
 
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
         
+        {/* --- FITUR BARU 15: WELCOME HEADER --- */}
+        <View style={styles.welcomeSection}>
+          <Text style={[styles.welcomeText, { color: theme.text }]}>Halo, Admin 👋</Text>
+          <Text style={[styles.dateText, { color: theme.subText }]}>{today}</Text>
+        </View>
+
+        <View style={{ height: 10 }} />
+
         {/* --- 1. SEARCH BAR --- */}
         <View style={styles.searchSection}>
           <View style={[styles.searchContainer, { backgroundColor: theme.surface, borderColor: theme.border }]}>
@@ -127,7 +143,7 @@ export default function AdminDashboard() {
 
         <View style={{ height: 20 }} />
 
-        {/* --- FITUR BARU: QUICK SYSTEM ACTIONS --- */}
+        {/* --- KONTROL SISTEM --- */}
         <View style={styles.sectionHeader}>
           <Text style={[styles.sectionTitle, { color: theme.text }]}>Kontrol Sistem</Text>
         </View>
@@ -364,6 +380,11 @@ const styles = StyleSheet.create({
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 16, borderBottomWidth: 1 },
   headerTitle: { fontSize: 18, fontWeight: 'bold' },
   content: { padding: 16 },
+
+  // STYLE BARU WELCOME SECTION
+  welcomeSection: { marginBottom: 15 },
+  welcomeText: { fontSize: 24, fontWeight: 'bold' },
+  dateText: { fontSize: 14, marginTop: 2 },
   
   searchSection: { flexDirection: 'row', gap: 10, alignItems: 'center' },
   searchContainer: { flex: 1, flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12, borderRadius: 12, height: 45, borderWidth: 1 },
@@ -375,7 +396,6 @@ const styles = StyleSheet.create({
   insightTitle: { fontSize: 14, fontWeight: 'bold' },
   insightDesc: { fontSize: 12, marginTop: 2 },
 
-  // STYLE BARU SYSTEM CONTROL
   systemControl: { padding: 16, borderRadius: 16 },
   controlRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   broadcastBtn: { backgroundColor: '#3b82f6', flexDirection: 'row', alignItems: 'center', justifyContent: 'center', padding: 12, borderRadius: 12, gap: 8 },
