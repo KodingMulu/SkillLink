@@ -6,16 +6,25 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import DrawerMenu from '../components/DrawerMenu';
 
+// Data Mockup: 10 Proyek Aktif
+const PROJECTS_DATA = [
+  { id: '1', title: 'Redesain UI/UX E-Wallet', client: 'FinTech Asia', progress: 0.75, status: 'Revisi', time: '2 Hari lagi', color: '#ef4444' },
+  { id: '2', title: 'Mobile App SkillLink', client: 'Internal', progress: 0.45, status: 'Proses', time: '5 Hari lagi', color: '#3b82f6' },
+  { id: '3', title: 'Dashboard Admin CMS', client: 'TechStart Inc', progress: 0.90, status: 'Proses', time: '1 Hari lagi', color: '#3b82f6' },
+  { id: '4', title: 'Landing Page Kopi', client: 'Nusantara Brew', progress: 1.0, status: 'Selesai', time: 'Selesai', color: '#10b981' },
+  { id: '5', title: 'API Integration', client: 'Data Logistic', progress: 0.20, status: 'Baru', time: '10 Hari lagi', color: '#f59e0b' },
+  { id: '6', title: 'E-Commerce Web', client: 'Fashion Style', progress: 0.60, status: 'Proses', time: '4 Hari lagi', color: '#3b82f6' },
+  { id: '7', title: 'Bug Fixing Payment', client: 'Pay-Lo', progress: 0.15, status: 'Revisi', time: '1 Hari lagi', color: '#ef4444' },
+  { id: '8', title: 'Optimasi Database', client: 'Cloud System', progress: 0.85, status: 'Proses', time: '3 Hari lagi', color: '#3b82f6' },
+  { id: '9', title: 'Slicing Figma to RN', client: 'Creative Dev', progress: 0.50, status: 'Proses', time: '6 Hari lagi', color: '#3b82f6' },
+  { id: '10', title: 'Testing & QA', client: 'App Quality', progress: 0.30, status: 'Proses', time: '8 Hari lagi', color: '#3b82f6' },
+];
+
 export default function HomePage() {
   const router = useRouter();
   const [drawerVisible, setDrawerVisible] = useState(false);
   const [notificationsVisible, setNotificationsVisible] = useState(false);
   const [slideAnim] = useState(new Animated.Value(-300));
-
-  const notifications = [
-    { id: '1', title: 'Proyek Baru', desc: 'TechStart Inc mengundang Anda.', time: '2m yang lalu' },
-    { id: '2', title: 'Revisi Diterima', desc: 'UI/UX E-Wallet telah disetujui.', time: '1j yang lalu' },
-  ];
 
   const openDrawer = () => {
     setDrawerVisible(true);
@@ -39,20 +48,19 @@ export default function HomePage() {
           <MaterialCommunityIcons name="briefcase" size={24} color="#3b82f6" />
           <Text style={styles.logoText}>SkillLink</Text>
         </View>
-        <TouchableOpacity style={styles.notificationButton} onPress={() => setNotificationsVisible(true)}>
+        <TouchableOpacity style={styles.notificationButton} onPress={() => router.push('/notifications')}>
           <MaterialCommunityIcons name="bell" size={26} color="#1a2533" />
           <View style={styles.notificationDot} />
         </TouchableOpacity>
       </View>
 
-      {/* --- KONTEN UTAMA --- */}
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
         <View style={styles.greeting}>
           <Text style={styles.greetingText}>Halo, Nazril! 👋</Text>
           <Text style={styles.subtitle}>Berikut aktivitas terbaru proyekmu.</Text>
         </View>
 
-        {/* Stats */}
+        {/* Stats Section */}
         <View style={styles.statsContainer}>
           <Card style={styles.statCard}>
             <Card.Content style={styles.cardContent}>
@@ -70,12 +78,11 @@ export default function HomePage() {
                 <MaterialCommunityIcons name="clock-outline" size={24} color="#3b82f6" />
               </View>
               <Text style={styles.statLabel}>Proyek Aktif</Text>
-              <Text style={styles.statValue}>3</Text>
+              <Text style={styles.statValue}>10</Text> 
             </Card.Content>
           </Card>
         </View>
 
-        {/* Proyek Section */}
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionTitle}>Proyek Berjalan</Text>
           <TouchableOpacity onPress={() => router.push('/proyek')}>
@@ -83,21 +90,29 @@ export default function HomePage() {
           </TouchableOpacity>
         </View>
 
-        <TouchableOpacity onPress={() => router.push('/proyek')}>
-          <Card style={styles.projectCard}>
-            <Card.Content>
-              <View style={styles.projectHeader}>
-                <Text style={styles.projectTitle}>Redesain UI/UX E-Wallet</Text>
-                <View style={styles.revisionBadge}><Text style={styles.revisionText}>Revisi</Text></View>
-              </View>
-              <Text style={styles.projectClient}>FinTech Asia • 2 Hari lagi</Text>
-              <div style={styles.progressContainer}>
-                <View style={styles.progressBar}><View style={[styles.progressFill, { width: '75%' }]} /></View>
-                <Text style={styles.progressText}>75%</Text>
-              </div>
-            </Card.Content>
-          </Card>
-        </TouchableOpacity>
+        {/* List 10 Proyek */}
+        {PROJECTS_DATA.map((item) => (
+          <TouchableOpacity key={item.id} onPress={() => router.push('/proyek')}>
+            <Card style={styles.projectCard}>
+              <Card.Content>
+                <View style={styles.projectHeader}>
+                  <Text style={styles.projectTitle}>{item.title}</Text>
+                  <View style={[styles.revisionBadge, { backgroundColor: item.color + '20' }]}>
+                    <Text style={[styles.revisionText, { color: item.color }]}>{item.status}</Text>
+                  </View>
+                </View>
+                <Text style={styles.projectClient}>{item.client} • {item.time}</Text>
+                <View style={styles.progressContainer}>
+                  <View style={styles.progressBar}>
+                    <View style={[styles.progressFill, { width: `${item.progress * 100}%`, backgroundColor: item.color }]} />
+                  </View>
+                  <Text style={styles.progressText}>{item.progress * 100}%</Text>
+                </View>
+              </Card.Content>
+            </Card>
+          </TouchableOpacity>
+        ))}
+        <View style={{ height: 40 }} />
       </ScrollView>
 
       {/* --- MODAL DRAWER --- */}
@@ -108,31 +123,6 @@ export default function HomePage() {
             <DrawerMenu visible={drawerVisible} onClose={closeDrawer} />
           </Animated.View>
         </View>
-      </Modal>
-
-      {/* --- MODAL NOTIFIKASI --- */}
-      <Modal visible={notificationsVisible} transparent animationType="fade" onRequestClose={() => setNotificationsVisible(false)}>
-        <TouchableOpacity style={styles.notiOverlay} activeOpacity={1} onPress={() => setNotificationsVisible(false)}>
-          <View style={styles.notificationPopup}>
-            <View style={styles.popupHeader}>
-              <Text style={styles.popupTitle}>Notifikasi</Text>
-              <TouchableOpacity onPress={() => setNotificationsVisible(false)}>
-                <MaterialCommunityIcons name="close" size={20} color="#64748b" />
-              </TouchableOpacity>
-            </View>
-            <Divider />
-            <FlatList
-              data={notifications}
-              keyExtractor={(item) => item.id}
-              renderItem={({ item }) => (
-                <View style={styles.notiItem}>
-                  <Text style={styles.notiTitle}>{item.title}</Text>
-                  <Text style={styles.notiDesc}>{item.desc}</Text>
-                </View>
-              )}
-            />
-          </View>
-        </TouchableOpacity>
       </Modal>
     </SafeAreaView>
   );
@@ -163,7 +153,7 @@ const styles = StyleSheet.create({
   greetingText: { fontSize: 24, fontWeight: 'bold', color: '#1e293b' },
   subtitle: { fontSize: 14, color: '#64748b' },
   statsContainer: { flexDirection: 'row', gap: 12, marginBottom: 24 },
-  statCard: { flex: 1, backgroundColor: '#fff', borderRadius: 12 },
+  statCard: { flex: 1, backgroundColor: '#fff', borderRadius: 12, elevation: 2 },
   cardContent: { padding: 16 },
   iconContainer: { width: 48, height: 48, borderRadius: 12, alignItems: 'center', justifyContent: 'center', marginBottom: 12 },
   statLabel: { fontSize: 12, color: '#64748b' },
@@ -171,24 +161,17 @@ const styles = StyleSheet.create({
   sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 },
   sectionTitle: { fontSize: 18, fontWeight: 'bold' },
   viewAllText: { color: '#3b82f6', fontWeight: '600' },
-  projectCard: { backgroundColor: '#fff', borderRadius: 12, marginBottom: 12 },
+  projectCard: { backgroundColor: '#fff', borderRadius: 12, marginBottom: 12, elevation: 1 },
   projectHeader: { flexDirection: 'row', justifyContent: 'space-between' },
-  projectTitle: { fontSize: 16, fontWeight: '600' },
-  revisionBadge: { backgroundColor: '#fee2e2', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6 },
-  revisionText: { fontSize: 11, color: '#ef4444', fontWeight: 'bold' },
+  projectTitle: { fontSize: 16, fontWeight: '600', flex: 1 },
+  revisionBadge: { paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6, marginLeft: 8 },
+  revisionText: { fontSize: 11, fontWeight: 'bold' },
   projectClient: { color: '#64748b', marginVertical: 8 },
   progressContainer: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   progressBar: { flex: 1, height: 6, backgroundColor: '#e2e8f0', borderRadius: 3 },
-  progressFill: { height: '100%', backgroundColor: '#10b981', borderRadius: 3 },
+  progressFill: { height: '100%', borderRadius: 3 },
   progressText: { fontSize: 12, fontWeight: 'bold' },
   modalOverlay: { flex: 1, flexDirection: 'row' },
   modalBackground: { flex: 1, backgroundColor: 'rgba(0, 0, 0, 0.5)' },
   drawerContainer: { width: '80%', maxWidth: 300, backgroundColor: '#fff', height: '100%' },
-  notiOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.2)', justifyContent: 'flex-start', alignItems: 'flex-end', paddingTop: 60, paddingRight: 16 },
-  notificationPopup: { width: 280, backgroundColor: '#fff', borderRadius: 12, padding: 16, elevation: 5 },
-  popupHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
-  popupTitle: { fontWeight: 'bold', fontSize: 16 },
-  notiItem: { paddingVertical: 12, borderBottomWidth: 0.5, borderBottomColor: '#f1f5f9' },
-  notiTitle: { fontWeight: 'bold', fontSize: 14 },
-  notiDesc: { fontSize: 12, color: '#64748b' }
 });
