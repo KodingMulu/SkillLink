@@ -22,6 +22,12 @@ const REVENUE_DATA = [
   { month: 'Mar', value: 85, color: '#3b82f6' },
 ];
 
+// DATA MOCKUP BARU: LOG PENARIKAN
+const PAYOUT_LOGS = [
+  { id: '1', name: 'Nazril', amount: 'Rp 750.000', time: '12m lalu', status: 'Selesai' },
+  { id: '2', name: 'Budi', amount: 'Rp 1.200.000', time: '1j lalu', status: 'Proses' },
+];
+
 export default function AdminDashboard() {
   const router = useRouter();
   const [verifying, setVerifying] = useState<string | null>(null);
@@ -47,7 +53,7 @@ export default function AdminDashboard() {
 
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
         
-        {/* --- 1. TAMPILAN BARU: NOTIFIKASI AKTIVITAS --- */}
+        {/* --- 1. NOTIFIKASI AKTIVITAS --- */}
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionTitle}>Notifikasi Aktivitas</Text>
           <TouchableOpacity><Text style={styles.clearText}>Tandai Dibaca</Text></TouchableOpacity>
@@ -68,7 +74,7 @@ export default function AdminDashboard() {
 
         <View style={{ height: 20 }} />
 
-        {/* --- 2. FITUR BARU: QUICK ACTION GRID --- */}
+        {/* --- 2. QUICK ACTION GRID --- */}
         <Text style={styles.sectionTitle}>Aksi Cepat Admin</Text>
         <View style={styles.actionGrid}>
           <TouchableOpacity style={styles.actionItem} onPress={() => alert("Siaran Terkirim")}>
@@ -77,21 +83,18 @@ export default function AdminDashboard() {
             </View>
             <Text style={styles.actionLabel}>Siaran</Text>
           </TouchableOpacity>
-
           <TouchableOpacity style={styles.actionItem} onPress={() => alert("Tambah User Baru")}>
             <View style={[styles.actionIconCircle, { backgroundColor: '#ecfdf5' }]}>
               <MaterialCommunityIcons name="account-plus-outline" size={22} color="#10b981" />
             </View>
             <Text style={styles.actionLabel}>User Baru</Text>
           </TouchableOpacity>
-
           <TouchableOpacity style={styles.actionItem} onPress={() => alert("Laporan PDF Diunduh")}>
             <View style={[styles.actionIconCircle, { backgroundColor: '#fff7ed' }]}>
               <MaterialCommunityIcons name="file-pdf-box" size={22} color="#f59e0b" />
             </View>
             <Text style={styles.actionLabel}>Laporan</Text>
           </TouchableOpacity>
-
           <TouchableOpacity style={styles.actionItem} onPress={() => alert("Keamanan Sistem OK")}>
             <View style={[styles.actionIconCircle, { backgroundColor: '#fef2f2' }]}>
               <MaterialCommunityIcons name="shield-lock-outline" size={22} color="#ef4444" />
@@ -102,7 +105,7 @@ export default function AdminDashboard() {
 
         <View style={{ height: 20 }} />
 
-        {/* --- 3. TAMPILAN LAMA: VERIFIKASI USER --- */}
+        {/* --- 3. VERIFIKASI USER --- */}
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionTitle}>Verifikasi Pengguna Baru</Text>
           <Badge style={styles.countBadge}>{PENDING_USERS.length}</Badge>
@@ -124,7 +127,30 @@ export default function AdminDashboard() {
 
         <View style={{ height: 20 }} />
 
-        {/* --- 4. TAMPILAN LAMA: STATS & GRAFIK --- */}
+        {/* --- 4. FITUR BARU: LOG PENARIKAN DANA (FINANCIAL LOG) --- */}
+        <Text style={styles.sectionTitle}>Penarikan Terbaru</Text>
+        <Card style={styles.payoutCard}>
+          {PAYOUT_LOGS.map((payout, index) => (
+            <React.Fragment key={payout.id}>
+              <View style={styles.payoutRow}>
+                <View style={styles.payoutIconBg}>
+                  <MaterialCommunityIcons name="bank-transfer-out" size={20} color="#10b981" />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.payoutText}>
+                    <Text style={{fontWeight: 'bold'}}>{payout.name}</Text> mencairkan <Text style={{color: '#10b981', fontWeight: 'bold'}}>{payout.amount}</Text>
+                  </Text>
+                  <Text style={styles.payoutTime}>{payout.time} • Status: {payout.status}</Text>
+                </View>
+              </View>
+              {index < PAYOUT_LOGS.length - 1 && <Divider />}
+            </React.Fragment>
+          ))}
+        </Card>
+
+        <View style={{ height: 20 }} />
+
+        {/* --- 5. STATS & GRAFIK --- */}
         <View style={styles.statsGrid}>
           <Surface style={[styles.statBox, { borderLeftColor: '#3b82f6' }]} elevation={1}>
             <Text style={styles.statLabel}>Total User</Text>
@@ -150,7 +176,7 @@ export default function AdminDashboard() {
 
         <View style={{ height: 20 }} />
 
-        {/* --- 5. TAMPILAN LAMA: TABEL MONITOR --- */}
+        {/* --- 6. TABEL MONITOR --- */}
         <Text style={styles.sectionTitle}>Monitor Proyek</Text>
         <Card style={styles.tableCard}>
           <DataTable>
@@ -184,7 +210,6 @@ const styles = StyleSheet.create({
   notiCard: { backgroundColor: '#fff', borderRadius: 12, elevation: 1 },
   notiTime: { fontSize: 10, color: '#94a3b8', alignSelf: 'center', marginRight: 10 },
   
-  // Quick Action Styles
   actionGrid: { flexDirection: 'row', justifyContent: 'space-between', gap: 8 },
   actionItem: { flex: 1, backgroundColor: '#fff', padding: 12, borderRadius: 12, alignItems: 'center', elevation: 1 },
   actionIconCircle: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center', marginBottom: 6 },
@@ -198,6 +223,14 @@ const styles = StyleSheet.create({
   userRoleText: { fontSize: 12, color: '#64748b' },
   actionGroup: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   verifyBtn: { backgroundColor: '#10b981' },
+
+  // Payout Styles Baru
+  payoutCard: { backgroundColor: '#fff', borderRadius: 12, paddingHorizontal: 12, elevation: 1 },
+  payoutRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 12, gap: 12 },
+  payoutIconBg: { width: 36, height: 36, borderRadius: 18, backgroundColor: '#ecfdf5', alignItems: 'center', justifyContent: 'center' },
+  payoutText: { fontSize: 13, color: '#1e293b' },
+  payoutTime: { fontSize: 11, color: '#94a3b8', marginTop: 2 },
+
   statsGrid: { flexDirection: 'row', gap: 12, marginBottom: 20 },
   statBox: { flex: 1, backgroundColor: '#fff', padding: 16, borderRadius: 12, borderLeftWidth: 4 },
   statLabel: { fontSize: 12, color: '#64748b' },
