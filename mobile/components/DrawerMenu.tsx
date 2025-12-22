@@ -20,7 +20,6 @@ interface MenuItem {
 }
 
 export default function DrawerMenu({ 
-  visible, 
   onClose, 
   userName = "Nazril",
   userEmail = "nazril@skilllink.com" 
@@ -29,10 +28,10 @@ export default function DrawerMenu({
 
   const handleNavigation = (route: string) => {
     onClose();
-    // Delay kecil agar animasi drawer tertutup selesai sebelum pindah halaman
+    // Gunakan push atau replace sesuai kebutuhan flow aplikasi
     setTimeout(() => {
       router.push(route as any);
-    }, 300);
+    }, 100); // Delay 100ms biasanya cukup untuk menutup modal dengan smooth
   };
 
   const renderMenuItem = (item: MenuItem) => (
@@ -66,8 +65,9 @@ export default function DrawerMenu({
 
   const mainMenuItems: MenuItem[] = [
     { label: 'Dashboard', icon: 'view-dashboard', route: '/' },
-    { label: 'Proyek Saya', icon: 'briefcase', route: '/proyek' }, // SUDAH DIUBAH KE /proyek
-    { label: 'Pesan', icon: 'message', route: '/messages', badge: '3' },
+    { label: 'Proyek Saya', icon: 'briefcase', route: '/proyek' },
+    // Pastikan route ini sesuai dengan nama file: messages.tsx
+    { label: 'Pesan', icon: 'message', route: '/messages', badge: '3' }, 
     { label: 'Notifikasi', icon: 'bell', route: '/notifications' },
   ];
 
@@ -96,13 +96,23 @@ export default function DrawerMenu({
           <Text style={styles.sectionTitle}>Menu Utama</Text>
           {mainMenuItems.map(renderMenuItem)}
         </View>
+        
         <Divider style={styles.divider} />
+        
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Akun</Text>
           {accountMenuItems.map(renderMenuItem)}
         </View>
+        
         <Divider style={styles.divider} />
-        <TouchableOpacity style={[styles.menuItem, styles.logoutItem]} onPress={() => console.log('Logout')}>
+        
+        <TouchableOpacity 
+          style={[styles.menuItem, styles.logoutItem]} 
+          onPress={() => {
+            onClose();
+            console.log('Logout dipicu');
+          }}
+        >
           <View style={styles.menuItemContent}>
             <MaterialCommunityIcons name="logout" size={24} color="#ef4444" style={styles.menuIcon} />
             <Text style={[styles.menuLabel, styles.logoutText]}>Keluar</Text>
@@ -116,7 +126,7 @@ export default function DrawerMenu({
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#fff' },
   header: { backgroundColor: '#3b82f6', padding: 20, paddingTop: 50, paddingBottom: 25 },
-  avatar: { marginBottom: 12, backgroundColor: '#2563eb' },
+  avatar: { marginBottom: 12, backgroundColor: '#2563eb', borderWidth: 2, borderColor: 'rgba(255,255,255,0.3)' },
   userName: { color: '#fff', fontSize: 20, fontWeight: 'bold' },
   userEmail: { color: '#fff', fontSize: 14, opacity: 0.9 },
   menuContainer: { flex: 1 },
