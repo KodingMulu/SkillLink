@@ -68,7 +68,41 @@ export default function AdminDashboard() {
 
         <View style={{ height: 20 }} />
 
-        {/* --- 2. TAMPILAN LAMA: VERIFIKASI USER --- */}
+        {/* --- 2. FITUR BARU: QUICK ACTION GRID --- */}
+        <Text style={styles.sectionTitle}>Aksi Cepat Admin</Text>
+        <View style={styles.actionGrid}>
+          <TouchableOpacity style={styles.actionItem} onPress={() => alert("Siaran Terkirim")}>
+            <View style={[styles.actionIconCircle, { backgroundColor: '#eff6ff' }]}>
+              <MaterialCommunityIcons name="bullhorn-outline" size={22} color="#3b82f6" />
+            </View>
+            <Text style={styles.actionLabel}>Siaran</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity style={styles.actionItem} onPress={() => alert("Tambah User Baru")}>
+            <View style={[styles.actionIconCircle, { backgroundColor: '#ecfdf5' }]}>
+              <MaterialCommunityIcons name="account-plus-outline" size={22} color="#10b981" />
+            </View>
+            <Text style={styles.actionLabel}>User Baru</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity style={styles.actionItem} onPress={() => alert("Laporan PDF Diunduh")}>
+            <View style={[styles.actionIconCircle, { backgroundColor: '#fff7ed' }]}>
+              <MaterialCommunityIcons name="file-pdf-box" size={22} color="#f59e0b" />
+            </View>
+            <Text style={styles.actionLabel}>Laporan</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity style={styles.actionItem} onPress={() => alert("Keamanan Sistem OK")}>
+            <View style={[styles.actionIconCircle, { backgroundColor: '#fef2f2' }]}>
+              <MaterialCommunityIcons name="shield-lock-outline" size={22} color="#ef4444" />
+            </View>
+            <Text style={styles.actionLabel}>Keamanan</Text>
+          </TouchableOpacity>
+        </View>
+
+        <View style={{ height: 20 }} />
+
+        {/* --- 3. TAMPILAN LAMA: VERIFIKASI USER --- */}
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionTitle}>Verifikasi Pengguna Baru</Text>
           <Badge style={styles.countBadge}>{PENDING_USERS.length}</Badge>
@@ -81,7 +115,7 @@ export default function AdminDashboard() {
                 <Text style={styles.userRoleText}>{user.role} • {user.date}</Text>
               </View>
               <View style={styles.actionGroup}>
-                <Button mode="contained" onPress={() => handleVerify(user.id)} loading={verifying === user.id} style={styles.verifyBtn}>Setujui</Button>
+                <Button mode="contained" onPress={() => handleVerify(user.id)} loading={verifying === user.id} style={styles.verifyBtn} labelStyle={{fontSize: 10}}>Setujui</Button>
                 <MaterialCommunityIcons name="close-circle-outline" size={24} color="#ef4444" />
               </View>
             </Card.Content>
@@ -90,7 +124,7 @@ export default function AdminDashboard() {
 
         <View style={{ height: 20 }} />
 
-        {/* --- 3. TAMPILAN LAMA: STATS & GRAFIK --- */}
+        {/* --- 4. TAMPILAN LAMA: STATS & GRAFIK --- */}
         <View style={styles.statsGrid}>
           <Surface style={[styles.statBox, { borderLeftColor: '#3b82f6' }]} elevation={1}>
             <Text style={styles.statLabel}>Total User</Text>
@@ -116,7 +150,7 @@ export default function AdminDashboard() {
 
         <View style={{ height: 20 }} />
 
-        {/* --- 4. TAMPILAN LAMA: TABEL MONITOR --- */}
+        {/* --- 5. TAMPILAN LAMA: TABEL MONITOR --- */}
         <Text style={styles.sectionTitle}>Monitor Proyek</Text>
         <Card style={styles.tableCard}>
           <DataTable>
@@ -145,10 +179,17 @@ const styles = StyleSheet.create({
   headerTitle: { fontSize: 18, fontWeight: 'bold', color: '#1e293b' },
   content: { padding: 16 },
   sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 },
-  sectionTitle: { fontSize: 16, fontWeight: 'bold', color: '#1e293b' },
+  sectionTitle: { fontSize: 16, fontWeight: 'bold', color: '#1e293b', marginBottom: 10 },
   clearText: { fontSize: 12, color: '#3b82f6', fontWeight: '600' },
   notiCard: { backgroundColor: '#fff', borderRadius: 12, elevation: 1 },
   notiTime: { fontSize: 10, color: '#94a3b8', alignSelf: 'center', marginRight: 10 },
+  
+  // Quick Action Styles
+  actionGrid: { flexDirection: 'row', justifyContent: 'space-between', gap: 8 },
+  actionItem: { flex: 1, backgroundColor: '#fff', padding: 12, borderRadius: 12, alignItems: 'center', elevation: 1 },
+  actionIconCircle: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center', marginBottom: 6 },
+  actionLabel: { fontSize: 10, fontWeight: '700', color: '#1e293b' },
+
   countBadge: { backgroundColor: '#ef4444' },
   verifyCard: { backgroundColor: '#fff', borderRadius: 12, marginBottom: 10 },
   verifyContent: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
