@@ -38,6 +38,20 @@ const REVENUE_DATA = [
   { month: 'Mar', value: 85, color: '#3b82f6' },
 ];
 
+const ONLINE_FREELANCERS = [
+  { id: '1', name: 'Siti', color: '#ec4899' },
+  { id: '2', name: 'Nazril', color: '#8b5cf6' },
+  { id: '3', name: 'Dewi', color: '#10b981' },
+  { id: '4', name: 'Aris', color: '#f59e0b' },
+  { id: '5', name: 'Raka', color: '#3b82f6' },
+];
+
+// DATA MOCKUP TAMBAHAN: RINGKASAN KEUANGAN
+const REVENUE_SUMMARY = [
+  { label: 'Total Payouts', value: 'Rp 28.5M', icon: 'cash-fast', color: '#10b981' },
+  { label: 'Platform Fees', value: 'Rp 4.2M', icon: 'clippy', color: '#3b82f6' },
+];
+
 export default function AdminDashboard() {
   const router = useRouter();
   const [isDark, setIsDark] = useState(false);
@@ -214,6 +228,42 @@ export default function AdminDashboard() {
           </Surface>
         </View>
 
+        <View style={{ height: 25 }} />
+
+        {/* --- FITUR BARU 9: RINGKASAN KEUANGAN --- */}
+        <Text style={[styles.sectionTitle, { color: theme.text }]}>Ringkasan Keuangan</Text>
+        <View style={{ gap: 10 }}>
+          {REVENUE_SUMMARY.map((stat, index) => (
+            <Card key={index} style={[styles.revenueCard, { backgroundColor: theme.surface }]}>
+              <View style={styles.revenueRow}>
+                <View style={[styles.revenueIconBg, { backgroundColor: stat.color + '15' }]}>
+                  <MaterialCommunityIcons name={stat.icon as any} size={22} color={stat.color} />
+                </View>
+                <View>
+                  <Text style={[styles.revenueLabel, { color: theme.subText }]}>{stat.label}</Text>
+                  <Text style={[styles.revenueValue, { color: theme.text }]}>{stat.value}</Text>
+                </View>
+              </View>
+            </Card>
+          ))}
+        </View>
+
+        <View style={{ height: 25 }} />
+
+        {/* --- 10. FREELANCER ONLINE --- */}
+        <Text style={[styles.sectionTitle, { color: theme.text }]}>Freelancer Online</Text>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginHorizontal: -4 }}>
+          {ONLINE_FREELANCERS.map((item) => (
+            <View key={item.id} style={{ alignItems: 'center', marginRight: 15 }}>
+              <View>
+                <Avatar.Text size={50} label={item.name.substring(0, 1)} style={{ backgroundColor: item.color }} />
+                <View style={[styles.onlineStatusDot, { borderColor: theme.surface }]} />
+              </View>
+              <Text style={{ color: theme.text, fontSize: 12, marginTop: 5 }}>{item.name}</Text>
+            </View>
+          ))}
+        </ScrollView>
+
         <View style={{ height: 40 }} />
       </ScrollView>
 
@@ -293,6 +343,16 @@ const styles = StyleSheet.create({
   statBox: { flex: 1, padding: 16, borderRadius: 12, borderLeftWidth: 4 },
   statLabel: { fontSize: 12 },
   statValue: { fontSize: 20, fontWeight: 'bold' },
+
+  // STYLE REVENUE SUMMARY
+  revenueCard: { padding: 12, borderRadius: 12, elevation: 1 },
+  revenueRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  revenueIconBg: { width: 45, height: 45, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
+  revenueLabel: { fontSize: 11 },
+  revenueValue: { fontSize: 18, fontWeight: 'bold' },
+
+  // STYLE ONLINE STATUS
+  onlineStatusDot: { position: 'absolute', bottom: 2, right: 2, width: 12, height: 12, borderRadius: 6, backgroundColor: '#10b981', borderWidth: 2 },
 
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'flex-end' },
   modalContent: { borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 24, minHeight: 400 },
