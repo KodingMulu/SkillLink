@@ -60,8 +60,43 @@ export async function GET() {
                 }
             }
         })
-        
+
         const projectGrowth = calculateGrowth(newProjectsThisMonth, newProjectsLastMonth);
+
+        //Stats Transactions
+        const totalTransactionAgg = await prisma.transaction.aggregate({
+            _sum: {
+                amount: true
+            }
+        });
+        const totalRevenue = totalTransactionAgg._sum.amount || 0;
+
+        const revenueThisMonthAgg = await prisma.transaction.aggregate({
+            _sum: {
+                amount: true
+            },
+            where: {
+                createdAt: {
+                    gte: currentMonth
+                }
+            }
+        });
+        const revenueThisMonth = revenueThisMonthAgg._sum.amount || 0;
+
+        const revenueLastMonthAgg = await prisma.transaction.aggregate({
+            _sum: {
+                amount: true
+            },
+            where: {
+                createdAt: {
+                    gte: lastMonth,
+                    lt: currentMonth
+                }
+            }
+        });
+        const revenueLastMonth = revenueLastMonthAgg._sum.amount || 0;
+
+        const revenueGrowth = calculateGrowth(revenueThisMonth, revenueLastMonth);
 
         return NextResponse.json({
             data: [
@@ -78,6 +113,13 @@ export async function GET() {
                     growth: parseFloat(projectGrowth.toFixed(1)),
                     subText: `${newProjectsThisMonth} projek baru bulan ini`,
                     type: "projects"
+                },
+                {
+                    title: "Total Transaksi",
+                    value: totalRevenue,
+                    growth: parseFloat(revenueGrowth.toFixed(1)),
+                    subtext: "Revenue bulan ini",
+                    type: "transactions"
                 },
             ]
         })
