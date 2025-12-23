@@ -98,6 +98,15 @@ export async function GET() {
 
         const revenueGrowth = calculateGrowth(revenueThisMonth, revenueLastMonth);
 
+        //Stats Report Pending
+        const pendingReports = await prisma.proposal.count({
+            where: {
+                status: 'PENDING'
+            }
+        });
+
+        const pendingReportsGrowth = -5.3;
+
         return NextResponse.json({
             data: [
                 {
@@ -121,6 +130,13 @@ export async function GET() {
                     subtext: "Revenue bulan ini",
                     type: "transactions"
                 },
+                {
+                    title: "Laporan Pending",
+                    value: pendingReports,
+                    growth: pendingReportsGrowth,
+                    subtext: "Perlu ditinjau",
+                    type: "reports"
+                }
             ]
         })
     } catch (error) {
