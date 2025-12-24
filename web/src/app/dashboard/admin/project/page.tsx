@@ -1,6 +1,7 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import axios from 'axios';
 import { 
   Plus, 
   Search, 
@@ -9,11 +10,19 @@ import {
   Briefcase,
   CheckCircle,
   Clock,
-  XCircle,
+  Banknote,
   type LucideIcon
 } from "lucide-react";
 import DashboardLayout from '../../DashboardLayout';
 import CreateProjectModal from './components/CreateProjectModal';
+
+interface ApiMainStat {
+  type: "users" | "active_projects" | "revenue" | "pending";
+  label: string;
+  value: number;
+  growth: number;
+  subtext: string;
+}
 
 interface Stat {
   label: string;
@@ -34,13 +43,24 @@ interface Project {
   progress: number;
 }
 
+interface ApiProjectStat {
+    type: "total" | "completed" | "in_progress" | "value";
+    label: string;
+    value: number;
+    color: "blue" | "emerald" | "orange" | "purple";
+}
+
+interface AdminStatsResponse {
+    mainStats: ApiMainStat[];
+    projectStats: ApiProjectStat[]; 
+}
+
 interface ProjectPageProps {
   backgroundImage?: string;
   backgroundColor?: string;
 }
 
 export default function ProjectManagement({ backgroundImage, backgroundColor }: ProjectPageProps) {
-  // Background configuration
   const defaultBackground = '/images/bg.webp';
   const backgroundStyle = backgroundImage 
     ? { backgroundImage: `url(${backgroundImage})`, backgroundSize: 'cover', backgroundPosition: 'center', backgroundRepeat: 'no-repeat', backgroundAttachment: 'fixed' }
@@ -51,97 +71,87 @@ export default function ProjectManagement({ backgroundImage, backgroundColor }: 
   const [isCreateProjectModalOpen, setIsCreateProjectModalOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
-
-  const stats: Stat[] = [
-    { 
-      label: "TOTAL PROYEK", 
-      value: "1,234", 
-      icon: Briefcase, 
-      color: "text-blue-600", 
-      bg: "bg-blue-50"
-    },
-    { 
-      label: "SELESAI", 
-      value: "856", 
-      icon: CheckCircle, 
-      color: "text-emerald-600", 
-      bg: "bg-emerald-50"
-    },
-    { 
-      label: "BERJALAN", 
-      value: "342", 
-      icon: Clock, 
-      color: "text-orange-600", 
-      bg: "bg-orange-50"
-    },
-    { 
-      label: "TOTAL NILAI", 
-      value: "Rp 1.2M", 
-      icon: Briefcase, 
-      color: "text-purple-600", 
-      bg: "bg-purple-50"
-    },
-  ];
+  
+  const [stats, setStats] = useState<Stat[]>([]);
+  const [loading, setLoading] = useState(true);
 
   const projects: Project[] = [
-    {
-      id: 1,
-      title: "Redesain Aplikasi Mobile",
-      client: "PT Tech Solution",
-      freelancer: "Nazril Afandi",
-      budget: "Rp 15.000.000",
-      deadline: "20/1/2024",
-      status: "active",
-      progress: 65
-    },
-    {
-      id: 2,
-      title: "Pengembangan API E-commerce",
-      client: "Budi Santoso",
-      freelancer: "Siska Putri",
-      budget: "Rp 8.500.000",
-      deadline: "15/12/2023",
-      status: "completed",
-      progress: 100
-    },
-    {
-      id: 3,
-      title: "Sistem Manajemen Inventori",
-      client: "Global Mandiri",
-      freelancer: "Ahmad Rivai",
-      budget: "Rp 12.000.000",
-      deadline: "10/2/2024",
-      status: "pending",
-      progress: 20
-    }
+    { id: 1, title: "Redesain Aplikasi Mobile", client: "PT Tech Solution", freelancer: "Nazril Afandi", budget: "Rp 15.000.000", deadline: "20/1/2024", status: "active", progress: 65 },
+    { id: 2, title: "Pengembangan API E-commerce", client: "Budi Santoso", freelancer: "Siska Putri", budget: "Rp 8.500.000", deadline: "15/12/2023", status: "completed", progress: 100 },
+    { id: 3, title: "Sistem Manajemen Inventori", client: "Global Mandiri", freelancer: "Ahmad Rivai", budget: "Rp 12.000.000", deadline: "10/2/2024", status: "pending", progress: 20 }
   ];
 
   const getStatusBadge = (status: Project['status']) => {
-    const styles: Record<Project['status'], string> = {
+    const styles = {
       active: "bg-blue-100 text-blue-700",
       completed: "bg-emerald-100 text-emerald-700",
       pending: "bg-orange-100 text-orange-700",
       cancelled: "bg-red-100 text-red-700"
     };
-    
-    const labels: Record<Project['status'], string> = {
-      active: "ACTIVE",
-      completed: "COMPLETED",
-      pending: "PENDING",
-      cancelled: "CANCELLED"
-    };
-    
-    return (
-      <span className={`px-3 py-1 rounded-full text-xs font-bold ${styles[status]}`}>
-        {labels[status]}
-      </span>
-    );
+    return <span className={`px-3 py-1 rounded-full text-xs font-bold ${styles[status]}`}>{status.toUpperCase()}</span>;
   };
 
-  const handleProjectCreated = () => {
-    console.log('Proyek berhasil dibuat!');
-    // Refresh data atau update state di sini
+  const getColorClasses = (colorName: string) => {
+      switch(colorName) {
+          case 'blue': return { color: "text-blue-600", bg: "bg-blue-50" };
+          case 'emerald': return { color: "text-emerald-600", bg: "bg-emerald-50" };
+          case 'orange': return { color: "text-orange-600", bg: "bg-orange-50" };
+          case 'purple': return { color: "text-purple-600", bg: "bg-purple-50" };
+          default: return { color: "text-slate-600", bg: "bg-slate-50" };
+      }
   };
+
+  const getIcon = (type: string) => {
+      switch(type) {
+          case 'total': return Briefcase;
+          case 'completed': return CheckCircle;
+          case 'in_progress': return Clock;
+          case 'value': return Banknote;
+          default: return Briefcase;
+      }
+  }
+
+  useEffect(() => {
+    const fetchStats = async () => {
+        try {
+            const res = await axios.get<AdminStatsResponse>(
+                `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/user/admin/stats`
+            );
+            
+            // Ambil 'projectStats'
+            const mappedStats: Stat[] = res.data.projectStats.map((item) => {
+                const styles = getColorClasses(item.color);
+                
+                // Format Value
+                let displayValue = item.value.toString();
+                if (item.type === 'value') {
+                    displayValue = new Intl.NumberFormat("id-ID", {
+                        style: "currency",
+                        currency: "IDR",
+                        notation: "compact", 
+                        maximumFractionDigits: 1
+                    }).format(item.value);
+                }
+
+                return {
+                    label: item.label,
+                    value: displayValue,
+                    icon: getIcon(item.type),
+                    color: styles.color,
+                    bg: styles.bg
+                };
+            });
+
+            setStats(mappedStats);
+        } catch (error) {
+            console.error("Error fetching project stats:", error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    fetchStats();
+  }, []);
 
   return (
     <div style={backgroundStyle} className="min-h-screen">
@@ -171,20 +181,26 @@ export default function ProjectManagement({ backgroundImage, backgroundColor }: 
 
         {/* Stats Cards */}
         <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-          {stats.map((stat) => {
-            const IconComponent = stat.icon;
-            return (
-              <div key={stat.label} className="bg-white/95 backdrop-blur-sm p-6 rounded-2xl border border-slate-200 shadow-sm">
-                <div className="flex items-center justify-between mb-3">
-                  <div className={`p-3 rounded-xl ${stat.bg}`}>
-                    <IconComponent className={`w-6 h-6 ${stat.color}`} />
-                  </div>
+          {loading ? (
+             [...Array(4)].map((_, i) => (
+                <div key={i} className="bg-white p-6 rounded-2xl h-32 animate-pulse border border-slate-200"></div>
+             ))
+          ) : (
+            stats.map((stat, idx) => {
+                const IconComponent = stat.icon;
+                return (
+                <div key={idx} className="bg-white/95 backdrop-blur-sm p-6 rounded-2xl border border-slate-200 shadow-sm">
+                    <div className="flex items-center justify-between mb-3">
+                    <div className={`p-3 rounded-xl ${stat.bg}`}>
+                        <IconComponent className={`w-6 h-6 ${stat.color}`} />
+                    </div>
+                    </div>
+                    <h3 className="text-3xl font-bold text-slate-900 mb-1">{stat.value}</h3>
+                    <p className="text-xs text-slate-500 font-semibold">{stat.label}</p>
                 </div>
-                <h3 className="text-3xl font-bold text-slate-900 mb-1">{stat.value}</h3>
-                <p className="text-xs text-slate-500 font-semibold">{stat.label}</p>
-              </div>
-            );
-          })}
+                );
+            })
+          )}
         </section>
 
         {/* Search and Filter */}
@@ -296,7 +312,7 @@ export default function ProjectManagement({ backgroundImage, backgroundColor }: 
         <CreateProjectModal 
           isOpen={isCreateProjectModalOpen}
           onClose={() => setIsCreateProjectModalOpen(false)}
-          onSuccess={handleProjectCreated}
+          onSuccess={() => console.log("Created")}
         />
       </DashboardLayout>
     </div>
