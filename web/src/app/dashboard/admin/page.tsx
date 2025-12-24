@@ -1,22 +1,23 @@
 'use client';
 
-import { useState } from 'react';
-import { 
-  Users, 
-  Briefcase, 
-  DollarSign, 
-  AlertTriangle, 
-  Filter, 
+import { useState, useEffect } from 'react';
+import {
+  Users,
+  Briefcase,
+  DollarSign,
+  AlertTriangle,
+  Filter,
   Download,
-  Eye, 
-  Ban, 
-  UserCheck, 
+  Eye,
+  Ban,
+  UserCheck,
   Clock,
   type LucideIcon
 } from "lucide-react";
 import DashboardLayout from '../DashboardLayout';
 import ExportModal from './components/ExportModal';
 import AddUserModal from './components/AddUserModal';
+import axios from 'axios';
 
 interface Stat {
   label: string;
@@ -27,6 +28,19 @@ interface Stat {
   color: string;
   bg: string;
   detail: string;
+}
+
+interface AdminStatApi {
+  title: string;
+  value: number;
+  growth: number;
+  subText?: string;
+  subtext?: string;
+  type: "users" | "projects" | "transactions" | "reports";
+}
+
+interface AdminStatsResponse {
+  data: AdminStatApi[];
 }
 
 interface User {
@@ -48,95 +62,77 @@ interface AdminDashboardProps {
 export default function AdminDashboard({ backgroundImage, backgroundColor }: AdminDashboardProps) {
   // Background configuration
   const defaultBackground = '/images/bg.webp';
-  const backgroundStyle = backgroundImage 
+  const backgroundStyle = backgroundImage
     ? { backgroundImage: `url(${backgroundImage})`, backgroundSize: 'cover', backgroundPosition: 'center', backgroundRepeat: 'no-repeat', backgroundAttachment: 'fixed' }
-    : backgroundColor 
+    : backgroundColor
       ? { backgroundColor: backgroundColor }
       : { backgroundImage: `url(${defaultBackground})`, backgroundSize: 'cover', backgroundPosition: 'center', backgroundRepeat: 'no-repeat', backgroundAttachment: 'fixed' };
 
   const [selectedPeriod, setSelectedPeriod] = useState<string>('30days');
   const [isExportModalOpen, setIsExportModalOpen] = useState<boolean>(false);
   const [isAddUserModalOpen, setIsAddUserModalOpen] = useState<boolean>(false);
+  const [stats, setStats] = useState<Stat[]>([]);
 
-  const stats: Stat[] = [
-    { 
-      label: "Total User", 
-      value: "2,847", 
-      change: "+12.5%", 
-      trend: "up",
-      icon: Users, 
-      color: "text-blue-600", 
+
+  const statConfig = {
+    users: {
+      icon: Users,
+      color: "text-blue-600",
       bg: "bg-blue-50",
-      detail: "245 user baru bulan ini"
     },
-    { 
-      label: "Proyek Aktif", 
-      value: "1,234", 
-      change: "+8.2%", 
-      trend: "up",
-      icon: Briefcase, 
-      color: "text-emerald-600", 
+    projects: {
+      icon: Briefcase,
+      color: "text-emerald-600",
       bg: "bg-emerald-50",
-      detail: "156 proyek baru"
     },
-    { 
-      label: "Total Transaksi", 
-      value: "Rp 2.4M", 
-      change: "+23.1%", 
-      trend: "up",
-      icon: DollarSign, 
-      color: "text-purple-600", 
+    transactions: {
+      icon: DollarSign,
+      color: "text-purple-600",
       bg: "bg-purple-50",
-      detail: "Revenue bulan ini"
     },
-    { 
-      label: "Laporan Pending", 
-      value: "23", 
-      change: "-5.3%", 
-      trend: "down",
-      icon: AlertTriangle, 
-      color: "text-orange-600", 
+    reports: {
+      icon: AlertTriangle,
+      color: "text-orange-600",
       bg: "bg-orange-50",
-      detail: "Perlu ditinjau"
     },
-  ];
+  };
 
   const recentUsers: User[] = [
-    { 
+    {
       id: 1,
-      name: "fatoni", 
+      name: "fatoni",
       email: "fatoni@email.com",
-      role: "Freelancer", 
+      role: "Freelancer",
       status: "active",
       joined: "2 jam lalu",
       projects: 3,
       rating: 4.8
     },
-    { 
+    {
       id: 2,
-      name: "PT Digital Innovation", 
+      name: "PT Digital Innovation",
       email: "contact@digital.com",
-      role: "Client", 
+      role: "Client",
       status: "active",
       joined: "5 jam lalu",
       projects: 8,
       rating: 4.9
     },
-    { 
+    {
       id: 3,
-      name: "egy", 
+      name: "egy",
       email: "egy@email.com",
-      role: "Freelancer", 
+      role: "Freelancer",
       status: "pending",
       joined: "1 hari lalu",
       projects: 0,
       rating: 0
     },
-    { 
+    {
       id: 4,
-      name: "CV Kreatif Media", 
+      name: "CV Kreatif Media",
       email: "info@kreatifmedia.com",
-      role: "Client", 
+      role: "Client",
       status: "active",
       joined: "2 hari lalu",
       projects: 5,
@@ -150,13 +146,13 @@ export default function AdminDashboard({ backgroundImage, backgroundColor }: Adm
       pending: "bg-orange-100 text-orange-700",
       suspended: "bg-red-100 text-red-700"
     };
-    
+
     const labels: Record<User['status'], string> = {
       active: "AKTIF",
       pending: "PENDING",
       suspended: "SUSPENDED"
     };
-    
+
     return (
       <span className={`px-2 py-1 rounded-md text-xs font-semibold ${styles[status]}`}>
         {labels[status]}
@@ -166,8 +162,41 @@ export default function AdminDashboard({ backgroundImage, backgroundColor }: Adm
 
   const handleUserAdded = () => {
     console.log('User berhasil ditambahkan!');
-    // Di sini Anda bisa refresh data atau update state
   };
+
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        const res = await axios.get<AdminStatsResponse>(
+          `${process.env.NEXT_PUBLIC_API_URL}/user/admin/stats`
+        );
+
+        const mappedStats: Stat[] = res.data.data.map((item) => {
+          const config = statConfig[item.type];
+
+          return {
+            label: item.title,
+            value:
+              item.type === "transactions"
+                ? `Rp ${item.value.toLocaleString("id-ID")}`
+                : item.value.toString(),
+            change: `${item.growth >= 0 ? "+" : ""}${item.growth}%`,
+            trend: item.growth >= 0 ? "up" : "down",
+            icon: config.icon,
+            color: config.color,
+            bg: config.bg,
+            detail: item.subText ?? item.subtext ?? "",
+          };
+        });
+
+        setStats(mappedStats);
+      } catch (error) {
+        console.error("Gagal mengambil data stats:", error);
+      }
+    };
+
+    fetchStats();
+  }, []);
 
   return (
     <div style={backgroundStyle} className="min-h-screen">
@@ -176,7 +205,7 @@ export default function AdminDashboard({ backgroundImage, backgroundColor }: Adm
           <div className="flex items-center justify-between mb-2">
             <h1 className="text-2xl font-bold text-slate-900">Dashboard Admin</h1>
             <div className="flex items-center gap-3">
-              <select 
+              <select
                 value={selectedPeriod}
                 onChange={(e) => setSelectedPeriod(e.target.value)}
                 className="px-4 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
@@ -186,11 +215,11 @@ export default function AdminDashboard({ backgroundImage, backgroundColor }: Adm
                 <option value="90days">90 Hari Terakhir</option>
                 <option value="all">Semua Data</option>
               </select>
-              <button 
+              <button
                 onClick={() => setIsExportModalOpen(true)}
                 className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all text-sm font-medium shadow-sm hover:shadow-md active:scale-95"
               >
-                <Download className="w-4 h-4" /> 
+                <Download className="w-4 h-4" />
                 Export
               </button>
             </div>
@@ -208,9 +237,8 @@ export default function AdminDashboard({ backgroundImage, backgroundColor }: Adm
                   <div className={`p-3 rounded-xl ${stat.bg}`}>
                     <IconComponent className={`w-6 h-6 ${stat.color}`} />
                   </div>
-                  <span className={`text-xs font-semibold px-2 py-1 rounded-md ${
-                    stat.trend === 'up' ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'
-                  }`}>
+                  <span className={`text-xs font-semibold px-2 py-1 rounded-md ${stat.trend === 'up' ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'
+                    }`}>
                     {stat.change}
                   </span>
                 </div>
@@ -256,7 +284,7 @@ export default function AdminDashboard({ backgroundImage, backgroundColor }: Adm
                       </div>
                       {getStatusBadge(user.status)}
                     </div>
-                    
+
                     {/* User Stats */}
                     <div className="flex items-center gap-4 mb-4 text-sm">
                       <div className="flex items-center gap-1">
@@ -270,15 +298,15 @@ export default function AdminDashboard({ backgroundImage, backgroundColor }: Adm
                         </div>
                       )}
                     </div>
-                    
+
                     {/* Action Buttons */}
                     <div className="flex gap-2">
                       <button className="flex-1 py-2 bg-blue-50 text-blue-600 rounded-lg text-xs font-medium flex items-center justify-center gap-2 hover:bg-blue-100 transition-colors">
-                        <Eye className="w-3 h-3" /> 
+                        <Eye className="w-3 h-3" />
                         Detail
                       </button>
                       <button className="flex-1 py-2 bg-emerald-50 text-emerald-600 rounded-lg text-xs font-medium flex items-center justify-center gap-2 hover:bg-emerald-100 transition-colors">
-                        <UserCheck className="w-3 h-3" /> 
+                        <UserCheck className="w-3 h-3" />
                         Approve
                       </button>
                       <button className="px-4 py-2 bg-red-50 text-red-600 rounded-lg text-xs font-medium hover:bg-red-100 transition-colors flex items-center gap-2">
@@ -289,7 +317,7 @@ export default function AdminDashboard({ backgroundImage, backgroundColor }: Adm
                   </div>
                 ))}
               </div>
-              
+
               {/* View All Button */}
               <div className="p-4 border-t border-slate-100 bg-slate-50">
                 <button className="w-full py-2 text-sm font-medium text-blue-600 hover:text-blue-700 transition-colors">
@@ -305,7 +333,7 @@ export default function AdminDashboard({ backgroundImage, backgroundColor }: Adm
             <section className="bg-white/95 backdrop-blur-sm rounded-2xl border border-slate-200 shadow-sm p-6">
               <h2 className="font-bold text-slate-900 mb-4">Quick Actions</h2>
               <div className="space-y-3">
-                <button 
+                <button
                   onClick={() => setIsAddUserModalOpen(true)}
                   className="w-full flex items-center gap-3 px-4 py-3 bg-slate-50 hover:bg-slate-100 rounded-xl transition text-sm font-medium text-left"
                 >
@@ -360,13 +388,13 @@ export default function AdminDashboard({ backgroundImage, backgroundColor }: Adm
         </div>
 
         {/* Modals */}
-        <ExportModal 
+        <ExportModal
           isOpen={isExportModalOpen}
           onClose={() => setIsExportModalOpen(false)}
           selectedPeriod={selectedPeriod}
         />
-        
-        <AddUserModal 
+
+        <AddUserModal
           isOpen={isAddUserModalOpen}
           onClose={() => setIsAddUserModalOpen(false)}
           onSuccess={handleUserAdded}
