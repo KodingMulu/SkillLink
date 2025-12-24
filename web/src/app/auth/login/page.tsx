@@ -5,6 +5,7 @@ import { Eye, EyeOff, Lock, Mail, ArrowRight, LogIn } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import axios from 'axios';
+import Cookies from 'js-cookie';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -30,43 +31,51 @@ export default function LoginPage() {
     setIsLoading(true);
 
     try {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || '/api';
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
+      
       const response = await axios.post(`${apiUrl}/auth/login`, {
         email: formData.email,
         password: formData.password
       }, {
-        withCredentials: true
+        withCredentials: true 
       });
 
+      console.log("Response Full:", response.data);
+
       if (response.data.code === 200) {
-        const userRole = response.data.user.role;
-        switch (userRole) {
-          case 'ADMIN':
-            router.push('/dashboard/admin');
-            break;
-          case 'CLIENT':
-            router.push('/dashboard/client');
-            break;
-          case 'FREELANCER':
-            router.push('/dashboard/freelancer');
-            break;
-          default:
-            router.push('/'); 
-            break;
+        const token = response.data.token; 
+
+        if (token) {
+             Cookies.set('token', token, { 
+                  expires: 7,
+                  path: '/',  
+                  secure: window.location.protocol === 'https:',
+                  sameSite: 'Lax'
+             });
+        } else {
+             alert("Sistem error: Token login tidak diterima.");
+             setIsLoading(false);
+             return;
         }
+
+        const rawRole = response.data.user?.role || response.data.role;
+        const userRole = String(rawRole).toUpperCase();
+
+        if (userRole === 'ADMIN') router.replace('/dashboard/admin');
+        else if (userRole === 'CLIENT') router.replace('/dashboard/client');
+        else if (userRole === 'FREELANCER') router.replace('/dashboard/freelancer');
+        else router.replace('/');
       } else {
-        alert(`Login Gagal`);
+        alert(`Login Gagal: ${response.data.message}`);
       }
 
-    } catch (error) {
+    } catch (error: any) {
       console.error('Login error:', error);
-      if (axios.isAxiosError(error)) {
-        alert(error.response?.data?.message || 'Email atau password salah');
-      } else {
-        alert('Terjadi kesalahan pada server');
-      }
+      alert('Terjadi kesalahan login');
     } finally {
-      setIsLoading(false);
+      if (!window.location.pathname.includes('/dashboard')) {
+          setIsLoading(false);
+      }
     }
   };
 

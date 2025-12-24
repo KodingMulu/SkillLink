@@ -7,24 +7,23 @@ const allowedOrigins = [
 
 export function middleware(req: Request) {
      const origin = req.headers.get("origin") || "";
-     const isAllowed = allowedOrigins.includes(origin);
-     const response = NextResponse.next();
-
-     if (origin && !isAllowed) {
+     
+     if (origin && !allowedOrigins.includes(origin)) {
           return NextResponse.json({
                message: 'Blocked by CORS',
                code: 403
-          }, {
-               status: 403,
-          })
-     };
-
-     if (isAllowed) {
-          response.headers.set("Access-Control-Allow-Origin", origin);
+          }, { status: 403 });
      }
 
-     response.headers.set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE");
-     response.headers.set("Access-Control-Allow-Headers", "Content-Type, Authorization");
+     const response = NextResponse.next();
+
+     if (allowedOrigins.includes(origin) || !origin) {
+          response.headers.set("Access-Control-Allow-Origin", origin || "*");
+     }
+
+     response.headers.set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
+     response.headers.set("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Requested-With");
+     response.headers.set("Access-Control-Allow-Credentials", "true"); 
 
      if (req.method === "OPTIONS") {
           return NextResponse.json(null, {
