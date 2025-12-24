@@ -1,15 +1,47 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import axios from 'axios';
 import { 
   DollarSign, Search, Filter, Download, 
-  ArrowUpRight, ArrowDownLeft, Clock, 
-  CheckCircle2, XCircle, MoreVertical,
-  ChevronLeft, ChevronRight, FileText,
-  CreditCard, Wallet, Landmark
+  ArrowUpRight, Clock, CheckCircle2, XCircle, 
+  MoreVertical, ChevronLeft, ChevronRight, FileText,
+  CreditCard, Wallet, Landmark,
+  type LucideIcon 
 } from 'lucide-react';
 import DashboardLayout from '../../DashboardLayout';
-import TaxReportModal from './components/TaxReportModal';// Pastikan path import benar
+import TaxReportModal from './components/TaxReportModal';
+
+interface TransactionStatApi {
+  type: "total_volume" | "success" | "pending" | "failed";
+  label: string;
+  value: number;
+  growth?: number;
+  color: "blue" | "emerald" | "orange" | "red";
+  icon?: string;
+}
+
+interface AdminStatsResponse {
+  transactionStats: TransactionStatApi[];
+}
+
+interface StatCardProps {
+  icon: React.ReactNode;
+  label: string;
+  value: string | number;
+  trend?: string;
+  color: "blue" | "emerald" | "orange" | "red";
+}
+
+interface TransactionRow {
+  id: string;
+  user: string;
+  project: string;
+  amount: string;
+  method: string;
+  status: 'success' | 'pending' | 'failed';
+  date: string;
+}
 
 const TRANSACTIONS_DATA = [
   { id: "TX-90210", user: "Budi Santoso", project: "Redesain Aplikasi Mobile", amount: "Rp 15.000.000", method: "Bank Transfer", status: "success", date: "2023-12-15 14:30" },
@@ -24,8 +56,28 @@ export default function TransactionManagementPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [isTaxModalOpen, setIsTaxModalOpen] = useState(false);
+  
+  // State untuk Data Statistik dari API
+  const [stats, setStats] = useState<TransactionStatApi[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  // Filter Logic
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        const res = await axios.get<AdminStatsResponse>(
+          `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/user/admin/stats`
+        );
+        setStats(res.data.transactionStats);
+      } catch (error) {
+        console.error("Gagal mengambil transaction stats:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchStats();
+  }, []);
+
   const filteredTransactions = TRANSACTIONS_DATA.filter(tx => {
     const matchesSearch = tx.id.toLowerCase().includes(searchTerm.toLowerCase()) || 
                          tx.user.toLowerCase().includes(searchTerm.toLowerCase());
@@ -48,6 +100,16 @@ export default function TransactionManagementPage() {
       case 'Wallet': return <Wallet className="w-3 h-3" />;
       case 'Credit Card': return <CreditCard className="w-3 h-3" />;
       default: return <DollarSign className="w-3 h-3" />;
+    }
+  };
+
+  const getStatIcon = (type: string) => {
+    switch(type) {
+      case 'total_volume': return <ArrowUpRight className="text-blue-600 w-6 h-6" />;
+      case 'success': return <CheckCircle2 className="text-emerald-600 w-6 h-6" />;
+      case 'pending': return <Clock className="text-orange-600 w-6 h-6" />;
+      case 'failed': return <XCircle className="text-red-600 w-6 h-6" />;
+      default: return <DollarSign className="text-slate-600 w-6 h-6" />;
     }
   };
 
@@ -77,10 +139,36 @@ export default function TransactionManagementPage() {
 
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <StatCard icon={<ArrowUpRight className="text-blue-600" />} label="Total Volume" value="Rp 2.480M" trend="+12%" color="blue" />
-          <StatCard icon={<CheckCircle2 className="text-emerald-600" />} label="Berhasil" value="1,120" color="emerald" />
-          <StatCard icon={<Clock className="text-orange-600" />} label="Menunggu" value="42" color="orange" />
-          <StatCard icon={<XCircle className="text-red-600" />} label="Gagal/Batal" value="15" color="red" />
+          {loading ? (
+             [...Array(4)].map((_, i) => (
+               <div key={i} className="bg-white p-5 rounded-2xl border border-slate-200 h-32 animate-pulse" />
+             ))
+          ) : (
+            stats.map((stat, idx) => {
+              let displayValue = stat.value.toString();
+              if (stat.type === 'total_volume') {
+                displayValue = new Intl.NumberFormat("id-ID", {
+                  style: "currency",
+                  currency: "IDR",
+                  notation: "compact", 
+                  maximumFractionDigits: 1
+                }).format(stat.value);
+              } else {
+                displayValue = stat.value.toLocaleString('id-ID');
+              }
+
+              return (
+                <StatCard 
+                  key={idx}
+                  icon={getStatIcon(stat.type)} 
+                  label={stat.label} 
+                  value={displayValue} 
+                  trend={stat.growth ? `${stat.growth > 0 ? '+' : ''}${stat.growth}%` : undefined} 
+                  color={stat.color} 
+                />
+              );
+            })
+          )}
         </div>
 
         {/* Table Section */}
@@ -191,10 +279,7 @@ export default function TransactionManagementPage() {
       <TaxReportModal 
         isOpen={isTaxModalOpen} 
         onClose={() => setIsTaxModalOpen(false)} 
-        onSuccess={() => {
-            // Logika tambahan jika laporan berhasil di-generate
-            console.log("Report generated successfully!");
-        }}
+        onSuccess={() => console.log("Report generated successfully!")}
       />
     </DashboardLayout>
   );
@@ -203,8 +288,8 @@ export default function TransactionManagementPage() {
 /**
  * Reusable Stat Card Component for cleaner code
  */
-function StatCard({ icon, label, value, trend, color }: any) {
-  const colorMap: any = {
+function StatCard({ icon, label, value, trend, color }: StatCardProps) {
+  const colorMap: Record<StatCardProps['color'], string> = {
     blue: "bg-blue-50",
     emerald: "bg-emerald-50",
     orange: "bg-orange-50",
