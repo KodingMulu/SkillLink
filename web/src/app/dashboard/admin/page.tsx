@@ -11,7 +11,6 @@ import {
   Eye,
   Ban,
   UserCheck,
-  Clock,
   type LucideIcon
 } from "lucide-react";
 import DashboardLayout from '../DashboardLayout';
@@ -30,17 +29,24 @@ interface Stat {
   detail: string;
 }
 
-interface AdminStatApi {
-  title: string;
+interface ApiProjectStat {
+  type: "total" | "completed" | "in_progress" | "value";
+  label: string;
+  value: number;
+  color: string;
+}
+
+interface ApiMainStat {
+  type: "users" | "active_projects" | "revenue" | "pending";
+  label: string;
   value: number;
   growth: number;
-  subText?: string;
-  subtext?: string;
-  type: "users" | "projects" | "transactions" | "reports";
+  subtext: string;
 }
 
 interface AdminStatsResponse {
-  data: AdminStatApi[];
+  mainStats: ApiMainStat[];
+  projectStats: ApiProjectStat[];
 }
 
 interface User {
@@ -60,7 +66,6 @@ interface AdminDashboardProps {
 }
 
 export default function AdminDashboard({ backgroundImage, backgroundColor }: AdminDashboardProps) {
-  // Background configuration
   const defaultBackground = '/images/bg.webp';
   const backgroundStyle = backgroundImage
     ? { backgroundImage: `url(${backgroundImage})`, backgroundSize: 'cover', backgroundPosition: 'center', backgroundRepeat: 'no-repeat', backgroundAttachment: 'fixed' }
@@ -73,24 +78,23 @@ export default function AdminDashboard({ backgroundImage, backgroundColor }: Adm
   const [isAddUserModalOpen, setIsAddUserModalOpen] = useState<boolean>(false);
   const [stats, setStats] = useState<Stat[]>([]);
 
-
   const statConfig = {
     users: {
       icon: Users,
       color: "text-blue-600",
       bg: "bg-blue-50",
     },
-    projects: {
+    active_projects: {
       icon: Briefcase,
       color: "text-emerald-600",
       bg: "bg-emerald-50",
     },
-    transactions: {
+    revenue: {
       icon: DollarSign,
       color: "text-purple-600",
       bg: "bg-purple-50",
     },
-    reports: {
+    pending: {
       icon: AlertTriangle,
       color: "text-orange-600",
       bg: "bg-orange-50",
@@ -168,24 +172,33 @@ export default function AdminDashboard({ backgroundImage, backgroundColor }: Adm
     const fetchStats = async () => {
       try {
         const res = await axios.get<AdminStatsResponse>(
-          `${process.env.NEXT_PUBLIC_API_URL}/user/admin/stats`
+          `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'}/user/admin/stats`
         );
 
-        const mappedStats: Stat[] = res.data.data.map((item) => {
-          const config = statConfig[item.type];
+        const mappedStats: Stat[] = res.data.mainStats.map((item) => {
+          const config = statConfig[item.type] || statConfig.users;
+          let displayValue = item.value.toString();
+
+          if (item.type === "revenue") {
+            displayValue = new Intl.NumberFormat("id-ID", {
+              style: "currency",
+              currency: "IDR",
+              notation: "compact",
+              maximumFractionDigits: 1
+            }).format(item.value);
+          } else {
+             displayValue = new Intl.NumberFormat("en-US").format(item.value);
+          }
 
           return {
-            label: item.title,
-            value:
-              item.type === "transactions"
-                ? `Rp ${item.value.toLocaleString("id-ID")}`
-                : item.value.toString(),
+            label: item.label,
+            value: displayValue,
             change: `${item.growth >= 0 ? "+" : ""}${item.growth}%`,
             trend: item.growth >= 0 ? "up" : "down",
             icon: config.icon,
             color: config.color,
             bg: config.bg,
-            detail: item.subText ?? item.subtext ?? "",
+            detail: item.subtext,
           };
         });
 
@@ -210,14 +223,11 @@ export default function AdminDashboard({ backgroundImage, backgroundColor }: Adm
                 onChange={(e) => setSelectedPeriod(e.target.value)}
                 className="px-4 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
               >
-                <option value="7days">7 Hari Terakhir</option>
                 <option value="30days">30 Hari Terakhir</option>
-                <option value="90days">90 Hari Terakhir</option>
-                <option value="all">Semua Data</option>
               </select>
               <button
                 onClick={() => setIsExportModalOpen(true)}
-                className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all text-sm font-medium shadow-sm hover:shadow-md active:scale-95"
+                className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all text-sm font-medium shadow-sm"
               >
                 <Download className="w-4 h-4" />
                 Export
@@ -229,25 +239,30 @@ export default function AdminDashboard({ backgroundImage, backgroundColor }: Adm
 
         {/* Stats Cards */}
         <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-          {stats.map((stat) => {
-            const IconComponent = stat.icon;
-            return (
-              <div key={stat.label} className="bg-white/95 backdrop-blur-sm p-6 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition-shadow">
-                <div className="flex items-start justify-between mb-4">
-                  <div className={`p-3 rounded-xl ${stat.bg}`}>
-                    <IconComponent className={`w-6 h-6 ${stat.color}`} />
+          {stats.length === 0 ? (
+            [...Array(4)].map((_, i) => (
+               <div key={i} className="bg-white p-6 rounded-2xl h-40 animate-pulse border border-slate-200"></div>
+            ))
+          ) : (
+            stats.map((stat, idx) => {
+              const IconComponent = stat.icon;
+              return (
+                <div key={idx} className="bg-white/95 backdrop-blur-sm p-6 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition-shadow">
+                  <div className="flex items-start justify-between mb-4">
+                    <div className={`p-3 rounded-xl ${stat.bg}`}>
+                      <IconComponent className={`w-6 h-6 ${stat.color}`} />
+                    </div>
+                    <span className={`text-xs font-semibold px-2 py-1 rounded-md ${stat.trend === 'up' ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'}`}>
+                      {stat.change}
+                    </span>
                   </div>
-                  <span className={`text-xs font-semibold px-2 py-1 rounded-md ${stat.trend === 'up' ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'
-                    }`}>
-                    {stat.change}
-                  </span>
+                  <h3 className="text-3xl font-bold text-slate-900 mb-1">{stat.value}</h3>
+                  <p className="text-sm text-slate-500">{stat.label}</p>
+                  <p className="text-xs text-slate-400 mt-2">{stat.detail}</p>
                 </div>
-                <h3 className="text-3xl font-bold text-slate-900 mb-1">{stat.value}</h3>
-                <p className="text-sm text-slate-500">{stat.label}</p>
-                <p className="text-xs text-slate-400 mt-2">{stat.detail}</p>
-              </div>
-            );
-          })}
+              );
+            })
+          )}
         </section>
 
         {/* Main Content Grid */}
