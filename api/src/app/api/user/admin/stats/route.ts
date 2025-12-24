@@ -14,6 +14,7 @@ export async function GET() {
 
         //Stats Users
         const totalUsers = await prisma.user.count();
+        const pendingVerificationUsers = await prisma.user.count({ where: { isVerified: false }});
         const newUsersOfMonth = await prisma.user.count({ where: { createdAt: { gte: currentMonth }}});
         const newUsersLastMonth = await prisma.user.count({ where: { createdAt: { gte: lastMonth, lt: currentMonth }}});
         const userGrowth = calculateGrowth(totalUsers, totalUsers - newUsersLastMonth);
@@ -76,7 +77,6 @@ export async function GET() {
                     subtext: "Perlu ditinjau"
                 }
             ],
-
             projectStats: [
                 {
                     type: "total",
@@ -101,6 +101,30 @@ export async function GET() {
                     label: "TOTAL NILAI",
                     value: totalProjectValue,
                     color: "purple"
+                }
+            ],
+            userStats: [
+                {
+                    type: "total_users",
+                    label: "Total User",
+                    value: totalUsers,
+                    icon: "users",
+                    color: "blue"
+                },
+                {
+                    type: "pending_verification",
+                    label: "Menunggu Verifikasi",
+                    value: pendingVerificationUsers,
+                    icon: "clock",
+                    color: "orange"
+                },
+                {
+                    type: "active_monthly",
+                    label: "Aktif Bulan Ini",
+                    value: newUsersOfMonth,
+                    prefix: "+", 
+                    icon: "check",
+                    color: "emerald"
                 }
             ]
         })
