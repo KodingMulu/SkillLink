@@ -9,133 +9,98 @@ function calculateGrowth(current: number, previous: number) {
 export async function GET() {
     try {
         const now = new Date();
-
         const currentMonth = new Date(now.getFullYear(), now.getMonth(), 1);
         const lastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-        const endLastMonth = new Date(now.getFullYear(), now.getMonth(), 0);
 
         //Stats Users
         const totalUsers = await prisma.user.count();
-
-        const newUsersOfMonth = await prisma.user.count({
-            where: {
-                createdAt: {
-                    gte: currentMonth
-                }
-            }
-        });
-
-        const newUsersLastMonth = await prisma.user.count({
-            where: {
-                createdAt: {
-                    gte: lastMonth,
-                    lt: currentMonth
-                }
-            }
-        });
-
-        const totalUsersLastMonth = totalUsers - newUsersLastMonth;
-        const userGrowth = calculateGrowth(totalUsers, totalUsersLastMonth);
+        const newUsersOfMonth = await prisma.user.count({ where: { createdAt: { gte: currentMonth }}});
+        const newUsersLastMonth = await prisma.user.count({ where: { createdAt: { gte: lastMonth, lt: currentMonth }}});
+        const userGrowth = calculateGrowth(totalUsers, totalUsers - newUsersLastMonth);
 
         //Stats Projects
-        const activeProjects = await prisma.project.count({
-            where: {
-                status: "IN_PROGRESS"
-            }
-        });
+        const activeProjects = await prisma.project.count({where: { status: "IN_PROGRESS" }});
+        const completedProjects = await prisma.project.count({ where: { status: 'COMPLETED' }});
+        const totalAllProjects = await prisma.project.count();
 
-        const newProjectsThisMonth = await prisma.job.count({
-            where: {
-                createdAt: {
-                    gte: currentMonth
-                }
-            }
-        })
-
-        const newProjectsLastMonth = await prisma.job.count({
-            where: {
-                createdAt: {
-                    gte: lastMonth,
-                    lt: currentMonth
-                }
-            }
-        })
-
+        //Stats Job
+        const newProjectsThisMonth = await prisma.job.count({ where: { createdAt: { gte: currentMonth }}});
+        const newProjectsLastMonth = await prisma.job.count({ where: { createdAt: { gte: lastMonth, lt: currentMonth }}});
         const projectGrowth = calculateGrowth(newProjectsThisMonth, newProjectsLastMonth);
 
         //Stats Transactions
-        const totalTransactionAgg = await prisma.transaction.aggregate({
-            _sum: {
-                amount: true
-            }
-        });
-        const totalRevenue = totalTransactionAgg._sum.amount || 0;
-
-        const revenueThisMonthAgg = await prisma.transaction.aggregate({
-            _sum: {
-                amount: true
-            },
-            where: {
-                createdAt: {
-                    gte: currentMonth
-                }
-            }
-        });
-        const revenueThisMonth = revenueThisMonthAgg._sum.amount || 0;
-
-        const revenueLastMonthAgg = await prisma.transaction.aggregate({
-            _sum: {
-                amount: true
-            },
-            where: {
-                createdAt: {
-                    gte: lastMonth,
-                    lt: currentMonth
-                }
-            }
-        });
-        const revenueLastMonth = revenueLastMonthAgg._sum.amount || 0;
-
-        const revenueGrowth = calculateGrowth(revenueThisMonth, revenueLastMonth);
+        const revenueAgg = await prisma.transaction.aggregate({ _sum: { amount: true } });
+        const totalRevenue = revenueAgg._sum.amount || 0;
+        const revThisMonthAgg = await prisma.transaction.aggregate({ _sum: { amount: true }, where: { createdAt: { gte: currentMonth } } });
+        const revThisMonth = revThisMonthAgg._sum.amount || 0;
+        const revLastMonthAgg = await prisma.transaction.aggregate({ _sum: { amount: true }, where: { createdAt: { gte: lastMonth, lt: currentMonth } } });
+        const revLastMonth = revLastMonthAgg._sum.amount || 0;
+        const revenueGrowth = calculateGrowth(revThisMonth, revLastMonth);
 
         //Stats Report Pending
-        const pendingReports = await prisma.proposal.count({
-            where: {
-                status: 'PENDING'
-            }
+        const pendingReports = await prisma.proposal.count({ where: { status: 'PENDING' } });
+        const projectValueAgg = await prisma.job.aggregate({
+            _sum: { budget: true },
+            where: { project: { isNot: null } }
         });
-
-        const pendingReportsGrowth = -5.3;
+        const totalProjectValue = projectValueAgg._sum.budget || 0;
 
         return NextResponse.json({
-            data: [
+            mainStats: [
                 {
-                    title: "Total Users",
+                    type: "users",
+                    label: "Total User",
                     value: totalUsers,
                     growth: parseFloat(userGrowth.toFixed(1)),
-                    subText: `${newUsersOfMonth} user baru bulan ini`,
-                    type: "users"
+                    subtext: `${newUsersOfMonth} user baru bulan ini`
                 },
                 {
-                    title: "Projek Aktif",
+                    type: "active_projects",
+                    label: "Proyek Aktif",
                     value: activeProjects,
                     growth: parseFloat(projectGrowth.toFixed(1)),
-                    subText: `${newProjectsThisMonth} projek baru bulan ini`,
-                    type: "projects"
+                    subtext: `${newProjectsThisMonth} proyek baru`
                 },
                 {
-                    title: "Total Transaksi",
+                    type: "revenue",
+                    label: "Total Transaksi",
                     value: totalRevenue,
                     growth: parseFloat(revenueGrowth.toFixed(1)),
-                    subtext: "Revenue bulan ini",
-                    type: "transactions"
+                    subtext: "Revenue bulan ini"
                 },
                 {
-                    title: "Laporan Pending",
+                    type: "pending",
+                    label: "Laporan Pending",
                     value: pendingReports,
-                    growth: pendingReportsGrowth,
-                    subtext: "Perlu ditinjau",
-                    type: "reports"
+                    growth: -5.3,
+                    subtext: "Perlu ditinjau"
+                }
+            ],
+
+            projectStats: [
+                {
+                    type: "total",
+                    label: "TOTAL PROYEK",
+                    value: totalAllProjects,
+                    color: "blue"
+                },
+                {
+                    type: "completed",
+                    label: "SELESAI",
+                    value: completedProjects,
+                    color: "emerald"
+                },
+                {
+                    type: "in_progress",
+                    label: "BERJALAN",
+                    value: activeProjects,
+                    color: "orange"
+                },
+                {
+                    type: "value",
+                    label: "TOTAL NILAI",
+                    value: totalProjectValue,
+                    color: "purple"
                 }
             ]
         })
