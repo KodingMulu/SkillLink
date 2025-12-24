@@ -33,6 +33,12 @@ enum ProposalStatus {
   REJECTED
 }
 
+enum TransactionStatus {
+  PENDING
+  COMPLETED
+  FAILED
+}
+
 model User {
   id                  String    @id @default(cuid())
   email               String    @unique
@@ -103,6 +109,8 @@ model Transaction {
   id        String   @id @default(cuid())
   amount    Float
   type      String   // "DEPOSIT", "WITHDRAWAL", "PAYMENT_IN"
+  status    TransactionStatus @default(COMPLETED)
+
   walletId  String
   wallet    Wallet   @relation(fields: [walletId], references: [id])
   createdAt DateTime @default(now())

@@ -38,6 +38,10 @@ export async function GET() {
         const revLastMonth = revLastMonthAgg._sum.amount || 0;
         const revenueGrowth = calculateGrowth(revThisMonth, revLastMonth);
 
+        const successTrx = await prisma.transaction.count({ where: { status: 'COMPLETED' } });
+        const pendingTrx = await prisma.transaction.count({ where: { status: 'PENDING' } });
+        const failedTrx = await prisma.transaction.count({ where: { status: 'FAILED' } });
+
         //Stats Report Pending
         const pendingReports = await prisma.proposal.count({ where: { status: 'PENDING' } });
         const projectValueAgg = await prisma.job.aggregate({
@@ -125,6 +129,37 @@ export async function GET() {
                     prefix: "+", 
                     icon: "check",
                     color: "emerald"
+                }
+            ],
+            transactionStats: [
+                { 
+                    type: "total_volume", 
+                    label: "Total Volume", 
+                    value: totalRevenue, 
+                    growth: parseFloat(revenueGrowth.toFixed(1)), 
+                    icon: "arrow-up-right",
+                    color: "blue" 
+                },
+                { 
+                    type: "success", 
+                    label: "Berhasil", 
+                    value: successTrx, 
+                    icon: "check-circle",
+                    color: "emerald" 
+                },
+                { 
+                    type: "pending", 
+                    label: "Menunggu", 
+                    value: pendingTrx, 
+                    icon: "clock",
+                    color: "orange" 
+                },
+                { 
+                    type: "failed", 
+                    label: "Gagal/Batal", 
+                    value: failedTrx, 
+                    icon: "x-circle",
+                    color: "red" 
                 }
             ]
         })
