@@ -1,14 +1,45 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import axios from 'axios';
 import { 
   Users, UserPlus, Search, Filter, 
   Mail, UserCheck, Ban, Edit2, 
   ChevronLeft, ChevronRight, Download, 
-  CheckCircle2, Clock
+  CheckCircle2, Clock, 
+  type LucideIcon 
 } from 'lucide-react';
 import DashboardLayout from '../../DashboardLayout';
 import AddUserModal from '../components/AddUserModal';
+
+interface UserData {
+  id: number;
+  name: string;
+  email: string;
+  role: string;
+  status: string;
+  joined: string;
+  projects: number;
+  rating: number;
+}
+
+interface UserStatApi {
+  type: "total_users" | "pending_verification" | "active_monthly";
+  label: string;
+  value: number;
+  prefix?: string;
+  icon: string; 
+  color: string;
+}
+
+interface AdminStatsResponse {
+  userStats: UserStatApi[];
+}
+
+interface UserManagementPageProps {
+  backgroundImage?: string;
+  backgroundColor?: string;
+}
 
 const USERS_DATA = [
   { id: 1, name: "fatoni", email: "fatoni@email.com", role: "Freelancer", status: "active", joined: "2023-10-12", projects: 12, rating: 4.8 },
@@ -19,13 +50,7 @@ const USERS_DATA = [
   { id: 6, name: "sapta", email: "sapta@email.com", role: "Freelancer", status: "pending", joined: "2023-12-16", projects: 0, rating: 0 },
 ];
 
-interface UserManagementPageProps {
-  backgroundImage?: string;
-  backgroundColor?: string;
-}
-
 export default function UserManagementPage({ backgroundImage, backgroundColor }: UserManagementPageProps) {
-  // Background configuration
   const defaultBackground = '/images/bg.webp';
   const backgroundStyle = backgroundImage 
     ? { backgroundImage: `url(${backgroundImage})`, backgroundSize: 'cover', backgroundPosition: 'center', backgroundRepeat: 'no-repeat', backgroundAttachment: 'fixed' }
@@ -37,6 +62,45 @@ export default function UserManagementPage({ backgroundImage, backgroundColor }:
   const [statusFilter, setStatusFilter] = useState('all');
   const [selectedUsers, setSelectedUsers] = useState<number[]>([]);
   const [isAddUserModalOpen, setIsAddUserModalOpen] = useState(false);
+
+  const [stats, setStats] = useState<UserStatApi[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        const res = await axios.get<AdminStatsResponse>(
+          `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/user/admin/stats`
+        );
+        // Kita hanya mengambil bagian userStats
+        setStats(res.data.userStats);
+      } catch (error) {
+        console.error("Gagal mengambil user stats:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchStats();
+  }, []);
+
+  const getIcon = (iconName: string): LucideIcon => {
+    switch (iconName) {
+      case 'users': return Users;
+      case 'clock': return Clock;
+      case 'check': return CheckCircle2;
+      default: return Users;
+    }
+  };
+
+  const getColorStyles = (colorName: string) => {
+    switch (colorName) {
+      case 'blue': return { bg: 'bg-blue-50', text: 'text-blue-600' };
+      case 'orange': return { bg: 'bg-orange-50', text: 'text-orange-600' };
+      case 'emerald': return { bg: 'bg-emerald-50', text: 'text-emerald-600' };
+      default: return { bg: 'bg-slate-50', text: 'text-slate-600' };
+    }
+  };
 
   const filteredUsers = USERS_DATA.filter(user => {
     const matchesSearch = user.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
@@ -64,7 +128,6 @@ export default function UserManagementPage({ backgroundImage, backgroundColor }:
 
   const handleUserAdded = () => {
     console.log('User berhasil ditambahkan!');
-    // Refresh data atau update state di sini
   };
 
   return (
@@ -92,33 +155,35 @@ export default function UserManagementPage({ backgroundImage, backgroundColor }:
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="bg-white/95 backdrop-blur-sm p-4 rounded-2xl border border-slate-200 flex items-center gap-4">
-              <div className="w-12 h-12 bg-blue-50 rounded-xl flex items-center justify-center">
-                <Users className="w-6 h-6 text-blue-600" />
-              </div>
-              <div>
-                <p className="text-sm text-slate-500 font-medium">Total User</p>
-                <h3 className="text-xl font-bold text-slate-900">2,847</h3>
-              </div>
-            </div>
-            <div className="bg-white/95 backdrop-blur-sm p-4 rounded-2xl border border-slate-200 flex items-center gap-4">
-              <div className="w-12 h-12 bg-orange-50 rounded-xl flex items-center justify-center">
-                <Clock className="w-6 h-6 text-orange-600" />
-              </div>
-              <div>
-                <p className="text-sm text-slate-500 font-medium">Menunggu Verifikasi</p>
-                <h3 className="text-xl font-bold text-slate-900">14</h3>
-              </div>
-            </div>
-            <div className="bg-white/95 backdrop-blur-sm p-4 rounded-2xl border border-slate-200 flex items-center gap-4">
-              <div className="w-12 h-12 bg-emerald-50 rounded-xl flex items-center justify-center">
-                <CheckCircle2 className="w-6 h-6 text-emerald-600" />
-              </div>
-              <div>
-                <p className="text-sm text-slate-500 font-medium">Aktif Bulan Ini</p>
-                <h3 className="text-xl font-bold text-slate-900">+245</h3>
-              </div>
-            </div>
+            {loading ? (
+              [...Array(3)].map((_, i) => (
+                <div key={i} className="bg-white/95 backdrop-blur-sm p-4 rounded-2xl border border-slate-200 h-24 animate-pulse" />
+              ))
+            ) : (
+              stats.map((stat, idx) => {
+                const IconComponent = getIcon(stat.icon);
+                const styles = getColorStyles(stat.color);
+                
+                return (
+                  <div key={idx} className="bg-white/95 backdrop-blur-sm p-4 rounded-2xl border border-slate-200 flex items-center gap-4 hover:shadow-md transition-all">
+                    <div className={`w-12 h-12 ${styles.bg} rounded-xl flex items-center justify-center`}>
+                      <IconComponent className={`w-6 h-6 ${styles.text}`} />
+                    </div>
+                    <div>
+                      <p className="text-sm text-slate-500 font-medium">{stat.label}</p>
+                      <h3 className="text-xl font-bold text-slate-900">
+                        {stat.prefix}{stat.value.toLocaleString('id-ID')}
+                      </h3>
+                    </div>
+                  </div>
+                );
+              })
+            )}
+            
+            {/* Fallback jika stats kosong (Opsional, agar layout tidak rusak jika API error) */}
+            {!loading && stats.length === 0 && (
+               <div className="col-span-3 text-center text-slate-400 py-4">Gagal memuat statistik.</div>
+            )}
           </div>
 
           <div className="bg-white/95 backdrop-blur-sm rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
