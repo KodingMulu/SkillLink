@@ -34,11 +34,26 @@ export default function LoginPage() {
       const response = await axios.post(`${apiUrl}/auth/login`, {
         email: formData.email,
         password: formData.password
+      }, {
+        withCredentials: true
       });
 
       if (response.data.code === 200) {
-        alert('Login berhasil! Selamat datang kembali.');
-        router.push('/user/dashboard');
+        const userRole = response.data.user.role;
+        switch (userRole) {
+          case 'ADMIN':
+            router.push('/dashboard/admin');
+            break;
+          case 'CLIENT':
+            router.push('/dashboard/client');
+            break;
+          case 'FREELANCER':
+            router.push('/dashboard/freelancer');
+            break;
+          default:
+            router.push('/'); 
+            break;
+        }
       } else {
         alert(`Login Gagal`);
       }

@@ -34,7 +34,12 @@ export async function POST(req:Request) {
 
           const response = NextResponse.json({
                message: "User logged in successfully",
-               role: user.role,
+               user: {
+                    id: user.id,
+                    email: user.email,
+                    role: user.role,
+                    username: user.username
+               },
                code: 200
           });
 
@@ -46,6 +51,7 @@ export async function POST(req:Request) {
 
           return response;
      } catch (error) {
+          console.log(error);
           return NextResponse.json({
                message: "Something went wrong",
                code: 500
