@@ -39,14 +39,21 @@ enum TransactionStatus {
   FAILED
 }
 
+enum UserStatus {
+  ACTIVE
+  PENDING
+  SUSPENDED
+}
+
 model User {
   id                  String    @id @default(cuid())
   email               String    @unique
   username            String?
   password            String
   role                Role      @default(FREELANCER)
-  skills    String[]
+  status    UserStatus @default(PENDING)
 
+  skills    String[]
   proposals Proposal[]
   projects  Project[]
   wallet    Wallet?
