@@ -2,18 +2,18 @@
 
 import { useState, useEffect } from 'react';
 import axios from 'axios';
-import { 
-  Users, UserPlus, Search, Filter, 
-  Mail, UserCheck, Ban, Edit2, 
-  ChevronLeft, ChevronRight, Download, 
-  CheckCircle2, Clock, 
-  type LucideIcon 
+import {
+  Users, UserPlus, Search, Filter,
+  Mail, UserCheck, Ban, Edit2,
+  ChevronLeft, ChevronRight, Download,
+  CheckCircle2, Clock,
+  type LucideIcon
 } from 'lucide-react';
 import DashboardLayout from '../../DashboardLayout';
 import AddUserModal from '../components/AddUserModal';
 
 interface UserData {
-  id: number;
+  id: string;
   name: string;
   email: string;
   role: string;
@@ -28,12 +28,24 @@ interface UserStatApi {
   label: string;
   value: number;
   prefix?: string;
-  icon: string; 
+  icon: string;
   color: string;
+}
+
+interface PaginationMeta {
+  page: number;
+  limit: number;
+  total: number;
+  totalPages: number;
 }
 
 interface AdminStatsResponse {
   userStats: UserStatApi[];
+}
+
+interface UserListResponse {
+  data: UserData[];
+  pagination: PaginationMeta;
 }
 
 interface UserManagementPageProps {
@@ -41,30 +53,27 @@ interface UserManagementPageProps {
   backgroundColor?: string;
 }
 
-const USERS_DATA = [
-  { id: 1, name: "fatoni", email: "fatoni@email.com", role: "Freelancer", status: "active", joined: "2023-10-12", projects: 12, rating: 4.8 },
-  { id: 2, name: "PT Digital Innovation", email: "contact@digital.com", role: "Client", status: "active", joined: "2023-11-05", projects: 5, rating: 4.9 },
-  { id: 3, name: "egy", email: "egy@email.com", role: "Freelancer", status: "pending", joined: "2023-12-15", projects: 0, rating: 0 },
-  { id: 4, name: "veri", email: "veri@email.com", role: "Freelancer", status: "suspended", joined: "2023-09-20", projects: 8, rating: 3.2 },
-  { id: 5, name: "bima", email: "bima@studio.com", role: "Client", status: "active", joined: "2023-12-01", projects: 2, rating: 4.5 },
-  { id: 6, name: "sapta", email: "sapta@email.com", role: "Freelancer", status: "pending", joined: "2023-12-16", projects: 0, rating: 0 },
-];
-
 export default function UserManagementPage({ backgroundImage, backgroundColor }: UserManagementPageProps) {
   const defaultBackground = '/images/bg.webp';
-  const backgroundStyle = backgroundImage 
+  const backgroundStyle = backgroundImage
     ? { backgroundImage: `url(${backgroundImage})`, backgroundSize: 'cover', backgroundPosition: 'center', backgroundRepeat: 'no-repeat', backgroundAttachment: 'fixed' }
-    : backgroundColor 
+    : backgroundColor
       ? { backgroundColor: backgroundColor }
       : { backgroundImage: `url(${defaultBackground})`, backgroundSize: 'cover', backgroundPosition: 'center', backgroundRepeat: 'no-repeat', backgroundAttachment: 'fixed' };
 
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
-  const [selectedUsers, setSelectedUsers] = useState<number[]>([]);
+  const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
   const [isAddUserModalOpen, setIsAddUserModalOpen] = useState(false);
 
+  const [users, setUsers] = useState<UserData[]>([]);
+  const [pagination, setPagination] = useState<PaginationMeta>({
+    page: 1, limit: 10, total: 0, totalPages: 1
+  });
+
   const [stats, setStats] = useState<UserStatApi[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loadingStats, setLoadingStats] = useState(true);
+  const [loadingUsers, setLoadingUsers] = useState(true);
 
   useEffect(() => {
     const fetchStats = async () => {
@@ -72,17 +81,51 @@ export default function UserManagementPage({ backgroundImage, backgroundColor }:
         const res = await axios.get<AdminStatsResponse>(
           `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/user/admin/stats`
         );
-        // Kita hanya mengambil bagian userStats
         setStats(res.data.userStats);
       } catch (error) {
         console.error("Gagal mengambil user stats:", error);
       } finally {
-        setLoading(false);
+        setLoadingStats(false);
+      }
+    };
+    fetchStats();
+  }, []);
+
+  useEffect(() => {
+    const fetchUsers = async () => {
+      setLoadingUsers(true);
+      try {
+        const res = await axios.get<UserListResponse>(
+          `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/user/admin/list-user`,
+          {
+            params: {
+              page: pagination.page,
+              limit: 10,
+              search: searchTerm
+            }
+          }
+        );
+        setUsers(res.data.data);
+        setPagination(prev => ({ ...prev, ...res.data.pagination }));
+      } catch (error) {
+        console.error("Gagal mengambil list user:", error);
+      } finally {
+        setLoadingUsers(false);
       }
     };
 
-    fetchStats();
-  }, []);
+    const timeoutId = setTimeout(() => {
+      fetchUsers();
+    }, 500);
+
+    return () => clearTimeout(timeoutId);
+  }, [searchTerm, pagination.page]);
+
+
+  const filteredUsers = users.filter(user => {
+    const matchesStatus = statusFilter === 'all' || user.status === statusFilter;
+    return matchesStatus;
+  });
 
   const getIcon = (iconName: string): LucideIcon => {
     switch (iconName) {
@@ -102,15 +145,8 @@ export default function UserManagementPage({ backgroundImage, backgroundColor }:
     }
   };
 
-  const filteredUsers = USERS_DATA.filter(user => {
-    const matchesSearch = user.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                         user.email.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesStatus = statusFilter === 'all' || user.status === statusFilter;
-    return matchesSearch && matchesStatus;
-  });
-
   const getStatusStyle = (status: string) => {
-    switch(status) {
+    switch (status) {
       case 'active': return 'bg-emerald-100 text-emerald-700 ring-1 ring-emerald-600/20';
       case 'pending': return 'bg-orange-100 text-orange-700 ring-1 ring-orange-600/20';
       case 'suspended': return 'bg-red-100 text-red-700 ring-1 ring-red-600/20';
@@ -126,8 +162,10 @@ export default function UserManagementPage({ backgroundImage, backgroundColor }:
     }
   };
 
-  const handleUserAdded = () => {
-    console.log('User berhasil ditambahkan!');
+  const handlePageChange = (newPage: number) => {
+    if (newPage >= 1 && newPage <= pagination.totalPages) {
+      setPagination(prev => ({ ...prev, page: newPage }));
+    }
   };
 
   return (
@@ -144,7 +182,7 @@ export default function UserManagementPage({ backgroundImage, backgroundColor }:
                 <Download className="w-4 h-4" />
                 Export
               </button>
-              <button 
+              <button
                 onClick={() => setIsAddUserModalOpen(true)}
                 className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition shadow-sm text-sm font-medium"
               >
@@ -154,8 +192,9 @@ export default function UserManagementPage({ backgroundImage, backgroundColor }:
             </div>
           </div>
 
+          {/* STATS CARDS */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {loading ? (
+            {loadingStats ? (
               [...Array(3)].map((_, i) => (
                 <div key={i} className="bg-white/95 backdrop-blur-sm p-4 rounded-2xl border border-slate-200 h-24 animate-pulse" />
               ))
@@ -163,7 +202,7 @@ export default function UserManagementPage({ backgroundImage, backgroundColor }:
               stats.map((stat, idx) => {
                 const IconComponent = getIcon(stat.icon);
                 const styles = getColorStyles(stat.color);
-                
+
                 return (
                   <div key={idx} className="bg-white/95 backdrop-blur-sm p-4 rounded-2xl border border-slate-200 flex items-center gap-4 hover:shadow-md transition-all">
                     <div className={`w-12 h-12 ${styles.bg} rounded-xl flex items-center justify-center`}>
@@ -179,19 +218,15 @@ export default function UserManagementPage({ backgroundImage, backgroundColor }:
                 );
               })
             )}
-            
-            {/* Fallback jika stats kosong (Opsional, agar layout tidak rusak jika API error) */}
-            {!loading && stats.length === 0 && (
-               <div className="col-span-3 text-center text-slate-400 py-4">Gagal memuat statistik.</div>
-            )}
           </div>
 
+          {/* TABLE & FILTER SECTION */}
           <div className="bg-white/95 backdrop-blur-sm rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
             <div className="p-4 border-b border-slate-100 flex flex-col lg:flex-row gap-4 justify-between items-center bg-slate-50/50">
               <div className="flex items-center gap-2 w-full lg:w-auto">
                 <div className="relative flex-1 lg:w-80">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                  <input 
+                  <input
                     type="text"
                     placeholder="Cari nama atau email..."
                     className="w-full pl-10 pr-4 py-2 bg-white border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20"
@@ -209,11 +244,10 @@ export default function UserManagementPage({ backgroundImage, backgroundColor }:
                   <button
                     key={status}
                     onClick={() => setStatusFilter(status)}
-                    className={`px-4 py-1.5 rounded-full text-xs font-semibold capitalize transition-colors whitespace-nowrap ${
-                      statusFilter === status 
-                      ? 'bg-blue-600 text-white' 
-                      : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'
-                    }`}
+                    className={`px-4 py-1.5 rounded-full text-xs font-semibold capitalize transition-colors whitespace-nowrap ${statusFilter === status
+                        ? 'bg-blue-600 text-white'
+                        : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'
+                      }`}
                   >
                     {status}
                   </button>
@@ -226,10 +260,11 @@ export default function UserManagementPage({ backgroundImage, backgroundColor }:
                 <thead>
                   <tr className="bg-slate-50/50 border-b border-slate-100">
                     <th className="px-6 py-4">
-                      <input 
-                        type="checkbox" 
+                      <input
+                        type="checkbox"
                         className="rounded border-slate-300 text-blue-600 focus:ring-blue-500"
-                        checked={selectedUsers.length === filteredUsers.length}
+                        disabled={loadingUsers || filteredUsers.length === 0}
+                        checked={filteredUsers.length > 0 && selectedUsers.length === filteredUsers.length}
                         onChange={toggleSelectAll}
                       />
                     </th>
@@ -242,81 +277,121 @@ export default function UserManagementPage({ backgroundImage, backgroundColor }:
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
-                  {filteredUsers.map((user) => (
-                    <tr key={user.id} className="hover:bg-slate-50/80 transition-colors group">
-                      <td className="px-6 py-4">
-                        <input 
-                          type="checkbox" 
-                          className="rounded border-slate-300 text-blue-600 focus:ring-blue-500"
-                          checked={selectedUsers.includes(user.id)}
-                          onChange={() => {
-                            setSelectedUsers(prev => 
-                              prev.includes(user.id) ? prev.filter(id => id !== user.id) : [...prev, user.id]
-                            );
-                          }}
-                        />
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-blue-100 to-indigo-100 flex items-center justify-center text-blue-700 font-bold border border-blue-200">
-                            {user.name.charAt(0)}
-                          </div>
-                          <div>
-                            <div className="text-sm font-bold text-slate-900">{user.name}</div>
-                            <div className="text-xs text-slate-500 flex items-center gap-1">
-                              <Mail className="w-3 h-3" /> {user.email}
-                            </div>
-                          </div>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4">
-                        <span className={`text-xs font-medium px-2.5 py-0.5 rounded-full ${user.role === 'Freelancer' ? 'text-purple-700 bg-purple-50' : 'text-blue-700 bg-blue-50'}`}>
-                          {user.role}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4">
-                        <span className={`px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider ${getStatusStyle(user.status)}`}>
-                          {user.status === 'active' ? 'Aktif' : user.status === 'pending' ? 'Pending' : 'Suspended'}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 text-sm text-slate-600">
-                        {new Date(user.joined).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}
-                      </td>
-                      <td className="px-6 py-4 text-sm text-slate-600 font-medium">
-                        {user.projects} Proyek
-                      </td>
-                      <td className="px-6 py-4 text-right">
-                        <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                          {user.status === 'pending' && (
-                            <button className="p-2 text-emerald-600 hover:bg-emerald-50 rounded-lg transition shadow-sm border border-emerald-100 bg-white">
-                              <UserCheck className="w-4 h-4" />
-                            </button>
-                          )}
-                          <button className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition shadow-sm border border-blue-100 bg-white">
-                            <Edit2 className="w-4 h-4" />
-                          </button>
-                          <button className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition shadow-sm border border-red-100 bg-white">
-                            <Ban className="w-4 h-4" />
-                          </button>
-                        </div>
+                  {loadingUsers ? (
+                    <tr>
+                      <td colSpan={7} className="text-center py-8 text-slate-500">Memuat data pengguna...</td>
+                    </tr>
+                  ) : filteredUsers.length === 0 ? (
+                    <tr>
+                      <td colSpan={7} className="text-center py-8 text-slate-500">
+                        {searchTerm ? "Tidak ada user yang cocok dengan pencarian." : "Belum ada data user."}
                       </td>
                     </tr>
-                  ))}
+                  ) : (
+                    filteredUsers.map((user) => (
+                      <tr key={user.id} className="hover:bg-slate-50/80 transition-colors group">
+                        <td className="px-6 py-4">
+                          <input
+                            type="checkbox"
+                            className="rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                            checked={selectedUsers.includes(user.id)}
+                            onChange={() => {
+                              setSelectedUsers(prev =>
+                                prev.includes(user.id) ? prev.filter(id => id !== user.id) : [...prev, user.id]
+                              );
+                            }}
+                          />
+                        </td>
+                        <td className="px-6 py-4">
+                          <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-blue-100 to-indigo-100 flex items-center justify-center text-blue-700 font-bold border border-blue-200">
+                              {user.name.charAt(0).toUpperCase()}
+                            </div>
+                            <div>
+                              <div className="text-sm font-bold text-slate-900">{user.name}</div>
+                              <div className="text-xs text-slate-500 flex items-center gap-1">
+                                <Mail className="w-3 h-3" /> {user.email}
+                              </div>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4">
+                          <span className={`text-xs font-medium px-2.5 py-0.5 rounded-full ${user.role === 'FREELANCER' ? 'text-purple-700 bg-purple-50' : 'text-blue-700 bg-blue-50'}`}>
+                            {user.role}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4">
+                          <span className={`px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider ${getStatusStyle(user.status)}`}>
+                            {user.status === 'active' ? 'Aktif' : user.status === 'pending' ? 'Pending' : 'Suspended'}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 text-sm text-slate-600">
+                          {new Date(user.joined).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}
+                        </td>
+                        <td className="px-6 py-4 text-sm text-slate-600 font-medium">
+                          {user.projects} Proyek
+                        </td>
+                        <td className="px-6 py-4 text-right">
+                          <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                            {user.status === 'pending' && (
+                              <button className="p-2 text-emerald-600 hover:bg-emerald-50 rounded-lg transition shadow-sm border border-emerald-100 bg-white">
+                                <UserCheck className="w-4 h-4" />
+                              </button>
+                            )}
+                            <button className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition shadow-sm border border-blue-100 bg-white">
+                              <Edit2 className="w-4 h-4" />
+                            </button>
+                            <button className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition shadow-sm border border-red-100 bg-white">
+                              <Ban className="w-4 h-4" />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))
+                  )}
                 </tbody>
               </table>
             </div>
 
+            {/* PAGINATION SECTION */}
             <div className="px-6 py-4 border-t border-slate-100 flex items-center justify-between bg-slate-50/30">
               <p className="text-sm text-slate-500">
-                Menampilkan <span className="font-medium text-slate-900">{filteredUsers.length}</span> dari <span className="font-medium text-slate-900">{USERS_DATA.length}</span> user
+                Menampilkan <span className="font-medium text-slate-900">{filteredUsers.length}</span> dari <span className="font-medium text-slate-900">{pagination.total}</span> user
               </p>
               <div className="flex items-center gap-2">
-                <button className="p-2 border border-slate-200 rounded-lg hover:bg-white disabled:opacity-50 transition" disabled>
+                <button
+                  onClick={() => handlePageChange(pagination.page - 1)}
+                  disabled={pagination.page <= 1 || loadingUsers}
+                  className="p-2 border border-slate-200 rounded-lg hover:bg-white disabled:opacity-50 transition"
+                >
                   <ChevronLeft className="w-4 h-4" />
                 </button>
-                <button className="px-3 py-1 bg-blue-600 text-white rounded-lg text-sm font-medium">1</button>
-                <button className="px-3 py-1 hover:bg-white border border-transparent hover:border-slate-200 rounded-lg text-sm transition text-slate-600">2</button>
-                <button className="p-2 border border-slate-200 rounded-lg hover:bg-white transition">
+
+                {Array.from({ length: pagination.totalPages }, (_, i) => i + 1).map((pageNum) => {
+                  if (pageNum === 1 || pageNum === pagination.totalPages || (pageNum >= pagination.page - 1 && pageNum <= pagination.page + 1)) {
+                    return (
+                      <button
+                        key={pageNum}
+                        onClick={() => handlePageChange(pageNum)}
+                        className={`px-3 py-1 rounded-lg text-sm font-medium transition ${pagination.page === pageNum
+                            ? 'bg-blue-600 text-white'
+                            : 'hover:bg-white border border-transparent hover:border-slate-200 text-slate-600'
+                          }`}
+                      >
+                        {pageNum}
+                      </button>
+                    )
+                  }
+                  if (pageNum === 2 && pagination.page > 4) return <span key={pageNum} className="px-1">...</span>;
+                  if (pageNum === pagination.totalPages - 1 && pagination.page < pagination.totalPages - 3) return <span key={pageNum} className="px-1">...</span>;
+                  return null;
+                })}
+
+                <button
+                  onClick={() => handlePageChange(pagination.page + 1)}
+                  disabled={pagination.page >= pagination.totalPages || loadingUsers}
+                  className="p-2 border border-slate-200 rounded-lg hover:bg-white disabled:opacity-50 transition"
+                >
                   <ChevronRight className="w-4 h-4" />
                 </button>
               </div>
@@ -325,10 +400,10 @@ export default function UserManagementPage({ backgroundImage, backgroundColor }:
         </div>
 
         {/* Modal Tambah User */}
-        <AddUserModal 
+        <AddUserModal
           isOpen={isAddUserModalOpen}
           onClose={() => setIsAddUserModalOpen(false)}
-          onSuccess={handleUserAdded}
+          onSuccess={() => console.log('User added')}
         />
       </DashboardLayout>
     </div>
