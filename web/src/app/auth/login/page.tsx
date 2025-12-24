@@ -47,7 +47,7 @@ export default function LoginPage() {
 
         if (token) {
              Cookies.set('token', token, { 
-                  expires: 7,
+                  expires: 1,
                   path: '/',  
                   secure: window.location.protocol === 'https:',
                   sameSite: 'Lax'
@@ -69,9 +69,15 @@ export default function LoginPage() {
         alert(`Login Gagal: ${response.data.message}`);
       }
 
-    } catch (error: any) {
-      console.error('Login error:', error);
-      alert('Terjadi kesalahan login');
+    } catch (error: unknown) {
+      if (axios.isAxiosError(error)) {
+        const errorMessage = error.response?.data?.message || 'Email atau password salah';
+        alert(errorMessage);
+      } else if (error instanceof Error) {
+        alert(error.message);
+      } else {
+        alert('Terjadi kesalahan yang tidak diketahui');
+      }
     } finally {
       if (!window.location.pathname.includes('/dashboard')) {
           setIsLoading(false);
