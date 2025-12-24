@@ -4,8 +4,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { 
   Briefcase, LayoutDashboard, MessageSquare, 
   Settings, LogOut, Bell, Search, Menu, X, User,
-  CheckCircle, FileText, TrendingUp, Users, DollarSign, Flag,
-  ChevronRight
+  TrendingUp, Users, DollarSign
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -25,7 +24,6 @@ export default function DashboardLayout({
   const notificationRef = useRef<HTMLDivElement>(null);
   const profileRef = useRef<HTMLDivElement>(null);
 
-  // Menutup dropdown saat klik di luar
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (notificationRef.current && !notificationRef.current.contains(event.target as Node)) {
@@ -55,7 +53,7 @@ export default function DashboardLayout({
           { icon: User, label: 'Cari Talenta', href: '/dashboard/client/talents' },
           { icon: MessageSquare, label: 'Pesan', href: '/dashboard/client/messages' },
         ];
-      default: // freelancer
+      default: 
         return [
           { icon: LayoutDashboard, label: 'Overview', href: '/dashboard/freelancer' },
           { icon: Search, label: 'Cari Kerja', href: '/dashboard/freelancer/jobs' },
@@ -68,64 +66,66 @@ export default function DashboardLayout({
   const menuItems = getMenuItems();
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] flex font-sans">
-      {/* SIDEBAR */}
+    <div className="h-screen w-full bg-[#F8FAFC] flex font-sans overflow-hidden">
       <aside className={`
         fixed inset-y-0 left-0 z-50 w-64 bg-white border-r border-slate-200 transform transition-transform duration-300 ease-in-out
         ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'} md:relative md:translate-x-0
+        flex flex-col h-full 
       `}>
-        <div className="h-full flex flex-col">
-          <div className="h-20 flex items-center px-6">
-            <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center shadow-lg shadow-blue-200">
-              <Briefcase className="w-5 h-5 text-white" />
-            </div>
-            <span className="ml-3 text-xl font-bold text-slate-900 tracking-tight">SkillLink</span>
+        <div className="h-20 flex-shrink-0 flex items-center px-6 border-b border-transparent">
+          <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center shadow-lg shadow-blue-200">
+            <Briefcase className="w-5 h-5 text-white" />
           </div>
+          <span className="ml-3 text-xl font-bold text-slate-900 tracking-tight">SkillLink</span>
+        </div>
 
-          <nav className="flex-1 px-4 py-4 space-y-1.5">
-            {menuItems.map((item) => {
-              // LOGIKA ACTIVE: Menggunakan startsWith agar sub-halaman tetap mengaktifkan menu induk
-              const isActive = pathname === item.href || (item.href !== '/dashboard/client' && item.href !== '/dashboard/freelancer' && pathname.startsWith(item.href));
+        <nav className="flex-1 px-4 py-4 space-y-1.5 overflow-y-auto">
+          {menuItems.map((item) => {
+            const isActive = pathname === item.href || (item.href !== '/dashboard/client' && item.href !== '/dashboard/freelancer' && pathname.startsWith(item.href));
 
-              return (
-                <Link 
-                  key={item.label} 
-                  href={item.href}
-                  className={`flex items-center px-4 py-3 text-sm font-semibold rounded-xl transition-all group ${
-                    isActive 
-                      ? 'bg-blue-600 text-white shadow-md shadow-blue-100' 
-                      : 'text-slate-500 hover:bg-slate-50 hover:text-slate-900'
-                  }`}
-                >
-                  <item.icon className={`w-5 h-5 mr-3 transition-colors ${isActive ? 'text-white' : 'text-slate-400 group-hover:text-slate-600'}`} />
-                  {item.label}
-                </Link>
-              );
-            })}
-          </nav>
+            return (
+              <Link 
+                key={item.label} 
+                href={item.href}
+                className={`flex items-center px-4 py-3 text-sm font-semibold rounded-xl transition-all group ${
+                  isActive 
+                    ? 'bg-blue-600 text-white shadow-md shadow-blue-100' 
+                    : 'text-slate-500 hover:bg-slate-50 hover:text-slate-900'
+                }`}
+              >
+                <item.icon className={`w-5 h-5 mr-3 transition-colors ${isActive ? 'text-white' : 'text-slate-400 group-hover:text-slate-600'}`} />
+                {item.label}
+              </Link>
+            );
+          })}
+        </nav>
 
-          <div className="p-4 border-t border-slate-100 space-y-1">
-            <Link 
-              href="/dashboard/settings" 
-              className={`flex items-center px-4 py-3 text-sm font-semibold rounded-xl transition-all ${
-                pathname.startsWith('/dashboard/settings') ? 'bg-blue-50 text-blue-600' : 'text-slate-500 hover:bg-slate-50'
-              }`}
-            >
-              <Settings className="w-5 h-5 mr-3" />
-              Pengaturan
-            </Link>
-            <button className="w-full flex items-center px-4 py-3 text-sm font-semibold text-red-500 hover:bg-red-50 rounded-xl transition-colors">
-              <LogOut className="w-5 h-5 mr-3" />
-              Keluar
-            </button>
-          </div>
+        <div className="p-4 border-t border-slate-100 space-y-1 flex-shrink-0">
+          <Link 
+            href="/dashboard/settings" 
+            className={`flex items-center px-4 py-3 text-sm font-semibold rounded-xl transition-all ${
+              pathname.startsWith('/dashboard/settings') ? 'bg-blue-50 text-blue-600' : 'text-slate-500 hover:bg-slate-50'
+            }`}
+          >
+            <Settings className="w-5 h-5 mr-3" />
+            Pengaturan
+          </Link>
+          <button className="w-full flex items-center px-4 py-3 text-sm font-semibold text-red-500 hover:bg-red-50 rounded-xl transition-colors">
+            <LogOut className="w-5 h-5 mr-3" />
+            Keluar
+          </button>
         </div>
       </aside>
 
-      {/* CONTENT AREA */}
-      <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
-        {/* TOP NAVBAR */}
-        <header className="h-20 bg-white border-b border-slate-200 flex items-center justify-between px-4 lg:px-10 sticky top-0 z-40">
+      {isSidebarOpen && (
+        <div 
+          onClick={() => setIsSidebarOpen(false)}
+          className="fixed inset-0 bg-black/20 z-40 md:hidden glass"
+        ></div>
+      )}
+
+      <div className="flex-1 flex flex-col h-full min-w-0">
+        <header className="h-20 flex-shrink-0 bg-white border-b border-slate-200 flex items-center justify-between px-4 lg:px-10 z-30">
           <div className="flex items-center gap-4">
             <button onClick={() => setIsSidebarOpen(true)} className="md:hidden p-2 text-slate-500 hover:bg-slate-100 rounded-lg">
               <Menu className="w-6 h-6" />
@@ -137,7 +137,6 @@ export default function DashboardLayout({
           </div>
 
           <div className="flex items-center gap-3">
-            {/* NOTIFICATIONS */}
             <div className="relative" ref={notificationRef}>
               <button 
                 onClick={() => setIsNotificationOpen(!isNotificationOpen)}
@@ -148,7 +147,7 @@ export default function DashboardLayout({
               </button>
               
               {isNotificationOpen && (
-                <div className="absolute right-0 mt-3 w-80 bg-white border border-slate-200 rounded-2xl shadow-xl py-2 overflow-hidden animate-in fade-in slide-in-from-top-2">
+                <div className="absolute right-0 mt-3 w-80 bg-white border border-slate-200 rounded-2xl shadow-xl py-2 overflow-hidden animate-in fade-in slide-in-from-top-2 z-50">
                   <div className="px-4 py-2 border-b border-slate-50 flex justify-between items-center">
                     <span className="font-bold text-sm text-slate-900">Notifikasi</span>
                     <button className="text-[10px] text-blue-600 font-bold uppercase">Tandai Baca</button>
@@ -164,7 +163,6 @@ export default function DashboardLayout({
               )}
             </div>
 
-            {/* PROFILE DROPDOWN */}
             <div className="relative" ref={profileRef}>
               <button 
                 onClick={() => setIsProfileOpen(!isProfileOpen)}
@@ -180,7 +178,7 @@ export default function DashboardLayout({
               </button>
 
               {isProfileOpen && (
-                <div className="absolute right-0 mt-3 w-56 bg-white border border-slate-200 rounded-2xl shadow-xl py-2 animate-in fade-in slide-in-from-top-2">
+                <div className="absolute right-0 mt-3 w-56 bg-white border border-slate-200 rounded-2xl shadow-xl py-2 animate-in fade-in slide-in-from-top-2 z-50">
                    <div className="px-4 py-2 border-b border-slate-50 mb-1">
                       <p className="text-xs font-bold text-slate-900 truncate">sapta.wahyu@email.com</p>
                    </div>
@@ -196,8 +194,7 @@ export default function DashboardLayout({
           </div>
         </header>
 
-        {/* MAIN SCROLLABLE CONTENT */}
-        <main className="flex-1 overflow-y-auto p-6 lg:p-10">
+        <main className="flex-1 overflow-y-auto p-6 lg:p-10 scroll-smooth">
           <div className="max-w-7xl mx-auto">
             {children}
           </div>
