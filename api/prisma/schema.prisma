@@ -51,7 +51,7 @@ model User {
   username            String?
   password            String
   role                Role      @default(FREELANCER)
-  status    UserStatus @default(PENDING)
+  status    UserStatus @default(ACTIVE)
 
   skills    String[]
   proposals Proposal[]
