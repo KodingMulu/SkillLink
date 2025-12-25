@@ -8,19 +8,20 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { useAuth } from '@/hooks/useAuth';
 
 export default function DashboardLayout({ 
   children, 
-  role = 'freelancer' 
 }: { 
   children: React.ReactNode; 
-  role?: 'freelancer' | 'client' | 'admin'; 
 }) {
+  const { user, loading } = useAuth();
+  const pathname = usePathname();
+
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isNotificationOpen, setIsNotificationOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   
-  const pathname = usePathname();
   const notificationRef = useRef<HTMLDivElement>(null);
   const profileRef = useRef<HTMLDivElement>(null);
 
@@ -36,6 +37,18 @@ export default function DashboardLayout({
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
+
+  if (loading) {
+    return (
+      <div className="h-screen flex items-center justify-center">
+        <span className="text-slate-500">Loading dashboard...</span>
+      </div>
+    );
+  }
+
+  if (!user) return null;
+
+  const role = user.role.toLowerCase() as 'admin' | 'client' | 'freelancer';
 
   const getMenuItems = () => {
     switch (role) {
@@ -81,19 +94,21 @@ export default function DashboardLayout({
 
         <nav className="flex-1 px-4 py-4 space-y-1.5 overflow-y-auto">
           {menuItems.map((item) => {
-            const isActive = pathname === item.href || (item.href !== '/dashboard/client' && item.href !== '/dashboard/freelancer' && pathname.startsWith(item.href));
+            const active =
+              pathname === item.href ||
+              pathname.startsWith(item.href + '/');
 
             return (
               <Link 
                 key={item.label} 
                 href={item.href}
                 className={`flex items-center px-4 py-3 text-sm font-semibold rounded-xl transition-all group ${
-                  isActive 
+                  active 
                     ? 'bg-blue-600 text-white shadow-md shadow-blue-100' 
                     : 'text-slate-500 hover:bg-slate-50 hover:text-slate-900'
                 }`}
               >
-                <item.icon className={`w-5 h-5 mr-3 transition-colors ${isActive ? 'text-white' : 'text-slate-400 group-hover:text-slate-600'}`} />
+                <item.icon className={`w-5 h-5 mr-3 transition-colors`} />
                 {item.label}
               </Link>
             );
@@ -169,18 +184,18 @@ export default function DashboardLayout({
                 className="flex items-center gap-2 p-1.5 hover:bg-slate-50 rounded-xl border border-transparent hover:border-slate-200 transition-all"
               >
                 <div className="w-9 h-9 rounded-lg bg-blue-100 flex items-center justify-center text-blue-700 font-bold text-sm shadow-sm">
-                  S
+                  SL
                 </div>
                 <div className="hidden sm:block text-left">
-                  <p className="text-xs font-bold text-slate-900 leading-none">Sapta Wahyu</p>
-                  <p className="text-[10px] text-slate-400 capitalize">{role}</p>
+                  <p className="text-xs font-bold">{user.username || user.email}</p>
+                  <p className="text-[10px] capitalize text-slate-400">{role}</p>
                 </div>
               </button>
 
               {isProfileOpen && (
                 <div className="absolute right-0 mt-3 w-56 bg-white border border-slate-200 rounded-2xl shadow-xl py-2 animate-in fade-in slide-in-from-top-2 z-50">
                    <div className="px-4 py-2 border-b border-slate-50 mb-1">
-                      <p className="text-xs font-bold text-slate-900 truncate">sapta.wahyu@email.com</p>
+                      <p className="text-xs font-bold text-slate-900 truncate">{user.email}</p>
                    </div>
                    <Link href="/dashboard/profile" className="flex items-center px-4 py-2 text-sm text-slate-600 hover:bg-slate-50">
                       <User className="w-4 h-4 mr-3" /> Profil Saya
