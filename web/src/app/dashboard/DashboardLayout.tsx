@@ -1,27 +1,29 @@
 'use client';
 
 import React, { useState, useRef, useEffect } from 'react';
-import { 
-  Briefcase, LayoutDashboard, MessageSquare, 
+import {
+  Briefcase, LayoutDashboard, MessageSquare,
   Settings, LogOut, Bell, Search, Menu, X, User,
   TrendingUp, Users, DollarSign
 } from 'lucide-react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
+import axios from 'axios';
 
-export default function DashboardLayout({ 
-  children, 
-}: { 
-  children: React.ReactNode; 
+export default function DashboardLayout({
+  children,
+}: {
+  children: React.ReactNode;
 }) {
   const { user, loading } = useAuth();
   const pathname = usePathname();
+  const router = useRouter();
 
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isNotificationOpen, setIsNotificationOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
-  
+
   const notificationRef = useRef<HTMLDivElement>(null);
   const profileRef = useRef<HTMLDivElement>(null);
 
@@ -37,6 +39,21 @@ export default function DashboardLayout({
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
+
+  const handleLogout = async () => {
+    try {
+      const apiUrl =
+        process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
+
+      await axios.post(`${apiUrl}/auth/logout`, {}, {
+        withCredentials: true,
+      });
+
+      router.replace('/auth/login');
+    } catch (error) {
+      alert('Gagal logout, coba lagi');
+    }
+  };
 
   if (loading) {
     return (
@@ -66,7 +83,7 @@ export default function DashboardLayout({
           { icon: User, label: 'Cari Talenta', href: '/dashboard/client/talents' },
           { icon: MessageSquare, label: 'Pesan', href: '/dashboard/client/messages' },
         ];
-      default: 
+      default:
         return [
           { icon: LayoutDashboard, label: 'Overview', href: '/dashboard/freelancer' },
           { icon: Search, label: 'Cari Kerja', href: '/dashboard/freelancer/jobs' },
@@ -99,14 +116,13 @@ export default function DashboardLayout({
               pathname.startsWith(item.href + '/');
 
             return (
-              <Link 
-                key={item.label} 
+              <Link
+                key={item.label}
                 href={item.href}
-                className={`flex items-center px-4 py-3 text-sm font-semibold rounded-xl transition-all group ${
-                  active 
-                    ? 'bg-blue-600 text-white shadow-md shadow-blue-100' 
+                className={`flex items-center px-4 py-3 text-sm font-semibold rounded-xl transition-all group ${active
+                    ? 'bg-blue-600 text-white shadow-md shadow-blue-100'
                     : 'text-slate-500 hover:bg-slate-50 hover:text-slate-900'
-                }`}
+                  }`}
               >
                 <item.icon className={`w-5 h-5 mr-3 transition-colors`} />
                 {item.label}
@@ -116,16 +132,15 @@ export default function DashboardLayout({
         </nav>
 
         <div className="p-4 border-t border-slate-100 space-y-1 flex-shrink-0">
-          <Link 
-            href="/dashboard/settings" 
-            className={`flex items-center px-4 py-3 text-sm font-semibold rounded-xl transition-all ${
-              pathname.startsWith('/dashboard/settings') ? 'bg-blue-50 text-blue-600' : 'text-slate-500 hover:bg-slate-50'
-            }`}
+          <Link
+            href="/dashboard/settings"
+            className={`flex items-center px-4 py-3 text-sm font-semibold rounded-xl transition-all ${pathname.startsWith('/dashboard/settings') ? 'bg-blue-50 text-blue-600' : 'text-slate-500 hover:bg-slate-50'
+              }`}
           >
             <Settings className="w-5 h-5 mr-3" />
             Pengaturan
           </Link>
-          <button className="w-full flex items-center px-4 py-3 text-sm font-semibold text-red-500 hover:bg-red-50 rounded-xl transition-colors">
+          <button onClick={handleLogout} className="w-full flex items-center px-4 py-3 text-sm font-semibold text-red-500 hover:bg-red-50 rounded-xl transition-colors">
             <LogOut className="w-5 h-5 mr-3" />
             Keluar
           </button>
@@ -133,7 +148,7 @@ export default function DashboardLayout({
       </aside>
 
       {isSidebarOpen && (
-        <div 
+        <div
           onClick={() => setIsSidebarOpen(false)}
           className="fixed inset-0 bg-black/20 z-40 md:hidden glass"
         ></div>
@@ -153,14 +168,14 @@ export default function DashboardLayout({
 
           <div className="flex items-center gap-3">
             <div className="relative" ref={notificationRef}>
-              <button 
+              <button
                 onClick={() => setIsNotificationOpen(!isNotificationOpen)}
                 className="p-2.5 text-slate-500 hover:bg-slate-50 rounded-xl relative border border-slate-100"
               >
                 <Bell className="w-5 h-5" />
                 <span className="absolute top-2.5 right-2.5 w-2 h-2 bg-red-500 rounded-full border-2 border-white"></span>
               </button>
-              
+
               {isNotificationOpen && (
                 <div className="absolute right-0 mt-3 w-80 bg-white border border-slate-200 rounded-2xl shadow-xl py-2 overflow-hidden animate-in fade-in slide-in-from-top-2 z-50">
                   <div className="px-4 py-2 border-b border-slate-50 flex justify-between items-center">
@@ -179,7 +194,7 @@ export default function DashboardLayout({
             </div>
 
             <div className="relative" ref={profileRef}>
-              <button 
+              <button
                 onClick={() => setIsProfileOpen(!isProfileOpen)}
                 className="flex items-center gap-2 p-1.5 hover:bg-slate-50 rounded-xl border border-transparent hover:border-slate-200 transition-all"
               >
@@ -194,15 +209,15 @@ export default function DashboardLayout({
 
               {isProfileOpen && (
                 <div className="absolute right-0 mt-3 w-56 bg-white border border-slate-200 rounded-2xl shadow-xl py-2 animate-in fade-in slide-in-from-top-2 z-50">
-                   <div className="px-4 py-2 border-b border-slate-50 mb-1">
-                      <p className="text-xs font-bold text-slate-900 truncate">{user.email}</p>
-                   </div>
-                   <Link href="/dashboard/profile" className="flex items-center px-4 py-2 text-sm text-slate-600 hover:bg-slate-50">
-                      <User className="w-4 h-4 mr-3" /> Profil Saya
-                   </Link>
-                   <Link href="/dashboard/settings" className="flex items-center px-4 py-2 text-sm text-slate-600 hover:bg-slate-50">
-                      <Settings className="w-4 h-4 mr-3" /> Pengaturan Akun
-                   </Link>
+                  <div className="px-4 py-2 border-b border-slate-50 mb-1">
+                    <p className="text-xs font-bold text-slate-900 truncate">{user.email}</p>
+                  </div>
+                  <Link href="/dashboard/profile" className="flex items-center px-4 py-2 text-sm text-slate-600 hover:bg-slate-50">
+                    <User className="w-4 h-4 mr-3" /> Profil Saya
+                  </Link>
+                  <Link href="/dashboard/settings" className="flex items-center px-4 py-2 text-sm text-slate-600 hover:bg-slate-50">
+                    <Settings className="w-4 h-4 mr-3" /> Pengaturan Akun
+                  </Link>
                 </div>
               )}
             </div>
