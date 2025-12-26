@@ -1,14 +1,15 @@
 'use client';
 
+import React, { useEffect, useState } from 'react';
 import DashboardLayout from "../DashboardLayout";
-import { Wallet, Clock, CheckCircle2, Star, TrendingUp } from "lucide-react";
+import { Wallet, Clock, CheckCircle2, Star, TrendingUp, TrendingDown } from "lucide-react";
+import axios from 'axios';
 
-interface Stat {
-  label: string;
-  value: string;
-  icon: React.ElementType;
-  color: string;
-  bg: string;
+interface DashboardStats {
+  revenue: { value: number; growth: number; label: string };
+  activeProjects: { value: number; growth: number; label: string };
+  completedProjects: { value: number; growth: number; label: string };
+  rating: { value: number; growth: number; label: string };
 }
 
 interface Project {
@@ -20,12 +21,42 @@ interface Project {
 }
 
 export default function FreelancerDashboard() {
-  const stats: Stat[] = [
-    { label: "Total Pendapatan", value: "Rp 12.500.000", icon: Wallet, color: "text-emerald-600", bg: "bg-emerald-50" },
-    { label: "Proyek Aktif", value: "3", icon: Clock, color: "text-blue-600", bg: "bg-blue-50" },
-    { label: "Selesai", value: "12", icon: CheckCircle2, color: "text-purple-600", bg: "bg-purple-50" },
-    { label: "Rating", value: "4.9/5.0", icon: Star, color: "text-amber-500", bg: "bg-amber-50" },
-  ];
+  const [statsData, setStatsData] = useState<DashboardStats | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  const formatRupiah = (number: number) => {
+    return new Intl.NumberFormat('id-ID', {
+      style: 'currency',
+      currency: 'IDR',
+      maximumFractionDigits: 0
+    }).format(number);
+  };
+
+  useEffect(() => {
+    const fetchDashboardData = async () => {
+      try {
+        const response = await axios.get(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/user/freelancer/dashboard`, {
+          withCredentials: true
+        });
+
+        if (response.data.code === 200 && response.data.data?.stats) {
+          setStatsData(response.data.data.stats);
+        }
+      } catch (error) {
+        if (axios.isAxiosError(error)) {
+          console.error("Gagal mengambil data dashboard:", error.response?.data || error.message);
+          if (error.response?.status === 401) {
+          }
+        } else {
+          console.error("Terjadi kesalahan:", error);
+        }
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchDashboardData();
+  }, []);
 
   const activeProjects: Project[] = [
     { title: "Redesain UI/UX Aplikasi E-Wallet", client: "FinTech Asia", deadline: "2 Hari lagi", progress: 75, status: "Revisi" },
@@ -35,45 +66,83 @@ export default function FreelancerDashboard() {
 
   const getStatusStyle = (status: string) => {
     switch (status) {
-      case 'Revisi':
-        return 'bg-orange-100 text-orange-600';
-      case 'Review':
-        return 'bg-blue-100 text-blue-600';
-      case 'On Progress':
-        return 'bg-emerald-100 text-emerald-600';
-      default:
-        return 'bg-slate-100 text-slate-600';
+      case 'Revisi': return 'bg-orange-100 text-orange-600';
+      case 'Review': return 'bg-blue-100 text-blue-600';
+      case 'On Progress': return 'bg-emerald-100 text-emerald-600';
+      default: return 'bg-slate-100 text-slate-600';
     }
   };
+
+  const statsConfig = [
+    {
+      label: "Total Pendapatan",
+      value: statsData ? formatRupiah(statsData.revenue.value) : "Rp 0",
+      growth: statsData?.revenue.growth || 0,
+      icon: Wallet,
+      color: "text-emerald-600",
+      bg: "bg-emerald-50"
+    },
+    {
+      label: "Proyek Aktif",
+      value: statsData?.activeProjects.value.toString() || "0",
+      growth: statsData?.activeProjects.growth || 0,
+      icon: Clock,
+      color: "text-blue-600",
+      bg: "bg-blue-50"
+    },
+    {
+      label: "Selesai",
+      value: statsData?.completedProjects.value.toString() || "0",
+      growth: statsData?.completedProjects.growth || 0,
+      icon: CheckCircle2,
+      color: "text-purple-600",
+      bg: "bg-purple-50"
+    },
+    {
+      label: "Rating",
+      value: statsData ? `${statsData.rating.value}/5.0` : "0.0/5.0",
+      growth: statsData?.rating.growth || 0,
+      icon: Star,
+      color: "text-amber-500",
+      bg: "bg-amber-50"
+    },
+  ];
 
   return (
     <DashboardLayout role="freelancer">
       <div className="mb-8">
-        <h1 className="text-2xl font-bold text-slate-900">Halo, Nazril! 👋</h1>
+        <h1 className="text-2xl font-bold text-slate-900">Halo, Freelancer! 👋</h1>
         <p className="text-slate-500">Berikut adalah aktivitas terbaru proyekmu.</p>
       </div>
 
-      {/* Stats Grid */}
       <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-        {stats.map((stat) => (
-          <div key={stat.label} className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition-shadow">
-            <div className="flex items-center justify-between mb-4">
-              <div className={`p-3 rounded-xl ${stat.bg}`}>
-                <stat.icon className={`w-6 h-6 ${stat.color}`} />
+        {loading ? (
+          [1, 2, 3, 4].map(i => (
+            <div key={i} className="h-32 bg-slate-100 rounded-2xl animate-pulse"></div>
+          ))
+        ) : (
+          statsConfig.map((stat, index) => (
+            <div key={index} className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition-shadow">
+              <div className="flex items-center justify-between mb-4">
+                <div className={`p-3 rounded-xl ${stat.bg}`}>
+                  <stat.icon className={`w-6 h-6 ${stat.color}`} />
+                </div>
+                <span className={`flex items-center text-xs font-medium px-2 py-1 rounded-full ${stat.growth >= 0
+                  ? 'text-emerald-600 bg-emerald-50'
+                  : 'text-red-600 bg-red-50'
+                  }`}>
+                  {stat.growth >= 0 ? <TrendingUp className="w-3 h-3 mr-1" /> : <TrendingDown className="w-3 h-3 mr-1" />}
+                  {Math.abs(stat.growth)}%
+                </span>
               </div>
-              <span className="flex items-center text-xs font-medium text-emerald-600 bg-emerald-50 px-2 py-1 rounded-full">
-                <TrendingUp className="w-3 h-3 mr-1" /> +12%
-              </span>
+              <h3 className="text-2xl font-bold text-slate-900">{stat.value}</h3>
+              <p className="text-sm text-slate-500">{stat.label}</p>
             </div>
-            <h3 className="text-2xl font-bold text-slate-900">{stat.value}</h3>
-            <p className="text-sm text-slate-500">{stat.label}</p>
-          </div>
-        ))}
+          ))
+        )}
       </section>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        
-        {/* Left Col: Active Projects */}
         <div className="lg:col-span-2 space-y-6">
           <section className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
             <div className="p-6 border-b border-slate-100 flex justify-between items-center">
@@ -94,15 +163,14 @@ export default function FreelancerDashboard() {
                       {project.status}
                     </span>
                   </div>
-                  {/* Progress Bar */}
                   <div className="mt-4">
                     <div className="flex justify-between text-xs mb-1">
                       <span className="text-slate-500">Progress</span>
                       <span className="font-medium text-slate-700">{project.progress}%</span>
                     </div>
                     <div className="w-full bg-slate-100 rounded-full h-2">
-                      <div 
-                        className="bg-blue-600 h-2 rounded-full transition-all duration-500" 
+                      <div
+                        className="bg-blue-600 h-2 rounded-full transition-all duration-500"
                         style={{ width: `${project.progress}%` }}
                       ></div>
                     </div>
@@ -113,7 +181,6 @@ export default function FreelancerDashboard() {
           </section>
         </div>
 
-        {/* Right Col: Recommended Jobs */}
         <div className="space-y-6">
           <section className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
             <h2 className="font-bold text-slate-900 mb-4">Rekomendasi Pekerjaan</h2>

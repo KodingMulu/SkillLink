@@ -86,27 +86,29 @@ export async function GET(req: NextRequest) {
           return NextResponse.json({
                message: "Success fetching dashboard data",
                code: 200,
-               stats: {
-                    revenue: {
-                         value: totalRevenue,
-                         growth: 12.5,
-                         label: "Total Pendapatan"
+               data: {
+                    stats: {
+                         revenue: {
+                              value: totalRevenue,
+                              growth: 12.5,
+                              label: "Total Pendapatan"
+                         },
+                         activeProjects: {
+                              value: activeProjects,
+                              growth: calculateGrowth(activeProjects, activeProjectsLastMonth),
+                              label: "Proyek Aktif"
+                         },
+                         completedProjects: {
+                              value: completedProjects,
+                              growth: calculateGrowth(completedProjects, completedProjectsLastMonth),
+                              label: "Selesai"
+                         },
+                         rating: {
+                              value: avgRating,
+                              growth: 0,
+                              label: "Rating"
+                         }
                     },
-                    activeProjects: {
-                         value: activeProjects,
-                         growth: calculateGrowth(activeProjects, activeProjectsLastMonth),
-                         label: "Proyek Aktif"
-                    },
-                    completedProjects: {
-                         value: completedProjects,
-                         growth: calculateGrowth(completedProjects, completedProjectsLastMonth),
-                         label: "Selesai"
-                    },
-                    rating: {
-                         value: avgRating,
-                         growth: 0,
-                         label: "Rating"
-                    }
                },
                walletBalance: walletData?.balance || 0,
                recentTransactions: walletData?.transactions || [],
