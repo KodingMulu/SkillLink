@@ -11,11 +11,16 @@ import { usePathname, useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 import axios from 'axios';
 
+interface DashboardLayoutProps {
+  children: React.ReactNode;
+  role?: string; 
+}
+
 export default function DashboardLayout({
   children,
-}: {
-  children: React.ReactNode;
-}) {
+  role: propRole,
+}: DashboardLayoutProps) {
+  
   const { user, loading } = useAuth();
   const pathname = usePathname();
   const router = useRouter();
@@ -65,10 +70,10 @@ export default function DashboardLayout({
 
   if (!user) return null;
 
-  const role = user.role.toLowerCase() as 'admin' | 'client' | 'freelancer';
+  const activeRole = user.role.toLowerCase() as 'admin' | 'client' | 'freelancer';
 
   const getMenuItems = () => {
-    switch (role) {
+    switch (activeRole) {
       case 'admin':
         return [
           { icon: TrendingUp, label: 'Overview', href: '/dashboard/admin' },
@@ -83,7 +88,7 @@ export default function DashboardLayout({
           { icon: User, label: 'Cari Talenta', href: '/dashboard/client/talents' },
           { icon: MessageSquare, label: 'Pesan', href: '/dashboard/client/messages' },
         ];
-      default:
+      default: // freelancer
         return [
           { icon: LayoutDashboard, label: 'Overview', href: '/dashboard/freelancer' },
           { icon: Search, label: 'Cari Kerja', href: '/dashboard/freelancer/jobs' },
@@ -97,6 +102,7 @@ export default function DashboardLayout({
 
   return (
     <div className="h-screen w-full bg-[#F8FAFC] flex font-sans overflow-hidden">
+      {/* Sidebar */}
       <aside className={`
         fixed inset-y-0 left-0 z-50 w-64 bg-white border-r border-slate-200 transform transition-transform duration-300 ease-in-out
         ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'} md:relative md:translate-x-0
@@ -147,6 +153,7 @@ export default function DashboardLayout({
         </div>
       </aside>
 
+      {/* Overlay Mobile */}
       {isSidebarOpen && (
         <div
           onClick={() => setIsSidebarOpen(false)}
@@ -154,6 +161,7 @@ export default function DashboardLayout({
         ></div>
       )}
 
+      {/* Main Content */}
       <div className="flex-1 flex flex-col h-full min-w-0">
         <header className="h-20 flex-shrink-0 bg-white border-b border-slate-200 flex items-center justify-between px-4 lg:px-10 z-30">
           <div className="flex items-center gap-4">
@@ -167,6 +175,7 @@ export default function DashboardLayout({
           </div>
 
           <div className="flex items-center gap-3">
+            {/* Notification */}
             <div className="relative" ref={notificationRef}>
               <button
                 onClick={() => setIsNotificationOpen(!isNotificationOpen)}
@@ -193,6 +202,7 @@ export default function DashboardLayout({
               )}
             </div>
 
+            {/* Profile Dropdown */}
             <div className="relative" ref={profileRef}>
               <button
                 onClick={() => setIsProfileOpen(!isProfileOpen)}
@@ -203,7 +213,7 @@ export default function DashboardLayout({
                 </div>
                 <div className="hidden sm:block text-left">
                   <p className="text-xs font-bold">{user.username || user.email}</p>
-                  <p className="text-[10px] capitalize text-slate-400">{role}</p>
+                  <p className="text-[10px] capitalize text-slate-400">{activeRole}</p>
                 </div>
               </button>
 
