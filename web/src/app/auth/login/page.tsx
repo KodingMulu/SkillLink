@@ -40,8 +40,6 @@ export default function LoginPage() {
         withCredentials: true 
       });
 
-      console.log("Response Full:", response.data);
-
       if (response.data.code === 200) {
         const token = response.data.token; 
 
