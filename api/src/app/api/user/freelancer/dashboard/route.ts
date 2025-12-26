@@ -4,11 +4,11 @@ import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(req: NextRequest) {
   try {
-    const user = await getAuthUser(req); 
+    const user = await getAuthUser(req);
     
     if (!user) {
       return NextResponse.json(
-        { message: "Unauthorized", code: 401 }, 
+        { message: "Unauthorized", code: 401 },
         { status: 401 }
       );
     }
@@ -25,7 +25,8 @@ export async function GET(req: NextRequest) {
       completedProjectsCount,
       completedProjectsLastMonth,
       ratingData,
-      activeProjectsList      
+      activeProjectsList,
+      recommendedJobs
     ] = await Promise.all([
       prisma.wallet.findUnique({
         where: { userId: userId },
@@ -77,14 +78,14 @@ export async function GET(req: NextRequest) {
           freelancerId: userId,
           status: "IN_PROGRESS",
         },
-        take: 5,
+        take: 5, 
         orderBy: { updatedAt: "desc" },
         include: {
           job: {
             select: {
               title: true,
               deadline: true, 
-              client: {      
+              client: {       
                 select: {
                   username: true,
                   email: true
@@ -93,11 +94,30 @@ export async function GET(req: NextRequest) {
             }
           }
         }
+      }),
+
+      prisma.job.findMany({
+        where: {
+          status: "OPEN",
+          proposals: {
+            none: {
+              freelancerId: userId 
+            }
+          }
+        },
+        take: 3, 
+        orderBy: { createdAt: "desc" },
+        select: {
+          id: true,
+          title: true,
+          description: true,
+          budget: true,
+          tags: true,
+        }
       })
     ]);
 
     const totalRevenue = totalRevenueData._sum.amount || 0;
-
     const avgRating = ratingData._avg.rating
       ? Number(ratingData._avg.rating.toFixed(1))
       : 0;
@@ -118,6 +138,15 @@ export async function GET(req: NextRequest) {
       return `${diffDays} Hari lagi`;
     };
 
+    const formatBudgetShort = (amount: number) => {
+      if (amount >= 1000000) {
+        return `Rp ${(amount / 1000000).toLocaleString('id-ID')}jt`;
+      } else if (amount >= 1000) {
+        return `Rp ${(amount / 1000).toLocaleString('id-ID')}rb`;
+      }
+      return `Rp ${amount.toLocaleString('id-ID')}`;
+    };
+
     const formattedActiveProjects = activeProjectsList.map((project) => ({
       id: project.id,
       title: project.job.title,
@@ -127,6 +156,14 @@ export async function GET(req: NextRequest) {
       status: "On Progress",
     }));
 
+    const formattedRecommendations = recommendedJobs.map((job) => ({
+      id: job.id,
+      title: job.title,
+      description: job.description,
+      budget: formatBudgetShort(job.budget),
+      tags: job.tags.length > 0 ? job.tags : ["Remote", "Project"] 
+    }));
+
     return NextResponse.json({
       message: "Success fetching dashboard data",
       code: 200,
@@ -134,7 +171,7 @@ export async function GET(req: NextRequest) {
         stats: {
           revenue: {
             value: totalRevenue,
-            growth: 12.5,
+            growth: 12.5, 
             label: "Total Pendapatan"
           },
           activeProjects: {
@@ -154,15 +191,16 @@ export async function GET(req: NextRequest) {
           }
         },
         activeProjects: formattedActiveProjects,
+        recommendedJobs: formattedRecommendations,
         walletBalance: walletData?.balance || 0,
         recentTransactions: walletData?.transactions || [],
       },
     });
 
   } catch (error) {
-    console.error("Dashboard Error:", error);
+    console.error("Dashboard API Error:", error);
     return NextResponse.json(
-      { message: "Internal Server Error", code: 500 }, 
+      { message: "Internal Server Error", code: 500 },
       { status: 500 }
     );
   }
