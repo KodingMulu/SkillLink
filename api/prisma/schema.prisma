@@ -57,6 +57,7 @@ model User {
   proposals Proposal[]
   projects  Project[]
   wallet    Wallet?
+  clientJobs Job[] @relation("ClientJobs")
 
   verificationCode    String?
   verificationExpires DateTime?
@@ -73,8 +74,11 @@ model Job {
   budget      Float
   status      JobStatus @default(OPEN)
   tags        String[]
+  deadline    DateTime?
   
   clientId    String
+  client      User     @relation("ClientJobs", fields: [clientId], references: [id])
+
   proposals   Proposal[]
   project     Project?
 
