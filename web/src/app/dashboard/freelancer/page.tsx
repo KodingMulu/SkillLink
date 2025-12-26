@@ -13,6 +13,7 @@ interface DashboardStats {
 }
 
 interface Project {
+  id?: string;
   title: string;
   client: string;
   deadline: string;
@@ -22,6 +23,7 @@ interface Project {
 
 export default function FreelancerDashboard() {
   const [statsData, setStatsData] = useState<DashboardStats | null>(null);
+  const [activeProjects, setActiveProjects] = useState<Project[]>([]); // State untuk Projects
   const [loading, setLoading] = useState(true);
 
   const formatRupiah = (number: number) => {
@@ -35,18 +37,22 @@ export default function FreelancerDashboard() {
   useEffect(() => {
     const fetchDashboardData = async () => {
       try {
-        const response = await axios.get(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/user/freelancer/dashboard`, {
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+        const response = await axios.get(`${apiUrl}/user/freelancer/dashboard`, {
           withCredentials: true
         });
 
-        if (response.data.code === 200 && response.data.data?.stats) {
-          setStatsData(response.data.data.stats);
+        if (response.data.code === 200 && response.data.data) {
+          if (response.data.data.stats) {
+            setStatsData(response.data.data.stats);
+          }
+          if (response.data.data.activeProjects) {
+            setActiveProjects(response.data.data.activeProjects);
+          }
         }
       } catch (error) {
         if (axios.isAxiosError(error)) {
           console.error("Gagal mengambil data dashboard:", error.response?.data || error.message);
-          if (error.response?.status === 401) {
-          }
         } else {
           console.error("Terjadi kesalahan:", error);
         }
@@ -58,19 +64,12 @@ export default function FreelancerDashboard() {
     fetchDashboardData();
   }, []);
 
-  const activeProjects: Project[] = [
-    { title: "Redesain UI/UX Aplikasi E-Wallet", client: "FinTech Asia", deadline: "2 Hari lagi", progress: 75, status: "Revisi" },
-    { title: "Backend API untuk LMS Kampus", client: "Univ. Teknokrat", deadline: "1 Minggu lagi", progress: 40, status: "On Progress" },
-    { title: "Artikel SEO Teknologi AI", client: "Media Tech", deadline: "Hari ini", progress: 90, status: "Review" },
-  ];
-
   const getStatusStyle = (status: string) => {
-    switch (status) {
-      case 'Revisi': return 'bg-orange-100 text-orange-600';
-      case 'Review': return 'bg-blue-100 text-blue-600';
-      case 'On Progress': return 'bg-emerald-100 text-emerald-600';
-      default: return 'bg-slate-100 text-slate-600';
-    }
+    const s = status.toLowerCase();
+    if (s.includes('revisi')) return 'bg-orange-100 text-orange-600';
+    if (s.includes('review')) return 'bg-blue-100 text-blue-600';
+    if (s.includes('progress')) return 'bg-emerald-100 text-emerald-600';
+    return 'bg-slate-100 text-slate-600';
   };
 
   const statsConfig = [
@@ -115,6 +114,7 @@ export default function FreelancerDashboard() {
         <p className="text-slate-500">Berikut adalah aktivitas terbaru proyekmu.</p>
       </div>
 
+      {/* Stats Grid */}
       <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
         {loading ? (
           [1, 2, 3, 4].map(i => (
@@ -149,34 +149,48 @@ export default function FreelancerDashboard() {
               <h2 className="font-bold text-slate-900">Proyek Sedang Berjalan</h2>
               <button className="text-sm text-blue-600 hover:underline">Lihat Semua</button>
             </div>
+
             <div className="divide-y divide-slate-100">
-              {activeProjects.map((project, idx) => (
-                <div key={idx} className="p-6 hover:bg-slate-50 transition-colors">
-                  <div className="flex justify-between items-start mb-2">
-                    <div>
-                      <h4 className="font-semibold text-slate-900">{project.title}</h4>
-                      <p className="text-sm text-slate-500">
-                        {project.client} • Deadline: <span className="text-red-500 font-medium">{project.deadline}</span>
-                      </p>
-                    </div>
-                    <span className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusStyle(project.status)}`}>
-                      {project.status}
-                    </span>
+              {loading ? (
+                [1, 2].map(i => (
+                  <div key={i} className="p-6 space-y-3">
+                    <div className="h-4 bg-slate-100 rounded w-1/3 animate-pulse"></div>
+                    <div className="h-4 bg-slate-100 rounded w-1/2 animate-pulse"></div>
                   </div>
-                  <div className="mt-4">
-                    <div className="flex justify-between text-xs mb-1">
-                      <span className="text-slate-500">Progress</span>
-                      <span className="font-medium text-slate-700">{project.progress}%</span>
-                    </div>
-                    <div className="w-full bg-slate-100 rounded-full h-2">
-                      <div
-                        className="bg-blue-600 h-2 rounded-full transition-all duration-500"
-                        style={{ width: `${project.progress}%` }}
-                      ></div>
-                    </div>
-                  </div>
+                ))
+              ) : activeProjects.length === 0 ? (
+                <div className="p-8 text-center text-slate-500">
+                  Tidak ada proyek yang sedang aktif saat ini.
                 </div>
-              ))}
+              ) : (
+                activeProjects.map((project, idx) => (
+                  <div key={project.id || idx} className="p-6 hover:bg-slate-50 transition-colors">
+                    <div className="flex justify-between items-start mb-2">
+                      <div>
+                        <h4 className="font-semibold text-slate-900">{project.title}</h4>
+                        <p className="text-sm text-slate-500">
+                          {project.client} • Deadline: <span className={`${String(project.deadline).includes('Terlewat') ? 'text-red-600' : 'text-red-500'} font-medium`}>{project.deadline}</span>
+                        </p>
+                      </div>
+                      <span className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusStyle(project.status)}`}>
+                        {project.status}
+                      </span>
+                    </div>
+                    <div className="mt-4">
+                      <div className="flex justify-between text-xs mb-1">
+                        <span className="text-slate-500">Progress</span>
+                        <span className="font-medium text-slate-700">{project.progress}%</span>
+                      </div>
+                      <div className="w-full bg-slate-100 rounded-full h-2">
+                        <div
+                          className="bg-blue-600 h-2 rounded-full transition-all duration-500"
+                          style={{ width: `${project.progress}%` }}
+                        ></div>
+                      </div>
+                    </div>
+                  </div>
+                ))
+              )}
             </div>
           </section>
         </div>
@@ -204,7 +218,6 @@ export default function FreelancerDashboard() {
             </button>
           </section>
         </div>
-
       </div>
     </DashboardLayout>
   );
