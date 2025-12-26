@@ -2,119 +2,168 @@ import prisma from "@/lib/prisma";
 import { getAuthUser } from "@/lib/server-auth";
 import { NextRequest, NextResponse } from "next/server";
 
-
 export async function GET(req: NextRequest) {
-     try {
-          //Check User
-          const user = getAuthUser(req);
-          if (!user) {
-               return NextResponse.json({ message: "Unauthorized", code: 401 }, { status: 401 });
+  try {
+    const user = await getAuthUser(req); 
+    
+    if (!user) {
+      return NextResponse.json(
+        { message: "Unauthorized", code: 401 }, 
+        { status: 401 }
+      );
+    }
+
+    const userId = user.id;
+    const now = new Date();
+    const endLastMonth = new Date(now.getFullYear(), now.getMonth(), 0);
+
+    const [
+      walletData,
+      totalRevenueData,
+      activeProjectsCount,
+      activeProjectsLastMonth,
+      completedProjectsCount,
+      completedProjectsLastMonth,
+      ratingData,
+      activeProjectsList      
+    ] = await Promise.all([
+      prisma.wallet.findUnique({
+        where: { userId: userId },
+        include: {
+          transactions: {
+            take: 5,
+            orderBy: { createdAt: "desc" },
+          },
+        },
+      }),
+
+      prisma.transaction.aggregate({
+        _sum: { amount: true },
+        where: {
+          wallet: { userId: userId },
+          type: "PAYMENT_IN",
+        },
+      }),
+
+      prisma.project.count({
+        where: { freelancerId: userId, status: "IN_PROGRESS" },
+      }),
+      prisma.project.count({
+        where: {
+          freelancerId: userId,
+          status: "IN_PROGRESS",
+          createdAt: { lte: endLastMonth },
+        },
+      }),
+
+      prisma.project.count({
+        where: { freelancerId: userId, status: "COMPLETED" },
+      }),
+      prisma.project.count({
+        where: {
+          freelancerId: userId,
+          status: "COMPLETED",
+          updatedAt: { lte: endLastMonth },
+        },
+      }),
+
+      prisma.review.aggregate({
+        _avg: { rating: true },
+        where: { project: { freelancerId: userId } },
+      }),
+
+      prisma.project.findMany({
+        where: {
+          freelancerId: userId,
+          status: "IN_PROGRESS",
+        },
+        take: 5,
+        orderBy: { updatedAt: "desc" },
+        include: {
+          job: {
+            select: {
+              title: true,
+              deadline: true, 
+              client: {      
+                select: {
+                  username: true,
+                  email: true
+                }
+              }
+            }
           }
+        }
+      })
+    ]);
 
-          const userId = user.id;
-          const now = new Date();
-          const endLastMonth = new Date(now.getFullYear(), now.getMonth(), 0);
+    const totalRevenue = totalRevenueData._sum.amount || 0;
 
-          //Get All Data
-          const [
-               walletData,
-               totalRevenueData,
-               activeProjects,
-               activeProjectsLastMonth,
-               completedProjects,
-               completedProjectsLastMonth,
-               ratingData
-          ] = await Promise.all([
-               prisma.wallet.findUnique({
-                    where: { userId: userId },
-                    include: {
-                         transactions: {
-                              take: 5,
-                              orderBy: { createdAt: "desc" },
-                         },
-                    },
-               }),
+    const avgRating = ratingData._avg.rating
+      ? Number(ratingData._avg.rating.toFixed(1))
+      : 0;
 
-               prisma.transaction.aggregate({
-                    _sum: { amount: true },
-                    where: {
-                         wallet: { userId: userId },
-                         type: "PAYMENT_IN",
-                    },
-               }),
+    const calculateGrowth = (current: number, previous: number) => {
+      if (previous === 0) return current > 0 ? 100 : 0;
+      return Number((((current - previous) / previous) * 100).toFixed(1));
+    };
 
-               prisma.project.count({
-                    where: { freelancerId: userId, status: "IN_PROGRESS" },
-               }),
-               prisma.project.count({
-                    where: {
-                         freelancerId: userId,
-                         status: "IN_PROGRESS",
-                         createdAt: { lte: endLastMonth },
-                    },
-               }),
+    const formatDeadline = (date: Date | null | undefined) => {
+      if (!date) return "Tidak ada deadline";
+      const deadlineDate = new Date(date);
+      const diffTime = deadlineDate.getTime() - now.getTime();
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+      
+      if (diffDays < 0) return "Terlewat";
+      if (diffDays === 0) return "Hari ini";
+      return `${diffDays} Hari lagi`;
+    };
 
-               prisma.project.count({
-                    where: { freelancerId: userId, status: "COMPLETED" },
-               }),
-               prisma.project.count({
-                    where: {
-                         freelancerId: userId,
-                         status: "COMPLETED",
-                         updatedAt: { lte: endLastMonth },
-                    },
-               }),
+    const formattedActiveProjects = activeProjectsList.map((project) => ({
+      id: project.id,
+      title: project.job.title,
+      client: project.job.client?.username || project.job.client?.email || "Client",
+      deadline: formatDeadline(project.job.deadline),
+      progress: project.progress,
+      status: "On Progress",
+    }));
 
-               prisma.review.aggregate({
-                    _avg: { rating: true },
-                    where: { project: { freelancerId: userId } },
-               }),
-          ]);
+    return NextResponse.json({
+      message: "Success fetching dashboard data",
+      code: 200,
+      data: {
+        stats: {
+          revenue: {
+            value: totalRevenue,
+            growth: 12.5,
+            label: "Total Pendapatan"
+          },
+          activeProjects: {
+            value: activeProjectsCount,
+            growth: calculateGrowth(activeProjectsCount, activeProjectsLastMonth),
+            label: "Proyek Aktif"
+          },
+          completedProjects: {
+            value: completedProjectsCount,
+            growth: calculateGrowth(completedProjectsCount, completedProjectsLastMonth),
+            label: "Selesai"
+          },
+          rating: {
+            value: avgRating,
+            growth: 0,
+            label: "Rating"
+          }
+        },
+        activeProjects: formattedActiveProjects,
+        walletBalance: walletData?.balance || 0,
+        recentTransactions: walletData?.transactions || [],
+      },
+    });
 
-          const totalRevenue = totalRevenueData._sum.amount || 0;
-
-          const avgRating = ratingData._avg.rating
-               ? Number(ratingData._avg.rating.toFixed(1))
-               : 0;
-
-          const calculateGrowth = (current: number, previous: number) => {
-               if (previous === 0) return current > 0 ? 100 : 0;
-               return Number((((current - previous) / previous) * 100).toFixed(1));
-          };
-
-          // Return Data
-          return NextResponse.json({
-               message: "Success fetching dashboard data",
-               code: 200,
-               data: {
-                    stats: {
-                         revenue: {
-                              value: totalRevenue,
-                              growth: 12.5,
-                              label: "Total Pendapatan"
-                         },
-                         activeProjects: {
-                              value: activeProjects,
-                              growth: calculateGrowth(activeProjects, activeProjectsLastMonth),
-                              label: "Proyek Aktif"
-                         },
-                         completedProjects: {
-                              value: completedProjects,
-                              growth: calculateGrowth(completedProjects, completedProjectsLastMonth),
-                              label: "Selesai"
-                         },
-                         rating: {
-                              value: avgRating,
-                              growth: 0,
-                              label: "Rating"
-                         }
-                    },
-               },
-               walletBalance: walletData?.balance || 0,
-               recentTransactions: walletData?.transactions || [],
-          });
-     } catch (error) {
-          console.error("Dashboard Error:", error);
-          return NextResponse.json({ message: "Internal Server Error", code: 500 }, { status: 500 });
-     }
+  } catch (error) {
+    console.error("Dashboard Error:", error);
+    return NextResponse.json(
+      { message: "Internal Server Error", code: 500 }, 
+      { status: 500 }
+    );
+  }
 }
