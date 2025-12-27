@@ -81,7 +81,7 @@ export default function FindJobsPage() {
     try {
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
       
-      const response = await axios.get<ApiResponse>(`${apiUrl}/api/jobs`, {
+      const response = await axios.get<ApiResponse>(`${apiUrl}/user/freelancer/jobs`, {
         params: {
           q: searchQuery,
           category: activeTab
