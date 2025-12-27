@@ -56,7 +56,7 @@ export default function FreelancerDashboard() {
     const fetchDashboardData = async () => {
       try {
         const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
-        const response = await axios.get(`${apiUrl}/api/dashboard/freelancer`, {
+        const response = await axios.get(`${apiUrl}/user/freelancer/dashboard`, {
           withCredentials: true 
         });
 
