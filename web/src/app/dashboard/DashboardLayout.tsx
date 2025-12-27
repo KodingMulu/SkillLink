@@ -88,7 +88,7 @@ export default function DashboardLayout({
           { icon: User, label: 'Cari Talenta', href: '/dashboard/client/talents' },
           { icon: MessageSquare, label: 'Pesan', href: '/dashboard/client/messages' },
         ];
-      default: // freelancer
+      default:
         return [
           { icon: LayoutDashboard, label: 'Overview', href: '/dashboard/freelancer' },
           { icon: Search, label: 'Cari Kerja', href: '/dashboard/freelancer/jobs' },
@@ -101,7 +101,6 @@ export default function DashboardLayout({
 
   return (
     <div className="h-screen w-full bg-[#F8FAFC] flex font-sans overflow-hidden">
-      {/* Sidebar */}
       <aside className={`
         fixed inset-y-0 left-0 z-50 w-64 bg-white border-r border-slate-200 transform transition-transform duration-300 ease-in-out
         ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'} md:relative md:translate-x-0
@@ -116,9 +115,10 @@ export default function DashboardLayout({
 
         <nav className="flex-1 px-4 py-4 space-y-1.5 overflow-y-auto">
           {menuItems.map((item) => {
-            const active =
-              pathname === item.href ||
-              pathname.startsWith(item.href + '/');
+            const isRoot = item.href === `/dashboard/${activeRole}`;
+            const active = isRoot
+              ? pathname === item.href
+              : pathname === item.href || pathname.startsWith(item.href + '/');
 
             return (
               <Link
@@ -135,11 +135,8 @@ export default function DashboardLayout({
             );
           })}
         </nav>
-
-        {/* BAGIAN FOOTER SIDEBAR YANG BERISI LOGOUT & SETTINGS TELAH DIHAPUS DARI SINI */}
       </aside>
 
-      {/* Overlay Mobile */}
       {isSidebarOpen && (
         <div
           onClick={() => setIsSidebarOpen(false)}
@@ -147,7 +144,6 @@ export default function DashboardLayout({
         ></div>
       )}
 
-      {/* Main Content */}
       <div className="flex-1 flex flex-col h-full min-w-0">
         <header className="h-20 flex-shrink-0 bg-white border-b border-slate-200 flex items-center justify-between px-4 lg:px-10 z-30">
           <div className="flex items-center gap-4">
@@ -161,7 +157,6 @@ export default function DashboardLayout({
           </div>
 
           <div className="flex items-center gap-3">
-            {/* Notification */}
             <div className="relative" ref={notificationRef}>
               <button
                 onClick={() => setIsNotificationOpen(!isNotificationOpen)}
@@ -188,7 +183,6 @@ export default function DashboardLayout({
               )}
             </div>
 
-            {/* Profile Dropdown */}
             <div className="relative" ref={profileRef}>
               <button
                 onClick={() => setIsProfileOpen(!isProfileOpen)}
@@ -208,25 +202,23 @@ export default function DashboardLayout({
                   <div className="px-4 py-2 border-b border-slate-50 mb-1">
                     <p className="text-xs font-bold text-slate-900 truncate">{user.email}</p>
                   </div>
-                  
-                  {/* UPDATE: Link Profil & Settings Dinamis sesuai Role */}
-                  <Link 
-                    href={`/dashboard/${activeRole}/profile`} 
+
+                  <Link
+                    href={`/dashboard/${activeRole}/profile`}
                     className="flex items-center px-4 py-2 text-sm text-slate-600 hover:bg-slate-50"
                   >
                     <User className="w-4 h-4 mr-3" /> Profil Saya
                   </Link>
-                  <Link 
-                    href={`/dashboard/${activeRole}/settings`} 
+                  <Link
+                    href={`/dashboard/${activeRole}/settings`}
                     className="flex items-center px-4 py-2 text-sm text-slate-600 hover:bg-slate-50"
                   >
                     <Settings className="w-4 h-4 mr-3" /> Pengaturan Akun
                   </Link>
 
-                  {/* UPDATE: Logout Pindah ke Sini */}
                   <div className="border-t border-slate-50 mt-1 pt-1">
-                    <button 
-                      onClick={handleLogout} 
+                    <button
+                      onClick={handleLogout}
                       className="flex w-full items-center px-4 py-2 text-sm text-red-600 hover:bg-red-50 hover:text-red-700 transition-colors"
                     >
                       <LogOut className="w-4 h-4 mr-3" /> Keluar
