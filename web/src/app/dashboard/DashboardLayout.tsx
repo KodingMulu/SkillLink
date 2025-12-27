@@ -3,7 +3,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import {
   Briefcase, LayoutDashboard, MessageSquare,
-  Settings, LogOut, Bell, Search, Menu, X, User,
+  Settings, LogOut, Bell, Search, Menu, User,
   TrendingUp, Users, DollarSign
 } from 'lucide-react';
 import Link from 'next/link';
@@ -13,14 +13,14 @@ import axios from 'axios';
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
-  role?: string; 
+  role?: string;
 }
 
 export default function DashboardLayout({
   children,
   role: propRole,
 }: DashboardLayoutProps) {
-  
+
   const { user, loading } = useAuth();
   const pathname = usePathname();
   const router = useRouter();
@@ -93,7 +93,6 @@ export default function DashboardLayout({
           { icon: LayoutDashboard, label: 'Overview', href: '/dashboard/freelancer' },
           { icon: Search, label: 'Cari Kerja', href: '/dashboard/freelancer/jobs' },
           { icon: MessageSquare, label: 'Pesan', href: '/dashboard/freelancer/messages' },
-          { icon: User, label: 'Profil Saya', href: '/dashboard/freelancer/profile' },
         ];
     }
   };
@@ -126,8 +125,8 @@ export default function DashboardLayout({
                 key={item.label}
                 href={item.href}
                 className={`flex items-center px-4 py-3 text-sm font-semibold rounded-xl transition-all group ${active
-                    ? 'bg-blue-600 text-white shadow-md shadow-blue-100'
-                    : 'text-slate-500 hover:bg-slate-50 hover:text-slate-900'
+                  ? 'bg-blue-600 text-white shadow-md shadow-blue-100'
+                  : 'text-slate-500 hover:bg-slate-50 hover:text-slate-900'
                   }`}
               >
                 <item.icon className={`w-5 h-5 mr-3 transition-colors`} />
@@ -137,20 +136,7 @@ export default function DashboardLayout({
           })}
         </nav>
 
-        <div className="p-4 border-t border-slate-100 space-y-1 flex-shrink-0">
-          <Link
-            href="/dashboard/settings"
-            className={`flex items-center px-4 py-3 text-sm font-semibold rounded-xl transition-all ${pathname.startsWith('/dashboard/settings') ? 'bg-blue-50 text-blue-600' : 'text-slate-500 hover:bg-slate-50'
-              }`}
-          >
-            <Settings className="w-5 h-5 mr-3" />
-            Pengaturan
-          </Link>
-          <button onClick={handleLogout} className="w-full flex items-center px-4 py-3 text-sm font-semibold text-red-500 hover:bg-red-50 rounded-xl transition-colors">
-            <LogOut className="w-5 h-5 mr-3" />
-            Keluar
-          </button>
-        </div>
+        {/* BAGIAN FOOTER SIDEBAR YANG BERISI LOGOUT & SETTINGS TELAH DIHAPUS DARI SINI */}
       </aside>
 
       {/* Overlay Mobile */}
@@ -222,12 +208,30 @@ export default function DashboardLayout({
                   <div className="px-4 py-2 border-b border-slate-50 mb-1">
                     <p className="text-xs font-bold text-slate-900 truncate">{user.email}</p>
                   </div>
-                  <Link href="/dashboard/profile" className="flex items-center px-4 py-2 text-sm text-slate-600 hover:bg-slate-50">
+                  
+                  {/* UPDATE: Link Profil & Settings Dinamis sesuai Role */}
+                  <Link 
+                    href={`/dashboard/${activeRole}/profile`} 
+                    className="flex items-center px-4 py-2 text-sm text-slate-600 hover:bg-slate-50"
+                  >
                     <User className="w-4 h-4 mr-3" /> Profil Saya
                   </Link>
-                  <Link href="/dashboard/settings" className="flex items-center px-4 py-2 text-sm text-slate-600 hover:bg-slate-50">
+                  <Link 
+                    href={`/dashboard/${activeRole}/settings`} 
+                    className="flex items-center px-4 py-2 text-sm text-slate-600 hover:bg-slate-50"
+                  >
                     <Settings className="w-4 h-4 mr-3" /> Pengaturan Akun
                   </Link>
+
+                  {/* UPDATE: Logout Pindah ke Sini */}
+                  <div className="border-t border-slate-50 mt-1 pt-1">
+                    <button 
+                      onClick={handleLogout} 
+                      className="flex w-full items-center px-4 py-2 text-sm text-red-600 hover:bg-red-50 hover:text-red-700 transition-colors"
+                    >
+                      <LogOut className="w-4 h-4 mr-3" /> Keluar
+                    </button>
+                  </div>
                 </div>
               )}
             </div>
