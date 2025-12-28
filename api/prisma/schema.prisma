@@ -63,6 +63,7 @@ model User {
   projects  Project[]
   wallet    Wallet?
   clientJobs Job[] @relation("ClientJobs")
+  portfolios          Portfolio[]
 
   verificationCode    String?
   verificationExpires DateTime?
@@ -70,6 +71,20 @@ model User {
 
   createdAt           DateTime @default(now())
   updatedAt           DateTime @updatedAt
+}
+
+model Portfolio {
+  id          String   @id @default(cuid())
+  title       String
+  description String
+  image       String? 
+  link        String?
+  tags        String[]
+  
+  userId      String
+  user        User     @relation(fields: [userId], references: [id])
+  
+  createdAt   DateTime @default(now())
 }
 
 model Job {
