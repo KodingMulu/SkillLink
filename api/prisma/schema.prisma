@@ -53,6 +53,11 @@ model User {
   role                Role      @default(FREELANCER)
   status    UserStatus @default(ACTIVE)
 
+  title               String?
+  bio                 String?   @db.Text
+  phone               String?
+  location            String?
+
   skills    String[]
   proposals Proposal[]
   projects  Project[]
@@ -115,6 +120,11 @@ model Project {
 model Wallet {
   id           String @id @default(cuid())
   balance      Float  @default(0)
+
+  bankName      String?      
+  accountNumber String? 
+  accountHolder String?
+
   userId       String @unique
   user         User   @relation(fields: [userId], references: [id])
   transactions Transaction[]
