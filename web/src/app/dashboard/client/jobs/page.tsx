@@ -10,10 +10,10 @@ interface Job {
   id: string;
   title: string;
   category: string;
-  budget: string;      
-  budgetRaw: number;   
-  deadline: string;    
-  deadlineRaw: string; 
+  budget: string;
+  budgetRaw: number;
+  deadline: string;
+  deadlineRaw: string;
   location: string;
   duration: string;
   description: string;
@@ -37,7 +37,7 @@ interface ApiJob {
   status: string;
   tags: string[];
   createdAt: string;
-  _count?: {          
+  _count?: {
     proposals: number;
   };
 }
@@ -70,7 +70,7 @@ export default function JobsPage() {
       if (response.data.code === 200) {
         const mappedJobs: Job[] = response.data.data.map((item: ApiJob) => {
           const isValidDate = (dateString: string | null) => {
-             return dateString && !isNaN(new Date(dateString).getTime());
+            return dateString && !isNaN(new Date(dateString).getTime());
           };
 
           return {
@@ -83,9 +83,9 @@ export default function JobsPage() {
             experienceLevel: item.experienceLevel || 'intermediate',
             skills: item.tags || [],
             applicants: item._count?.proposals || 0,
-            status: item.status === 'OPEN' ? 'active' : 'closed',
-            postedDate: isValidDate(item.createdAt) 
-              ? new Date(item.createdAt).toLocaleDateString('id-ID') 
+            status: (item.status === 'OPEN' || item.status === 'active') ? 'active' : 'closed',
+            postedDate: isValidDate(item.createdAt)
+              ? new Date(item.createdAt).toLocaleDateString('id-ID')
               : '-',
             budget: `Rp ${item.budget.toLocaleString('id-ID')}`,
             budgetRaw: item.budget,
@@ -122,7 +122,7 @@ export default function JobsPage() {
 
     try {
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
-      
+
       if (editingId) {
         await axios.put(`${apiUrl}/user/client/jobs/${editingId}`, formData, { withCredentials: true });
         alert('Pekerjaan berhasil diperbarui!');
@@ -169,12 +169,12 @@ export default function JobsPage() {
     try {
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
       await axios.delete(`${apiUrl}/user/client/jobs/${jobId}`, { withCredentials: true });
-      
+
       alert("Pekerjaan berhasil dihapus.");
-      fetchJobs(); 
+      fetchJobs();
     } catch (error) {
-       console.error("Delete error:", error);
-       alert("Gagal menghapus pekerjaan.");
+      console.error("Delete error:", error);
+      alert("Gagal menghapus pekerjaan.");
     }
   };
 
@@ -203,7 +203,7 @@ export default function JobsPage() {
           <h1 className="text-2xl font-bold text-slate-900">Posting Proyek</h1>
           <p className="text-slate-500">Kelola semua lowongan pekerjaan Anda</p>
         </div>
-        <button 
+        <button
           onClick={() => setShowModal(true)}
           className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-lg text-sm font-medium shadow-lg shadow-blue-600/20 transition-all"
         >
@@ -252,7 +252,7 @@ export default function JobsPage() {
                       </span>
                     </div>
                     <p className="text-sm text-slate-500 mb-3">{job.category} • Diposting {job.postedDate}</p>
-                    
+
                     <div className="flex flex-wrap gap-2 mb-4">
                       {job.skills.map((skill, idx) => (
                         <span key={idx} className="px-3 py-1 bg-blue-50 text-blue-700 rounded-full text-xs font-medium">
@@ -282,19 +282,19 @@ export default function JobsPage() {
                   </div>
 
                   <div className="flex items-center gap-2 ml-4">
-                    <button 
+                    <button
                       onClick={() => handleViewClick(job)}
                       className="p-2 hover:bg-blue-50 text-blue-600 rounded-lg transition-colors" title="Lihat Detail"
                     >
                       <Eye className="w-4 h-4" />
                     </button>
-                    <button 
+                    <button
                       onClick={() => handleEditClick(job)}
                       className="p-2 hover:bg-emerald-50 text-emerald-600 rounded-lg transition-colors" title="Edit"
                     >
                       <Edit className="w-4 h-4" />
                     </button>
-                    <button 
+                    <button
                       onClick={() => handleDeleteClick(job.id)}
                       className="p-2 hover:bg-red-50 text-red-600 rounded-lg transition-colors" title="Hapus"
                     >
@@ -308,8 +308,8 @@ export default function JobsPage() {
                     <Users className="w-4 h-4 text-slate-400" />
                     <span className="text-sm font-semibold text-slate-700">{job.applicants} Pelamar</span>
                   </div>
-                  <Link 
-                    href={`/dashboard/client/jobs/${job.id}/applicants`} 
+                  <Link
+                    href={`/dashboard/client/jobs/${job.id}/applicants`}
                     className="text-sm text-blue-600 hover:underline font-medium"
                   >
                     Lihat Pelamar
@@ -487,8 +487,8 @@ export default function JobsPage() {
       {showViewModal && selectedJob && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto p-6 relative">
-            <button 
-              onClick={() => setShowViewModal(false)} 
+            <button
+              onClick={() => setShowViewModal(false)}
               className="absolute top-4 right-4 p-2 hover:bg-slate-100 rounded-full text-slate-400"
             >
               <X className="w-6 h-6" />
@@ -498,7 +498,7 @@ export default function JobsPage() {
               <span className="px-3 py-1 bg-blue-50 text-blue-700 text-xs font-bold rounded-full uppercase">{selectedJob.category}</span>
               <span className="px-3 py-1 bg-emerald-50 text-emerald-700 text-xs font-bold rounded-full uppercase">{selectedJob.status === 'active' ? 'Aktif' : 'Tutup'}</span>
             </div>
-            
+
             <div className="space-y-4 text-sm text-slate-600">
               <div className="grid grid-cols-2 gap-4">
                 <p><strong>Budget:</strong> {selectedJob.budget}</p>
@@ -506,16 +506,16 @@ export default function JobsPage() {
                 <p><strong>Lokasi:</strong> {selectedJob.location}</p>
                 <p><strong>Durasi:</strong> {selectedJob.duration}</p>
               </div>
-              
+
               <div>
                 <strong>Skills:</strong>
                 <div className="flex flex-wrap gap-2 mt-1">
-                   {selectedJob.skills.map((s, i) => (
-                     <span key={i} className="px-2 py-1 bg-slate-100 rounded text-xs border border-slate-200">{s}</span>
-                   ))}
+                  {selectedJob.skills.map((s, i) => (
+                    <span key={i} className="px-2 py-1 bg-slate-100 rounded text-xs border border-slate-200">{s}</span>
+                  ))}
                 </div>
               </div>
-              
+
               <div className="border-t pt-4">
                 <strong>Deskripsi:</strong>
                 <p className="mt-2 whitespace-pre-line leading-relaxed text-slate-700">{selectedJob.description}</p>
@@ -523,8 +523,8 @@ export default function JobsPage() {
             </div>
 
             <div className="mt-6 pt-4 border-t flex justify-end">
-              <button 
-                onClick={() => setShowViewModal(false)} 
+              <button
+                onClick={() => setShowViewModal(false)}
                 className="px-6 py-2 bg-slate-900 text-white rounded-lg hover:bg-slate-800 transition"
               >
                 Tutup
