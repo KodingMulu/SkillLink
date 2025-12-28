@@ -3,16 +3,16 @@
 import { useState, useEffect } from 'react';
 import DashboardLayout from "../../DashboardLayout";
 import axios from 'axios';
-import { 
-  User, Bell, CreditCard, Eye, EyeOff, Save, Shield, 
+import {
+  User, Bell, CreditCard, Eye, EyeOff, Save, Shield,
   Check, X, ExternalLink, Wallet, MapPin, Phone
 } from 'lucide-react';
+import Link from 'next/link';
 
 export default function SettingsPage() {
   const [activeTab, setActiveTab] = useState('profile');
   const [loading, setLoading] = useState(true);
-  
-  // State Profile
+
   const [profileData, setProfileData] = useState({
     name: '',
     email: '',
@@ -25,7 +25,6 @@ export default function SettingsPage() {
   const [newSkill, setNewSkill] = useState('');
   const [saveSuccess, setSaveSuccess] = useState(false);
 
-  // State Wallet (Data Real dari DB)
   const [walletData, setWalletData] = useState({
     balance: 0,
     bankName: '-',
@@ -33,7 +32,6 @@ export default function SettingsPage() {
     accountHolder: '-'
   });
 
-  // State Password
   const [showCurrentPassword, setShowCurrentPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [passwordData, setPasswordData] = useState({
@@ -42,7 +40,6 @@ export default function SettingsPage() {
     confirmPassword: ''
   });
 
-  // State Notification (UI Only sesuai request)
   const [notifications, setNotifications] = useState({
     emailJobAlerts: true,
     emailMessages: true,
@@ -50,17 +47,15 @@ export default function SettingsPage() {
     pushPayment: true
   });
 
-  // Fetch Data Settings saat load
   useEffect(() => {
     const fetchSettings = async () => {
       try {
         const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
         const response = await axios.get(`${apiUrl}/user/freelancer/settings`, { withCredentials: true });
-        
+
         if (response.data.code === 200) {
           const data = response.data.data;
-          
-          // Set Data Profile
+
           setProfileData({
             name: data.name || '',
             email: data.email || '',
@@ -71,16 +66,15 @@ export default function SettingsPage() {
           });
           setSkills(data.skills || []);
 
-          // Set Data Wallet
           if (data.wallet) {
             setWalletData(data.wallet);
           }
         }
       } catch (error) {
         if (axios.isAxiosError(error)) {
-           console.error("Gagal load settings:", error.response?.data?.message || error.message);
+          console.error("Gagal load settings:", error.response?.data?.message || error.message);
         } else {
-           console.error("Error:", error);
+          console.error("Error:", error);
         }
       } finally {
         setLoading(false);
@@ -90,7 +84,6 @@ export default function SettingsPage() {
     fetchSettings();
   }, []);
 
-  // Handler: Add Skill
   const addSkill = () => {
     if (newSkill && !skills.includes(newSkill)) {
       setSkills([...skills, newSkill]);
@@ -98,12 +91,10 @@ export default function SettingsPage() {
     }
   };
 
-  // Handler: Remove Skill
   const removeSkill = (skillToRemove: string) => {
     setSkills(skills.filter(s => s !== skillToRemove));
   };
 
-  // Handler: Update Profile (PUT)
   const handleProfileUpdate = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
@@ -124,7 +115,6 @@ export default function SettingsPage() {
     }
   };
 
-  // Handler: Change Password (PATCH)
   const handlePasswordChange = async (e: React.FormEvent) => {
     e.preventDefault();
     if (passwordData.newPassword !== passwordData.confirmPassword) {
@@ -145,16 +135,15 @@ export default function SettingsPage() {
       } else {
         alert(response.data.message);
       }
-    } catch (error) { // PERBAIKAN: Hapus ': any' di sini
-       if (axios.isAxiosError(error)) {
-         alert(error.response?.data?.message || "Gagal mengubah password");
-       } else {
-         alert("Terjadi kesalahan sistem");
-       }
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        alert(error.response?.data?.message || "Gagal mengubah password");
+      } else {
+        alert("Terjadi kesalahan sistem");
+      }
     }
   };
 
-  // Helper Format Rupiah
   const formatRupiah = (number: number) => {
     return new Intl.NumberFormat('id-ID', {
       style: 'currency',
@@ -178,23 +167,23 @@ export default function SettingsPage() {
           <p className="text-slate-500">Kelola akun dan preferensi Anda</p>
         </div>
         <button className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 text-slate-700 rounded-xl hover:bg-slate-50 transition font-bold text-sm shadow-sm">
-            <ExternalLink size={16} />
+          <ExternalLink size={16} />
+          <Link href={'/dashboard/freelancer/profile'}>
             <span>Lihat Profil Publik</span>
+          </Link>
         </button>
       </div>
 
       <div className="flex flex-col lg:flex-row gap-6">
-        {/* SIDEBAR TABS */}
         <div className="w-full lg:w-64 space-y-2">
           {tabs.map((tab) => (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`w-full flex items-center space-x-3 px-4 py-3 rounded-xl transition font-medium ${
-                activeTab === tab.id
-                  ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20'
-                  : 'bg-white text-slate-700 hover:bg-slate-50 border border-slate-200'
-              }`}
+              className={`w-full flex items-center space-x-3 px-4 py-3 rounded-xl transition font-medium ${activeTab === tab.id
+                ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20'
+                : 'bg-white text-slate-700 hover:bg-slate-50 border border-slate-200'
+                }`}
             >
               <tab.icon className="w-5 h-5" />
               <span>{tab.label}</span>
@@ -202,7 +191,6 @@ export default function SettingsPage() {
           ))}
         </div>
 
-        {/* CONTENT AREA */}
         <div className="flex-1">
           {saveSuccess && (
             <div className="bg-green-50 border border-green-200 rounded-xl p-4 mb-6 flex items-center space-x-3 animate-in fade-in zoom-in duration-300">
@@ -211,11 +199,10 @@ export default function SettingsPage() {
             </div>
           )}
 
-          {/* 1. PROFILE TAB */}
           {activeTab === 'profile' && (
             <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
               <h2 className="text-xl font-bold text-slate-900 mb-6">Informasi Profil</h2>
-              
+
               <div className="mb-6 pb-6 border-b border-slate-200">
                 <div className="flex items-center space-x-4">
                   <div className="w-20 h-20 bg-gradient-to-br from-blue-600 to-purple-600 rounded-2xl flex items-center justify-center text-white text-2xl font-bold shadow-lg">
@@ -226,7 +213,7 @@ export default function SettingsPage() {
                     <p className="text-sm text-slate-500">{profileData.email}</p>
                     {profileData.location && (
                       <p className="text-xs text-slate-400 mt-1 flex items-center gap-1">
-                        <MapPin size={12}/> {profileData.location}
+                        <MapPin size={12} /> {profileData.location}
                       </p>
                     )}
                   </div>
@@ -234,7 +221,6 @@ export default function SettingsPage() {
               </div>
 
               <form onSubmit={handleProfileUpdate} className="space-y-5">
-                {/* Nama & Title */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                   <div>
                     <label className="block text-sm font-semibold text-slate-700 mb-2">Nama Lengkap</label>
@@ -246,25 +232,23 @@ export default function SettingsPage() {
                   </div>
                 </div>
 
-                {/* Kontak & Lokasi */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                   <div>
                     <label className="block text-sm font-semibold text-slate-700 mb-2">Nomor Telepon</label>
                     <div className="relative">
-                       <Phone className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
-                       <input type="text" placeholder="+62..." value={profileData.phone} onChange={(e) => setProfileData({ ...profileData, phone: e.target.value })} className="w-full pl-10 pr-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 bg-slate-50 outline-none transition-all" />
+                      <Phone className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
+                      <input type="text" placeholder="+62..." value={profileData.phone} onChange={(e) => setProfileData({ ...profileData, phone: e.target.value })} className="w-full pl-10 pr-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 bg-slate-50 outline-none transition-all" />
                     </div>
                   </div>
                   <div>
                     <label className="block text-sm font-semibold text-slate-700 mb-2">Lokasi</label>
                     <div className="relative">
-                       <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
-                       <input type="text" placeholder="Jakarta, Indonesia" value={profileData.location} onChange={(e) => setProfileData({ ...profileData, location: e.target.value })} className="w-full pl-10 pr-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 bg-slate-50 outline-none transition-all" />
+                      <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
+                      <input type="text" placeholder="Jakarta, Indonesia" value={profileData.location} onChange={(e) => setProfileData({ ...profileData, location: e.target.value })} className="w-full pl-10 pr-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 bg-slate-50 outline-none transition-all" />
                     </div>
                   </div>
                 </div>
 
-                {/* Skills */}
                 <div className="py-2">
                   <label className="block text-sm font-semibold text-slate-700 mb-3 text-[10px] uppercase tracking-widest">Keahlian (Skills)</label>
                   <div className="flex flex-wrap gap-2 mb-3">
@@ -282,7 +266,6 @@ export default function SettingsPage() {
                   </div>
                 </div>
 
-                {/* Bio */}
                 <div>
                   <label className="block text-sm font-semibold text-slate-700 mb-2">Bio Singkat</label>
                   <textarea rows={4} placeholder="Ceritakan sedikit tentang pengalaman Anda..." value={profileData.bio} onChange={(e) => setProfileData({ ...profileData, bio: e.target.value })} className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 bg-slate-50 outline-none resize-none transition-all" />
@@ -332,7 +315,6 @@ export default function SettingsPage() {
             </div>
           )}
 
-          {/* 3. NOTIFICATION TAB */}
           {activeTab === 'notifications' && (
             <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
               <h2 className="text-xl font-bold text-slate-900 mb-6 flex items-center gap-2">
@@ -351,11 +333,11 @@ export default function SettingsPage() {
                       <p className="text-xs text-slate-500">{item.desc}</p>
                     </div>
                     <label className="relative inline-flex items-center cursor-pointer">
-                      <input 
-                        type="checkbox" 
+                      <input
+                        type="checkbox"
                         checked={notifications[item.id as keyof typeof notifications]}
-                        onChange={() => setNotifications({...notifications, [item.id]: !notifications[item.id as keyof typeof notifications]})}
-                        className="sr-only peer" 
+                        onChange={() => setNotifications({ ...notifications, [item.id]: !notifications[item.id as keyof typeof notifications] })}
+                        className="sr-only peer"
                       />
                       <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
                     </label>
@@ -365,17 +347,14 @@ export default function SettingsPage() {
             </div>
           )}
 
-          {/* 4. PAYMENT TAB (View Only with Data) */}
           {activeTab === 'payment' && (
             <div className="space-y-6">
-              {/* Kartu Saldo */}
               <div className="bg-gradient-to-r from-blue-600 to-indigo-700 rounded-2xl p-8 text-white shadow-xl relative overflow-hidden">
                 <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/3 blur-3xl"></div>
-                
                 <div className="relative z-10">
                   <p className="text-blue-100 text-sm mb-1 font-medium">Total Saldo Aktif</p>
                   <h2 className="text-4xl font-bold mb-6">{formatRupiah(walletData.balance)}</h2>
-                  
+
                   <div className="flex gap-3">
                     <button className="px-6 py-2.5 bg-white text-blue-700 rounded-xl font-bold text-sm hover:bg-blue-50 transition shadow-lg">
                       Tarik Dana (Withdraw)
@@ -387,24 +366,23 @@ export default function SettingsPage() {
                 </div>
               </div>
 
-              {/* Detail Wallet Penerima */}
               <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
                 <h3 className="font-bold text-slate-900 mb-4 flex items-center gap-2">
                   <Wallet className="text-slate-500" size={20} /> Akun Penerima
                 </h3>
-                
+
                 <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 flex items-center justify-between">
-                   <div className="flex items-center gap-4">
-                      <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 font-bold">
-                         {walletData.bankName?.charAt(0) || 'B'}
-                      </div>
-                      <div>
-                         <p className="font-bold text-slate-900">{walletData.bankName}</p>
-                         <p className="text-sm text-slate-500">{walletData.accountNumber}</p>
-                         <p className="text-xs text-slate-400 mt-0.5">{walletData.accountHolder}</p>
-                      </div>
-                   </div>
-                   <button className="text-sm font-bold text-blue-600 hover:underline">Ubah</button>
+                  <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 font-bold">
+                      {walletData.bankName?.charAt(0) || 'B'}
+                    </div>
+                    <div>
+                      <p className="font-bold text-slate-900">{walletData.bankName}</p>
+                      <p className="text-sm text-slate-500">{walletData.accountNumber}</p>
+                      <p className="text-xs text-slate-400 mt-0.5">{walletData.accountHolder}</p>
+                    </div>
+                  </div>
+                  <button className="text-sm font-bold text-blue-600 hover:underline">Ubah</button>
                 </div>
               </div>
             </div>
