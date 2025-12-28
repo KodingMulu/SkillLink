@@ -64,12 +64,6 @@ export default function ClientDashboard() {
             <h1 className="text-2xl font-bold text-slate-900">Dashboard Klien</h1>
             <p className="text-slate-500">Kelola proyek dan temukan talenta terbaik.</p>
         </div>
-        <button 
-          onClick={() => setShowPostJobModal(true)}
-          className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-lg text-sm font-medium shadow-lg shadow-blue-600/20 transition-all"
-        >
-            + Posting Pekerjaan Baru
-        </button>
       </div>
 
       {/* Stats Grid */}

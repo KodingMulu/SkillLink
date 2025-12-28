@@ -1,8 +1,4 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+// prisma/schema.prisma
 
 generator client {
   provider = "prisma-client-js"
@@ -46,71 +42,76 @@ enum UserStatus {
 }
 
 model User {
-  id                  String    @id @default(cuid())
-  email               String    @unique
-  username            String?
-  password            String
-  role                Role      @default(FREELANCER)
-  status    UserStatus @default(ACTIVE)
+  id       String     @id @default(cuid())
+  email    String     @unique
+  username String?
+  password String
+  role     Role       @default(FREELANCER)
+  status   UserStatus @default(ACTIVE)
 
-  title               String?
-  bio                 String?   @db.Text
-  phone               String?
-  location            String?
+  title    String?
+  bio      String? @db.Text
+  phone    String?
+  location String?
 
-  skills    String[]
-  proposals Proposal[]
-  projects  Project[]
-  wallet    Wallet?
-  clientJobs Job[] @relation("ClientJobs")
-  portfolios          Portfolio[]
+  skills     String[]
+  proposals  Proposal[]
+  projects   Project[]
+  wallet     Wallet?
+  clientJobs Job[]       @relation("ClientJobs")
+  portfolios Portfolio[]
 
   verificationCode    String?
   verificationExpires DateTime?
   isVerified          Boolean   @default(false)
 
-  createdAt           DateTime @default(now())
-  updatedAt           DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model Portfolio {
   id          String   @id @default(cuid())
   title       String
   description String
-  image       String? 
+  image       String?
   link        String?
   tags        String[]
-  
-  userId      String
-  user        User     @relation(fields: [userId], references: [id])
-  
-  createdAt   DateTime @default(now())
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id])
+
+  createdAt DateTime @default(now())
 }
 
 model Job {
-  id          String   @id @default(cuid())
-  title       String
-  description String
-  budget      Float
-  status      JobStatus @default(OPEN)
-  tags        String[]
-  deadline    DateTime?
+  id              String    @id @default(cuid())
+  title           String
+  description     String
+  category        String
+  budget          Float
+  deadline        DateTime?
+  location        String?
+  duration        String?
+  experienceLevel String?
   
-  clientId    String
-  client      User     @relation("ClientJobs", fields: [clientId], references: [id])
+  status          JobStatus @default(OPEN)
+  tags            String[]
 
-  proposals   Proposal[]
-  project     Project?
+  clientId String
+  client   User   @relation("ClientJobs", fields: [clientId], references: [id])
 
-  createdAt   DateTime @default(now())
+  proposals Proposal[]
+  project   Project?
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
 }
 
 model Proposal {
-  id           String         @id @default(cuid())
-  coverLetter  String
-  bidAmount    Float
-  status       ProposalStatus @default(PENDING)
-  
+  id          String         @id @default(cuid())
+  coverLetter String
+  bidAmount   Float
+  status      ProposalStatus @default(PENDING)
+
   jobId        String
   job          Job    @relation(fields: [jobId], references: [id])
   freelancerId String
@@ -118,38 +119,38 @@ model Proposal {
 }
 
 model Project {
-  id           String    @id @default(cuid())
-  status       JobStatus @default(IN_PROGRESS)
-  progress     Int       @default(0)
-  
-  jobId        String    @unique
-  job          Job       @relation(fields: [jobId], references: [id])
-  freelancerId String
-  freelancer   User      @relation(fields: [freelancerId], references: [id])
+  id       String    @id @default(cuid())
+  status   JobStatus @default(IN_PROGRESS)
+  progress Int       @default(0)
 
-  review       Review?
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
+  jobId        String @unique
+  job          Job    @relation(fields: [jobId], references: [id])
+  freelancerId String
+  freelancer   User   @relation(fields: [freelancerId], references: [id])
+
+  review    Review?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model Wallet {
-  id           String @id @default(cuid())
-  balance      Float  @default(0)
+  id      String @id @default(cuid())
+  balance Float  @default(0)
 
-  bankName      String?      
-  accountNumber String? 
+  bankName      String?
+  accountNumber String?
   accountHolder String?
 
-  userId       String @unique
-  user         User   @relation(fields: [userId], references: [id])
+  userId       String        @unique
+  user         User          @relation(fields: [userId], references: [id])
   transactions Transaction[]
 }
 
 model Transaction {
-  id        String   @id @default(cuid())
-  amount    Float
-  type      String   // "DEPOSIT", "WITHDRAWAL", "PAYMENT_IN"
-  status    TransactionStatus @default(COMPLETED)
+  id     String            @id @default(cuid())
+  amount Float
+  type   String // "DEPOSIT", "WITHDRAWAL", "PAYMENT_IN"
+  status TransactionStatus @default(COMPLETED)
 
   walletId  String
   wallet    Wallet   @relation(fields: [walletId], references: [id])
@@ -157,12 +158,12 @@ model Transaction {
 }
 
 model Review {
-  id        String   @id @default(cuid())
-  rating    Int    
-  comment   String? 
-  
-  projectId String   @unique
-  project   Project  @relation(fields: [projectId], references: [id])
-  
+  id      String  @id @default(cuid())
+  rating  Int
+  comment String?
+
+  projectId String  @unique
+  project   Project @relation(fields: [projectId], references: [id])
+
   createdAt DateTime @default(now())
 }
