@@ -95,7 +95,6 @@ export default function SettingsPage() {
     { id: 'profile', label: 'Profil', icon: User },
     { id: 'security', label: 'Keamanan', icon: Shield },
     { id: 'notifications', label: 'Notifikasi', icon: Bell },
-    { id: 'privacy', label: 'Privasi', icon: Eye },
     { id: 'payment', label: 'Pembayaran', icon: CreditCard },
   ];
 
@@ -128,23 +127,6 @@ export default function SettingsPage() {
         </div>
       </div>
 
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-        {[
-          { label: 'Proyek Selesai', value: '24', icon: Briefcase, color: 'text-blue-600', bg: 'bg-blue-50' },
-          { label: 'Rating Rata-rata', value: '4.9', icon: Star, color: 'text-amber-500', bg: 'bg-amber-50' },
-          { label: 'Klien Puas', value: '98%', icon: Check, color: 'text-emerald-600', bg: 'bg-emerald-50' },
-          { label: 'Waktu Respon', value: '< 2 jam', icon: Clock, color: 'text-purple-600', bg: 'bg-purple-50' },
-        ].map((stat, i) => (
-          <div key={i} className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm transition-all hover:shadow-md hover:-translate-y-1">
-            <div className={`w-10 h-10 ${stat.bg} ${stat.color} rounded-xl flex items-center justify-center mb-3`}>
-              <stat.icon size={20} />
-            </div>
-            <p className="text-2xl font-black text-slate-900">{stat.value}</p>
-            <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">{stat.label}</p>
-          </div>
-        ))}
-      </div>
-
       <div className="flex flex-col lg:flex-row gap-6">
         <div className="w-full lg:w-64 space-y-2">
           {tabs.map((tab) => (
@@ -161,11 +143,6 @@ export default function SettingsPage() {
               <span>{tab.label}</span>
             </button>
           ))}
-          
-          <button className="w-full flex items-center space-x-3 px-4 py-3 rounded-xl bg-white text-red-600 hover:bg-red-50 border border-slate-200 transition mt-4 font-medium">
-            <LogOut className="w-5 h-5" />
-            <span>Keluar</span>
-          </button>
         </div>
 
         <div className="flex-1">
@@ -254,29 +231,6 @@ export default function SettingsPage() {
                 <div>
                   <label className="block text-sm font-semibold text-slate-700 mb-2">Bio Singkat</label>
                   <textarea value={profileData.bio} onChange={(e) => setProfileData({ ...profileData, bio: e.target.value })} rows={4} className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 bg-slate-50 outline-none resize-none transition-all" />
-                </div>
-
-                <div className="py-4 border-t border-slate-100">
-                  <label className="block text-sm font-semibold text-slate-700 mb-4 uppercase tracking-widest text-[10px]">Akun Terhubung</label>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    {[
-                      { platform: 'GitHub', icon: Github, user: 'saipulbahri', color: 'text-slate-900', connected: true },
-                      { platform: 'LinkedIn', icon: Linkedin, user: 'Belum terhubung', color: 'text-blue-700', connected: false },
-                    ].map((social, i) => (
-                      <div key={i} className="flex items-center justify-between p-3 rounded-xl border border-slate-200 bg-slate-50/50 hover:bg-white transition-all group hover:shadow-sm">
-                        <div className="flex items-center gap-3">
-                          <div className={`p-2 rounded-lg bg-white shadow-sm border border-slate-100 ${social.color}`}><social.icon size={18}/></div>
-                          <div>
-                            <p className="text-xs font-bold text-slate-900">{social.platform}</p>
-                            <p className="text-[10px] text-slate-500">{social.user}</p>
-                          </div>
-                        </div>
-                        <button type="button" className={`text-[10px] font-black px-3 py-1.5 rounded-lg transition-all border ${social.connected ? 'text-red-500 border-red-100 hover:bg-red-50' : 'bg-slate-900 text-white hover:bg-slate-800'}`}>
-                          {social.connected ? 'Putuskan' : 'Hubungkan'}
-                        </button>
-                      </div>
-                    ))}
-                  </div>
                 </div>
 
                 <div className="flex justify-end pt-4">
