@@ -41,6 +41,14 @@ enum UserStatus {
   SUSPENDED
 }
 
+enum TransactionType {
+  DEPOSIT
+  WITHDRAWAL
+  PAYMENT_OUT 
+  PAYMENT_IN 
+  REFUND
+}
+
 model User {
   id       String     @id @default(cuid())
   email    String     @unique
@@ -135,7 +143,7 @@ model Project {
 
 model Wallet {
   id      String @id @default(cuid())
-  balance Float  @default(0)
+  balance Decimal @db.Decimal(15, 2) @default(0)
 
   bankName      String?
   accountNumber String?
@@ -148,8 +156,8 @@ model Wallet {
 
 model Transaction {
   id     String            @id @default(cuid())
-  amount Float
-  type   String // "DEPOSIT", "WITHDRAWAL", "PAYMENT_IN"
+  amount Decimal @db.Decimal(15, 2)
+  type   TransactionType
   status TransactionStatus @default(COMPLETED)
 
   walletId  String
