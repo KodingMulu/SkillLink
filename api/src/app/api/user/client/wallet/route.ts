@@ -32,6 +32,8 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   try {
+    console.log("DEBUG SERVER KEY:", process.env.MIDTRANS_SERVER_KEY);
+    
     const auth = await getAuthUser(req);
     if (!auth) return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
 
