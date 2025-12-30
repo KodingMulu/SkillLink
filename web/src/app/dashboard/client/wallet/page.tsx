@@ -25,9 +25,18 @@ interface SnapResult {
     transaction_status: string;
 }
 
+interface Snap {
+  pay: (token: string, options: {
+    onSuccess: (result: SnapResult) => void;
+    onPending: (result: SnapResult) => void;
+    onError: (result: SnapResult) => void;
+    onClose: () => void;
+  }) => void;
+}
+
 declare global {
     interface Window {
-        snap: any;
+        snap: Snap;
     }
 }
 
