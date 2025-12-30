@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
-import { Prisma } from "@/generated/prisma";
+import { Prisma } from "@/generated/prisma"; // Pastikan path ini sesuai setup generate kamu
 
 export interface TalentResponse {
   id: string; 
@@ -22,6 +22,8 @@ export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url);
     const search = searchParams.get("search") || "";
     const category = searchParams.get("category") || "all";
+    
+    // 1. Setup Filter
     const whereClause: Prisma.UserWhereInput = {
       role: "FREELANCER",
       status: "ACTIVE",   
@@ -40,24 +42,31 @@ export async function GET(req: NextRequest) {
         whereClause.title = { contains: cleanCategory, mode: "insensitive" };
     }
 
+    // 2. Query Database (PERBAIKAN DISINI)
     const users = await prisma.user.findMany({
       where: whereClause,
       include: {
-        projects: {
-          where: { status: "COMPLETED" },
+        // GANTI 'projects' JADI 'freelancerProjects'
+        freelancerProjects: {
+          where: { status: "COMPLETED" }, // Ambil yang statusnya selesai
           select: { id: true }
         },
         _count: {
-          select: { projects: true } 
+          // GANTI 'projects' JADI 'freelancerProjects'
+          select: { freelancerProjects: true } 
         }
       },
       take: 20,
     });
 
+    // 3. Transform Data
     const formattedTalents: TalentResponse[] = users.map((user) => {
       const calculatedRating = 4.5 + (Math.random() * 0.5); 
       const mockHourly = Math.floor(Math.random() * (300 - 50) + 50) * 1000; 
       
+      // Hitung project yang selesai dari array yang di-include
+      const completedCount = user.freelancerProjects.length;
+
       return {
         id: user.id,
         name: user.username || "Freelancer",
@@ -68,7 +77,10 @@ export async function GET(req: NextRequest) {
         location: user.location || "Indonesia",
         hourlyRate: `Rp ${new Intl.NumberFormat('id-ID').format(mockHourly)}`,
         skills: user.skills || [],
-        completedProjects: user._count.projects || 0, 
+        
+        // Update cara hitungnya
+        completedProjects: completedCount, 
+        
         description: user.bio || "No description provided.",
         availability: 'available'
       };

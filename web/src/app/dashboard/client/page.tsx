@@ -83,35 +83,6 @@ export default function ClientDashboard() {
         ))}
       </section>
 
-      {/* SEKSI: Smart Talent Recommendation (AI) */}
-      <section className="mb-8">
-        <div className="flex items-center gap-2 mb-4">
-          <Zap className="w-5 h-5 text-amber-500 fill-amber-500" />
-          <h2 className="font-bold text-slate-800">Rekomendasi Spesialis Untuk Anda</h2>
-          <span className="text-[10px] bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full font-bold uppercase tracking-wider">AI Match</span>
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {recommendations.map((talent) => (
-            <div key={talent.id} className="bg-white border border-slate-200 p-5 rounded-2xl flex items-center justify-between hover:shadow-md transition-all">
-              <div className="flex items-center gap-4">
-                <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center text-blue-700 font-bold text-lg">{talent.name.charAt(0)}</div>
-                <div>
-                  <div className="flex items-center gap-2">
-                    <h3 className="font-bold text-slate-900 text-sm">{talent.name}</h3>
-                    <div className="flex items-center text-amber-500 text-[10px] font-bold"><Star className="w-3 h-3 fill-amber-500 mr-1" /> {talent.rating}</div>
-                  </div>
-                  <p className="text-xs text-slate-500">{talent.role} • {talent.rate}</p>
-                </div>
-              </div>
-              <div className="text-right">
-                <div className="text-blue-600 font-bold text-xs mb-2">{talent.match}% Match</div>
-                <button className="text-[10px] font-bold border border-blue-600 text-blue-600 px-3 py-1.5 rounded-lg hover:bg-blue-600 hover:text-white transition-all">Rekrut</button>
-              </div>
-            </div>
-          ))}
-        </div>
-      </section>
-
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Left Col: Recent Applicants */}
         <div className="lg:col-span-2 space-y-6">
