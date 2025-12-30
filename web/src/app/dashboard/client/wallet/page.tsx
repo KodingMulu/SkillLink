@@ -1,12 +1,11 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import DashboardLayout from "../../DashboardLayout"; // Sesuaikan path layout
+import DashboardLayout from "../../DashboardLayout";
 import { Wallet, CreditCard, History, ArrowUpRight, ArrowDownLeft, Plus } from "lucide-react";
 import axios from 'axios';
 import Script from 'next/script';
 
-// --- DEFINISI TIPE MANUAL DI FE (Karena tidak bisa akses Prisma BE) ---
 interface Transaction {
     id: string;
     amount: number;
@@ -24,7 +23,6 @@ interface WalletData {
 interface SnapResult {
     status_code: string;
     transaction_status: string;
-    // ... field lain jika butuh
 }
 
 declare global {
@@ -38,15 +36,11 @@ export default function WalletPage() {
     const [isLoading, setIsLoading] = useState(true);
     const [isProcessing, setIsProcessing] = useState(false);
     const [amount, setAmount] = useState<string>('');
-
     const presetAmounts = [50000, 100000, 250000, 500000, 1000000];
-
-    // Gunakan ENV untuk URL Backend
     const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
     const fetchWallet = async () => {
         try {
-            // PENTING: withCredentials: true agar cookie auth dari BE terbaca
             const response = await axios.get(`${API_URL}/user/client/wallet`, { withCredentials: true });
             if (response.data.code === 200) {
                 setWallet(response.data.data);
@@ -71,16 +65,14 @@ export default function WalletPage() {
 
         setIsProcessing(true);
         try {
-            // 1. Minta Token ke Backend (API Project)
             const response = await axios.post(
                 `${API_URL}/user/client/wallet`,
                 { amount },
-                { withCredentials: true } // Wajib kirim cookie
+                { withCredentials: true }
             );
 
             const { token } = response.data.data;
 
-            // 2. Munculkan Snap (Frontend Logic)
             if (window.snap) {
                 window.snap.pay(token, {
                     onSuccess: function (result: SnapResult) {
@@ -135,9 +127,7 @@ export default function WalletPage() {
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                {/* KOLOM KIRI */}
                 <div className="lg:col-span-2 space-y-8">
-
                     <div className="bg-gradient-to-r from-blue-600 to-indigo-700 rounded-3xl p-8 text-white shadow-xl relative overflow-hidden">
                         <div className="absolute top-0 right-0 p-8 opacity-10"><Wallet size={120} /></div>
                         <div className="relative z-10">
@@ -179,7 +169,6 @@ export default function WalletPage() {
                     </div>
                 </div>
 
-                {/* KOLOM KANAN: History */}
                 <div className="lg:col-span-1">
                     <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm h-full flex flex-col">
                         <h3 className="font-bold text-slate-900 mb-6 flex items-center gap-2"><History size={20} className="text-slate-400" /> Riwayat Transaksi</h3>
