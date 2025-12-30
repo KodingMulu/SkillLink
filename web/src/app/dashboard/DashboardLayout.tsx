@@ -87,6 +87,7 @@ export default function DashboardLayout({
           { icon: Briefcase, label: 'Proyek Saya', href: '/dashboard/client/jobs' },
           { icon: User, label: 'Cari Talenta', href: '/dashboard/client/talents' },
           { icon: MessageSquare, label: 'Pesan', href: '/dashboard/client/messages' },
+          { icon: DollarSign, label: 'Saldo Saya', href: '/dashboard/client/wallet' },
         ];
       default:
         return [
