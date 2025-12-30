@@ -15,7 +15,7 @@ export default function Layout() {
           />
         )}
         screenOptions={{
-          // --- POSISI DIUBAH KE KIRI ---
+          // --- POSISI DI SEBELAH KIRI ---
           drawerPosition: 'left', 
           // -----------------------------
           headerShown: true,
@@ -24,9 +24,13 @@ export default function Layout() {
             backgroundColor: '#fff',
           },
           headerTintColor: '#1e293b',
+          
+          // --- UKURAN SIDEBAR DIUBAH KE NORMAL (300px) ---
           drawerStyle: {
-            width: '80%',
+            width: 300, 
+            backgroundColor: '#fff',
           },
+          // -----------------------------------------------
         }}
       >
         {/* Rute Utama (Dashboard) */}
