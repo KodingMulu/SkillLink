@@ -1,11 +1,3 @@
-/**
- * Register User
- * @route POST /api/auth/register
- * @access Public
- * @returns {message: string, code: number}
- * @requires email, username, password
- */
-
 import { hashPassword } from "@/lib/auth";
 import { sendMail } from "@/lib/mail";
 import prisma from "@/lib/prisma";
@@ -14,25 +6,22 @@ import { NextResponse } from "next/server";
 export async function POST(req: Request) {
      try {
           const { email, username, password, role } = await req.json();
-
           if (!role || (role !== "FREELANCER" && role !== "CLIENT")) {
-               return NextResponse.json({
-                    message: "Invalid role. Please select either FREELANCER or CLIENT.",
-                    code: 400
-               });
+               return NextResponse.json(
+                    { message: "Invalid role. Please select either FREELANCER or CLIENT." },
+                    { status: 400 } 
+               );
           }
 
           const exists = await prisma.user.findUnique({
-               where: {
-                    email
-               }
+               where: { email }
           });
 
           if (exists) {
-               return NextResponse.json({
-                    message: "User already exists",
-                    code: 400
-               });
+               return NextResponse.json(
+                    { message: "User already exists" },
+                    { status: 400 } 
+               );
           };
 
           const code = Math.floor(1000 + Math.random() * 9000).toString();
@@ -46,25 +35,35 @@ export async function POST(req: Request) {
                     role: role,
                     verificationCode: code,
                     verificationExpires: new Date(Date.now() + 15 * 60 * 1000),
-                    isVerified: false
+                    isVerified: false,
+                    wallet: {
+                         create: {
+                              balance: 0
+                         }
+                    }
                }
           });
 
-          await sendMail(
-               email,
-               "Verification Code",
-               `Your verification code is ${code}`
+          try {
+               await sendMail(
+                    email,
+                    "Verification Code",
+                    `Your verification code is ${code}`
+               );
+          } catch (emailError) {
+               console.error("Email failed to send:", emailError);
+          }
+
+          return NextResponse.json(
+               { message: "Verification code sent to your email" },
+               { status: 201 } 
           );
 
-          return NextResponse.json({
-               message: "Verification code sent to your email",
-               code: 200
-          })
      } catch (error) {
-          console.error(error);
-          return NextResponse.json({
-               message: "Something went wrong",
-               code: 500
-          })
+          console.error("Registration Error:", error);
+          return NextResponse.json(
+               { message: "Something went wrong" },
+               { status: 500 } 
+          );
      }
 }
