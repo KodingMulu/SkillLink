@@ -43,14 +43,16 @@ export default function TalentsPage() {
   const fetchTalents = async () => {
     setIsLoading(true);
     try {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || '';
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
       const params = new URLSearchParams();
       if (searchQuery) params.append('search', searchQuery);
       if (selectedCategory !== 'all') params.append('category', selectedCategory);
       if (priceRange !== 'all') params.append('price', priceRange);
       if (ratingFilter !== 'all') params.append('rating', ratingFilter);
 
-      const response = await axios.get(`${apiUrl}/user/client/?${params.toString()}`);
+      const response = await axios.get(`${apiUrl}/user/client/?${params.toString()}`, {
+        withCredentials: true
+      });
       
       if (response.data.code === 200) {
         setTalents(response.data.data);

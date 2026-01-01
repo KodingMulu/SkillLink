@@ -4,7 +4,8 @@ import React, { useState, useRef, useEffect } from 'react';
 import {
   Briefcase, LayoutDashboard, MessageSquare,
   Settings, LogOut, Bell, Search, Menu, User,
-  TrendingUp, Users, DollarSign
+  TrendingUp, Users, DollarSign,
+  Wallet
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
@@ -94,6 +95,7 @@ export default function DashboardLayout({
           { icon: LayoutDashboard, label: 'Overview', href: '/dashboard/freelancer' },
           { icon: Search, label: 'Cari Kerja', href: '/dashboard/freelancer/jobs' },
           { icon: MessageSquare, label: 'Pesan', href: '/dashboard/freelancer/messages' },
+          { icon: Wallet, label: 'Saldo Saya', href: '/dashboard/freelancer/wallet' },
         ];
     }
   };

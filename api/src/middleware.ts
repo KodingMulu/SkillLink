@@ -1,40 +1,39 @@
 import { NextResponse } from "next/server";
+import type { NextRequest } from "next/server";
 
 const allowedOrigins = [
-     process.env.WEB_URL,
-     process.env.MOBILE_URL
-];
+  process.env.WEB_URL,
+  process.env.MOBILE_URL,
+].filter(Boolean);
 
-export function middleware(req: Request) {
-     const origin = req.headers.get("origin") || "";
-     
-     if (origin && !allowedOrigins.includes(origin)) {
-          return NextResponse.json({
-               message: 'Blocked by CORS',
-               code: 403
-          }, { status: 403 });
-     }
+export function middleware(req: NextRequest) {
+  const origin = req.headers.get("origin");
 
-     const response = NextResponse.next();
+  if (origin && !allowedOrigins.includes(origin)) {
+    return new NextResponse("Blocked by CORS", { status: 403 });
+  }
 
-     if (allowedOrigins.includes(origin) || !origin) {
-          response.headers.set("Access-Control-Allow-Origin", origin || "*");
-     }
+  if (req.method === "OPTIONS") {
+    const res = new NextResponse(null, { status: 200 });
+    if (origin) {
+      res.headers.set("Access-Control-Allow-Origin", origin);
+    }
+    res.headers.set("Access-Control-Allow-Methods", "GET,POST,PUT,DELETE,OPTIONS");
+    res.headers.set("Access-Control-Allow-Headers", "Content-Type, Authorization");
+    res.headers.set("Access-Control-Allow-Credentials", "true");
+    return res;
+  }
 
-     response.headers.set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
-     response.headers.set("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Requested-With");
-     response.headers.set("Access-Control-Allow-Credentials", "true"); 
+  const res = NextResponse.next();
 
-     if (req.method === "OPTIONS") {
-          return NextResponse.json(null, {
-               status: 200,
-               headers: response.headers
-          });
-     };
+  if (origin) {
+    res.headers.set("Access-Control-Allow-Origin", origin);
+    res.headers.set("Access-Control-Allow-Credentials", "true");
+  }
 
-     return response;
+  return res;
 }
 
 export const config = {
-     matcher: "/api/:path*"
-}
+  matcher: "/api/:path*",
+};
