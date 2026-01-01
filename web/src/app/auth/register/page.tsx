@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Eye, EyeOff, Mail, User, ArrowRight, Lock } from 'lucide-react';
+import { Eye, EyeOff, Mail, User, ArrowRight, Lock, Briefcase, UserCircle } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import axios from 'axios';
@@ -11,7 +11,8 @@ export default function RegisterPage() {
   const [formData, setFormData] = useState({
     fullName: '',
     email: '',
-    password: ''
+    password: '',
+    role: 'FREELANCER'
   });
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -21,20 +22,29 @@ export default function RegisterPage() {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
+  const setRole = (role: string) => {
+    setFormData({ ...formData, role });
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!acceptTerms) { alert('Anda harus menyetujui syarat dan ketentuan'); return; }
     setIsLoading(true);
     try {
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || '/api';
-      const payload = { email: formData.email, username: formData.fullName, password: formData.password };
+      const payload = { 
+        email: formData.email, 
+        username: formData.fullName, 
+        password: formData.password,
+        role: formData.role 
+      };
+      
       const response = await axios.post(`${apiUrl}/auth/register`, payload);
-      if (response.data.code === 200) {
+      
+      if (response.status === 201) {
         alert(`Registrasi Berhasil! Cek email Anda.`);
         router.push(`/auth/verify?email=${encodeURIComponent(formData.email)}`);
-      } else {
-        alert(`Gagal Mendaftar`);
-      }
+      } 
     } catch (error) {
       if (axios.isAxiosError(error)) {
         alert(error.response?.data?.message || 'Terjadi kesalahan pada server');
@@ -66,6 +76,33 @@ export default function RegisterPage() {
         </header>
 
         <form onSubmit={handleSubmit} className="space-y-5">
+          <div className="grid grid-cols-2 gap-3 p-1 bg-slate-100 rounded-lg">
+            <button
+              type="button"
+              onClick={() => setRole('FREELANCER')}
+              className={`flex items-center justify-center space-x-2 py-2 text-sm font-medium rounded-md transition-all ${
+                formData.role === 'FREELANCER' 
+                  ? 'bg-white text-blue-600 shadow-sm' 
+                  : 'text-slate-500 hover:text-slate-700'
+              }`}
+            >
+              <Briefcase className="w-4 h-4" />
+              <span>Freelancer</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setRole('CLIENT')}
+              className={`flex items-center justify-center space-x-2 py-2 text-sm font-medium rounded-md transition-all ${
+                formData.role === 'CLIENT' 
+                  ? 'bg-white text-blue-600 shadow-sm' 
+                  : 'text-slate-500 hover:text-slate-700'
+              }`}
+            >
+              <UserCircle className="w-4 h-4" />
+              <span>Client</span>
+            </button>
+          </div>
+
           <div className="space-y-1.5">
             <label htmlFor="fullName" className="text-sm font-medium text-slate-700">Username</label>
             <div className="relative group">
