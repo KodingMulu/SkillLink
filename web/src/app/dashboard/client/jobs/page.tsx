@@ -56,7 +56,7 @@ export default function JobsPage() {
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
       const response = await axios.get(`${apiUrl}/user/client/jobs`, { withCredentials: true });
       
-      if (response.data.code === 200) {
+      if (response.data.code === 200 && response.data.data) {
         const mappedJobs: Job[] = response.data.data.map((item: ApiJob) => {
           const isValidDate = (d: string | null) => d && !isNaN(new Date(d).getTime());
           return {

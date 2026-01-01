@@ -84,7 +84,7 @@ export async function GET(req: NextRequest) {
       },
     });
 
-    return NextResponse.json({ message: "Success", data: jobs });
+    return NextResponse.json({ message: "Success", data: jobs, code: 200 });
   } catch (error) {
     if (error instanceof Error) {
       console.error("POST Error:", error.message);
