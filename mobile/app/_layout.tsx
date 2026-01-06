@@ -1,45 +1,52 @@
 import { Slot, useRouter, useSegments } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { View, ActivityIndicator } from 'react-native';
-// Anggap Anda punya AuthContext atau tempat simpan state user
-// import { useAuth } from '../context/AuthContext'; 
+import { AuthProvider, useAuth } from '../context/AuthContext'; // 1. Import AuthProvider
 
+// 2. Export default HANYA membungkus Provider
 export default function RootLayout() {
-  const router = useRouter();
+  return (
+    <AuthProvider>
+      <MainLayout />
+    </AuthProvider>
+  );
+}
+
+// 3. Pindahkan semua logika routing ke komponen child (MainLayout)
+//    agar bisa menggunakan 'useAuth' (karena sekarang sudah di dalam Provider)
+function MainLayout() {
+  const { user, isLoading } = useAuth();
   const segments = useSegments();
-
-  // CONTOH STATE (Nanti ganti pakai Context/Zustand/Redux)
-  const [isLoading, setIsLoading] = useState(true);
-  const [user, setUser] = useState(null); 
-  // user object contoh: { name: 'Budi', role: 'freelancer' }
-
-  useEffect(() => {
-    // Simulasi cek login (ganti dengan logika real cek token/AsyncStorage)
-    const checkLogin = async () => {
-      // ... logika ambil token ...
-      setIsLoading(false);
-    };
-    checkLogin();
-  }, []);
+  const router = useRouter();
 
   useEffect(() => {
     if (isLoading) return;
 
     const inAuthGroup = segments[0] === '(auth)';
-    
-    // 1. JIKA BELUM LOGIN
+    const inDashboardGroup = segments[0] === '(dashboard)';
+
+    // === LOGIKA CEK LOGIN & ROLE ===
     if (!user && !inAuthGroup) {
-      // Tendang ke halaman login
+      // Jika belum login, tendang ke login
       router.replace('/(auth)/login');
-    } 
-    
-    // 2. JIKA SUDAH LOGIN
-    else if (user && inAuthGroup) {
-      // User sudah login tapi masih di halaman login, pindahkan sesuai ROLE
-      if (user.role === 'freelancer') {
-        router.replace('/(dashboard)/freelancer');
-      } else if (user.role === 'client') {
-        router.replace('/(dashboard)/client');
+    } else if (user) {
+      // Jika sudah login
+      if (inAuthGroup) {
+        // Redirect user dari halaman login ke dashboard masing-masing
+        if (user.role === 'CLIENT') {
+          router.replace('/(dashboard)/client');
+        } else if (user.role === 'FREELANCER') {
+          router.replace('/(dashboard)/freelancer');
+        }
+      } 
+      else if (inDashboardGroup) {
+         // Cek Cross-Role (Cegah Freelancer masuk folder Client)
+         const specificGroup = segments[1];
+         if (specificGroup === 'client' && user.role !== 'CLIENT') {
+             router.replace('/(dashboard)/freelancer');
+         } else if (specificGroup === 'freelancer' && user.role !== 'FREELANCER') {
+             router.replace('/(dashboard)/client');
+         }
       }
     }
   }, [user, segments, isLoading]);
@@ -47,10 +54,10 @@ export default function RootLayout() {
   if (isLoading) {
     return (
       <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-        <ActivityIndicator size="large" />
+        <ActivityIndicator size="large" color="#2563EB" />
       </View>
     );
   }
 
-  return <Slot />; // Slot ini akan merender child route (login atau dashboard)
+  return <Slot />;
 }

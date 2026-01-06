@@ -14,11 +14,13 @@ import {
 import { Eye, EyeOff, Mail, ArrowRight, Lock, LogIn, Check } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 import axios from 'axios';
+import { useAuth } from '../../context/AuthContext';
 
-const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://10.0.2.2:3000/api';
+const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://10.109.161.89/api';
 
 export default function LoginScreen() {
   const router = useRouter();
+  const { signIn } = useAuth();
   const [formData, setFormData] = useState({
     email: '',
     password: ''
@@ -36,29 +38,22 @@ export default function LoginScreen() {
     setIsLoading(true);
 
     try {
-      const response = await axios.post(`${API_URL}/auth/login`, {
+      const response = await axios.post(`${API_URL}/login`, {
         email: formData.email,
         password: formData.password
+      }, {
+        withCredentials: true
       });
 
       if (response.data.code === 200) {
-        Alert.alert('Sukses', 'Login berhasil! Selamat datang kembali.', [
-          {
-            text: 'OK',
-            onPress: () => router.push('/user/dashboard')
-          }
-        ]);
+        const { token, user } = response.data;
+        await signIn(token, user);
       } else {
         Alert.alert('Gagal', 'Login Gagal');
       }
 
     } catch (error: any) {
       console.error('Login error:', error);
-      if (axios.isAxiosError(error)) {
-        Alert.alert('Gagal', error.response?.data?.message || 'Email atau password salah');
-      } else {
-        Alert.alert('Error', 'Terjadi kesalahan pada server');
-      }
     } finally {
       setIsLoading(false);
     }
@@ -147,7 +142,7 @@ export default function LoginScreen() {
                   </Text>
                 </View>
 
-                <TouchableOpacity onPress={() => router.push('/auth/forgot-password')}>
+                <TouchableOpacity onPress={() => router.push('/forgot-password')}>
                   <Text style={styles.forgotLink}>Lupa password?</Text>
                 </TouchableOpacity>
               </View>
@@ -176,7 +171,7 @@ export default function LoginScreen() {
               <Text style={styles.footerText}>
                 Belum punya akun?{' '}
                 <Text
-                  onPress={() => router.push('/auth/register')}
+                  onPress={() => router.push('/register')}
                   style={styles.linkText}
                 >
                   Daftar sekarang
