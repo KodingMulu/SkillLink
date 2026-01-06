@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
-import { 
-  View, Text, StyleSheet, TouchableOpacity, TextInput, Modal 
+import {
+  View, Text, StyleSheet, TouchableOpacity, TextInput, Modal
 } from 'react-native';
-import { Search, Bell, LogOut, User as UserIcon, Settings } from 'lucide-react-native'; 
-import { useAuth } from '../../context/AuthContext'; 
+import { Search, Bell, LogOut, User as UserIcon, Settings } from 'lucide-react-native';
+import { useAuth } from '../../context/AuthContext';
 import { useRouter } from 'expo-router';
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -12,21 +12,21 @@ export default function DashboardHeader() {
   const { user } = useAuth();
   const router = useRouter();
   const [isMenuVisible, setIsMenuVisible] = useState(false);
-  
+
   const rawRole = user?.role || 'Guest';
   const displayRole = rawRole.charAt(0).toUpperCase() + rawRole.slice(1).toLowerCase();
-  
-  const dashboardPath = user?.role === 'CLIENT' ? '/client' : '/freelancer';
+
+  const dashboardPath = user?.role === 'CLIENT' ? '/(dashboard)/client' : user?.role === 'ADMIN' ? '/(dashboard)/admin' : '/(dashboard)/freelancer';
 
   const handleLogout = async () => {
     try {
       const apiUrl = process.env.EXPO_PUBLIC_API_URL;
       await axios.post(`${apiUrl}/auth/logout`);
       await AsyncStorage.removeItem('token');
-      router.replace('/(auth)/login');
+      router.replace('/login');
     } catch (error) {
       await AsyncStorage.removeItem('token');
-      router.replace('/(auth)/login');
+      router.replace('/login');
     }
   };
 
@@ -41,10 +41,10 @@ export default function DashboardHeader() {
       <View style={styles.leftSection}>
         <View style={styles.searchContainer}>
           <Search size={18} color="#94A3B8" />
-          <TextInput 
-            placeholder="Cari..." 
+          <TextInput
+            placeholder="Cari..."
             placeholderTextColor="#94A3B8"
-            style={styles.searchInput} 
+            style={styles.searchInput}
           />
         </View>
       </View>
@@ -57,8 +57,8 @@ export default function DashboardHeader() {
           </View>
         </TouchableOpacity>
 
-        <TouchableOpacity 
-          style={styles.profileButton} 
+        <TouchableOpacity
+          style={styles.profileButton}
           onPress={() => setIsMenuVisible(true)}
         >
           <View style={styles.userInfo}>
@@ -69,9 +69,9 @@ export default function DashboardHeader() {
           </View>
 
           <View style={styles.avatar}>
-             <Text style={styles.avatarText}>
-                {user?.username?.substring(0, 2).toUpperCase() || 'SL'}
-             </Text>
+            <Text style={styles.avatarText}>
+              {user?.username?.substring(0, 2).toUpperCase() || 'SL'}
+            </Text>
           </View>
         </TouchableOpacity>
       </View>
@@ -82,9 +82,9 @@ export default function DashboardHeader() {
         animationType="fade"
         onRequestClose={() => setIsMenuVisible(false)}
       >
-        <TouchableOpacity 
-          style={styles.modalOverlay} 
-          activeOpacity={1} 
+        <TouchableOpacity
+          style={styles.modalOverlay}
+          activeOpacity={1}
           onPress={() => setIsMenuVisible(false)}
         >
           <View style={styles.dropdownMenu}>
@@ -92,15 +92,15 @@ export default function DashboardHeader() {
               <Text style={styles.dropdownEmail} numberOfLines={1}>{user?.email}</Text>
             </View>
 
-            <TouchableOpacity 
-              style={styles.dropdownItem} 
+            <TouchableOpacity
+              style={styles.dropdownItem}
               onPress={() => navigateTo(`${dashboardPath}/profile`)}
             >
               <UserIcon size={16} color="#64748B" />
               <Text style={styles.dropdownText}>Profil Saya</Text>
             </TouchableOpacity>
 
-            <TouchableOpacity 
+            <TouchableOpacity
               style={styles.dropdownItem}
               onPress={() => navigateTo(`${dashboardPath}/settings`)}
             >
@@ -110,7 +110,7 @@ export default function DashboardHeader() {
 
             <View style={styles.dropdownDivider} />
 
-            <TouchableOpacity 
+            <TouchableOpacity
               style={[styles.dropdownItem, styles.logoutItem]}
               onPress={handleLogout}
             >
@@ -127,9 +127,9 @@ export default function DashboardHeader() {
 const styles = StyleSheet.create({
   headerContainer: {
     flexDirection: 'row',
-    height: 80, 
+    height: 80,
     backgroundColor: '#FFFFFF',
-    alignItems: 'flex-end', 
+    alignItems: 'flex-end',
     paddingBottom: 12,
     justifyContent: 'space-between',
     paddingHorizontal: 16,
@@ -163,14 +163,14 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     paddingHorizontal: 10,
     height: 38,
-    flex: 1, 
+    flex: 1,
   },
   searchInput: {
     marginLeft: 8,
     flex: 1,
     fontSize: 14,
     color: '#334155',
-    paddingVertical: 0, 
+    paddingVertical: 0,
   },
   badgeContainer: {
     position: 'relative',
@@ -190,12 +190,12 @@ const styles = StyleSheet.create({
   profileButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8, 
+    gap: 8,
   },
   userInfo: {
-    alignItems: 'flex-end', 
-    maxWidth: 100, 
-    display: 'flex', 
+    alignItems: 'flex-end',
+    maxWidth: 100,
+    display: 'flex',
   },
   userName: {
     fontSize: 13,
@@ -211,7 +211,7 @@ const styles = StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: 10,
-    backgroundColor: '#DBEAFE', 
+    backgroundColor: '#DBEAFE',
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
@@ -224,7 +224,7 @@ const styles = StyleSheet.create({
   },
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.1)', 
+    backgroundColor: 'rgba(0,0,0,0.1)',
   },
   dropdownMenu: {
     position: 'absolute',
