@@ -1,70 +1,56 @@
-import { GestureHandlerRootView } from 'react-native-gesture-handler';
-import { Drawer } from 'expo-router/drawer';
-import DrawerMenu from '../components/DrawerMenu';
+import { Slot, useRouter, useSegments } from 'expo-router';
+import { useEffect, useState } from 'react';
+import { View, ActivityIndicator } from 'react-native';
+// Anggap Anda punya AuthContext atau tempat simpan state user
+// import { useAuth } from '../context/AuthContext'; 
 
-export default function Layout() {
-  return (
-    <GestureHandlerRootView style={{ flex: 1 }}>
-      <Drawer
-        // Menggunakan konten kustom dari DrawerMenu.tsx Anda
-        drawerContent={(props) => (
-          <DrawerMenu 
-            {...props} 
-            visible={true} 
-            onClose={() => props.navigation.closeDrawer()} 
-          />
-        )}
-        screenOptions={{
-          // --- POSISI DI SEBELAH KIRI ---
-          drawerPosition: 'left', 
-          // -----------------------------
-          headerShown: true,
-          headerTitle: "SkillLink",
-          headerStyle: {
-            backgroundColor: '#fff',
-          },
-          headerTintColor: '#1e293b',
-          
-          // --- UKURAN SIDEBAR DIUBAH KE NORMAL (300px) ---
-          drawerStyle: {
-            width: 300, 
-            backgroundColor: '#fff',
-          },
-          // -----------------------------------------------
-        }}
-      >
-        {/* Rute Utama (Dashboard) */}
-        <Drawer.Screen 
-          name="index" 
-          options={{ 
-            drawerLabel: 'Dashboard',
-            headerTitle: 'Dashboard' 
-          }} 
-        />
-        
-        {/* Rute Admin (Panel Manajemen) */}
-        <Drawer.Screen 
-          name="admin/index" 
-          options={{ 
-            drawerLabel: 'Panel Admin',
-            headerTitle: 'Admin Management' 
-          }} 
-        />
+export default function RootLayout() {
+  const router = useRouter();
+  const segments = useSegments();
 
-        {/* Tambahkan rute lainnya di sini jika ingin muncul di menu */}
-        <Drawer.Screen name="proyek" options={{ drawerLabel: 'Proyek Saya' }} />
-        <Drawer.Screen name="messages" options={{ drawerLabel: 'Pesan' }} />
-        <Drawer.Screen name="notifications" options={{ drawerLabel: 'Notifikasi' }} />
-        
-        {/* Sembunyikan rute yang tidak perlu muncul di list menu drawer secara manual */}
-        <Drawer.Screen 
-          name="auth" 
-          options={{ 
-            drawerItemStyle: { display: 'none' },
-            headerShown: false 
-          }} 
-        />
-      </Drawer>
-    </GestureHandlerRootView>
-  );
+  // CONTOH STATE (Nanti ganti pakai Context/Zustand/Redux)
+  const [isLoading, setIsLoading] = useState(true);
+  const [user, setUser] = useState(null); 
+  // user object contoh: { name: 'Budi', role: 'freelancer' }
+
+  useEffect(() => {
+    // Simulasi cek login (ganti dengan logika real cek token/AsyncStorage)
+    const checkLogin = async () => {
+      // ... logika ambil token ...
+      setIsLoading(false);
+    };
+    checkLogin();
+  }, []);
+
+  useEffect(() => {
+    if (isLoading) return;
+
+    const inAuthGroup = segments[0] === '(auth)';
+    
+    // 1. JIKA BELUM LOGIN
+    if (!user && !inAuthGroup) {
+      // Tendang ke halaman login
+      router.replace('/(auth)/login');
+    } 
+    
+    // 2. JIKA SUDAH LOGIN
+    else if (user && inAuthGroup) {
+      // User sudah login tapi masih di halaman login, pindahkan sesuai ROLE
+      if (user.role === 'freelancer') {
+        router.replace('/(dashboard)/freelancer');
+      } else if (user.role === 'client') {
+        router.replace('/(dashboard)/client');
+      }
+    }
+  }, [user, segments, isLoading]);
+
+  if (isLoading) {
+    return (
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+        <ActivityIndicator size="large" />
+      </View>
+    );
+  }
+
+  return <Slot />; // Slot ini akan merender child route (login atau dashboard)
 }
