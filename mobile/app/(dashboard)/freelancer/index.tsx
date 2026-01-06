@@ -1,204 +1,536 @@
-import React, { useEffect, useState } from 'react';
-import { View, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native';
-import { Text, Card, Avatar } from 'react-native-paper';
-import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { useRouter } from 'expo-router';
+import React, { useEffect, useState, useCallback } from 'react';
+import { 
+  View, 
+  Text, 
+  StyleSheet, 
+  ScrollView, 
+  TouchableOpacity, 
+  ActivityIndicator, 
+  RefreshControl,
+} from 'react-native';
+import { Wallet, Clock, CheckCircle2, Star, TrendingUp, TrendingDown, ArrowRight } from "lucide-react-native";
 import axios from 'axios';
+import { useRouter } from 'expo-router';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 interface DashboardStats {
-  revenue: { value: number; growth: number };
-  activeProjects: { value: number; growth: number };
-  completedProjects: { value: number; growth: number };
-  rating: { value: number; growth: number };
+  revenue: { value: number; growth: number; label: string };
+  activeProjects: { value: number; growth: number; label: string };
+  completedProjects: { value: number; growth: number; label: string };
+  rating: { value: number; growth: number; label: string };
+}
+
+interface Project {
+  id?: string;
+  title: string;
+  client: string;
+  deadline: string;
+  progress: number;
+  status: string;
+}
+
+interface RecommendedJob {
+  id: string;
+  title: string;
+  description: string;
+  budget: string;
+  tags: string[];
 }
 
 export default function FreelancerDashboard() {
   const router = useRouter();
+  const [statsData, setStatsData] = useState<DashboardStats | null>(null);
+  const [activeProjects, setActiveProjects] = useState<Project[]>([]);
+  const [recommendedJobs, setRecommendedJobs] = useState<RecommendedJob[]>([]);
   const [loading, setLoading] = useState(true);
-  const [stats, setStats] = useState<DashboardStats | null>(null);
-  const [projects, setProjects] = useState([]);
-  const [jobs, setJobs] = useState([]);
+  const [refreshing, setRefreshing] = useState(false);
 
-  useEffect(() => {
-    fetchData();
-  }, []);
-
-  const fetchData = async () => {
-    try {
-      const apiUrl = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3001';
-      const response = await axios.get(`${apiUrl}/user/freelancer/dashboard`);
-      if (response.data.data) {
-        setStats(response.data.data.stats);
-        setProjects(response.data.data.activeProjects || []);
-        setJobs(response.data.data.recommendedJobs || []);
-      }
-    } catch (error) {
-      console.error(error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const formatIDR = (val: number) => {
+  const formatRupiah = (number: number) => {
     return new Intl.NumberFormat('id-ID', {
       style: 'currency',
       currency: 'IDR',
       maximumFractionDigits: 0
-    }).format(val);
+    }).format(number);
   };
+
+  const getStatusColor = (status: string) => {
+    const s = status.toLowerCase();
+    if (s.includes('revisi')) return { bg: '#FFF7ED', text: '#EA580C' }; 
+    if (s.includes('review')) return { bg: '#EFF6FF', text: '#2563EB' }; 
+    if (s.includes('progress')) return { bg: '#ECFDF5', text: '#059669' }; 
+    return { bg: '#F1F5F9', text: '#475569' }; 
+  };
+
+  const fetchDashboardData = async () => {
+    try {
+      const apiUrl = process.env.EXPO_PUBLIC_API_URL;
+      const token = await AsyncStorage.getItem('token'); 
+
+      const response = await axios.get(`${apiUrl}/user/freelancer/dashboard`, {
+        withCredentials: true,
+        headers: {
+          'Authorization': token ? `Bearer ${token}` : '',
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (response.data.code === 200 && response.data.data) {
+        const { stats, activeProjects, recommendedJobs } = response.data.data;
+        if (stats) setStatsData(stats);
+        if (activeProjects) setActiveProjects(activeProjects);
+        if (recommendedJobs) setRecommendedJobs(recommendedJobs);
+      }
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        console.error("Gagal mengambil data dashboard:", error.response?.data || error.message);
+      } else {
+        console.error("Terjadi kesalahan sistem:", error);
+      }
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchDashboardData();
+  }, []);
+
+  const onRefresh = useCallback(() => {
+    setRefreshing(true);
+    fetchDashboardData();
+  }, []);
+
+  const statsConfig = [
+    {
+      label: "Pendapatan",
+      value: statsData ? formatRupiah(statsData.revenue.value) : "Rp 0",
+      growth: statsData?.revenue.growth || 0,
+      icon: Wallet,
+      color: "#059669",
+      bg: "#ECFDF5" 
+    },
+    {
+      label: "Proyek Aktif",
+      value: statsData?.activeProjects.value.toString() || "0",
+      growth: statsData?.activeProjects.growth || 0,
+      icon: Clock,
+      color: "#2563EB", 
+      bg: "#EFF6FF"
+    },
+    {
+      label: "Selesai",
+      value: statsData?.completedProjects.value.toString() || "0",
+      growth: statsData?.completedProjects.growth || 0,
+      icon: CheckCircle2,
+      color: "#9333EA",
+      bg: "#FAF5FF"
+    },
+    {
+      label: "Rating",
+      value: statsData ? `${statsData.rating.value}/5.0` : "0.0/5.0",
+      growth: statsData?.rating.growth || 0,
+      icon: Star,
+      color: "#D97706", 
+      bg: "#FFFBEB" 
+    },
+  ];
 
   if (loading) {
     return (
-      <View style={styles.loadingCenter}>
-        <ActivityIndicator color="#3b82f6" size="large" />
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#2563EB" />
+        <Text style={styles.loadingText}>Memuat data...</Text>
       </View>
     );
   }
 
   return (
-    <SafeAreaView style={styles.container} edges={['bottom']}>
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
-        
-        <View style={styles.header}>
-          <Text style={styles.title}>Halo, Freelancer! 👋</Text>
-          <Text style={styles.subtitle}>Berikut adalah aktivitas terbaru proyekmu.</Text>
-        </View>
+    <ScrollView 
+      style={styles.container}
+      contentContainerStyle={{ paddingBottom: 40 }}
+      refreshControl={
+        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={['#2563EB']} />
+      }
+    >
+      <View style={styles.header}>
+        <Text style={styles.greetingTitle}>Halo, Freelancer! 👋</Text>
+        <Text style={styles.greetingSubtitle}>Aktivitas terbaru proyekmu.</Text>
+      </View>
 
-        <View style={styles.statsGrid}>
-          <StatCard 
-            label="Pendapatan" 
-            value={stats ? formatIDR(stats.revenue.value) : 'Rp 0'} 
-            icon="wallet" 
-            color="#10b981" 
-            growth={stats?.revenue.growth}
-          />
-          <StatCard 
-            label="Proyek Aktif" 
-            value={stats?.activeProjects.value.toString() || '0'} 
-            icon="clock-outline" 
-            color="#3b82f6"
-            growth={stats?.activeProjects.growth}
-          />
-          <StatCard 
-            label="Selesai" 
-            value={stats?.completedProjects.value.toString() || '0'} 
-            icon="check-circle-outline" 
-            color="#8b5cf6"
-            growth={stats?.completedProjects.growth}
-          />
-          <StatCard 
-            label="Rating" 
-            value={stats ? `${stats.rating.value}/5.0` : '0/5.0'} 
-            icon="star-outline" 
-            color="#f59e0b"
-            growth={stats?.rating.growth}
-          />
-        </View>
-
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Proyek Berjalan</Text>
-            <TouchableOpacity><Text style={styles.linkText}>Lihat Semua</Text></TouchableOpacity>
+      <View style={styles.statsGrid}>
+        {statsConfig.map((stat, index) => (
+          <View key={index} style={styles.statCard}>
+            <View style={styles.statHeader}>
+              <View style={[styles.iconBox, { backgroundColor: stat.bg }]}>
+                <stat.icon size={20} color={stat.color} />
+              </View>
+              <View style={[
+                styles.badge, 
+                { backgroundColor: stat.growth >= 0 ? '#ECFDF5' : '#FEF2F2' }
+              ]}>
+                {stat.growth >= 0 
+                  ? <TrendingUp size={12} color="#059669" /> 
+                  : <TrendingDown size={12} color="#DC2626" />
+                }
+                <Text style={[
+                  styles.badgeText, 
+                  { color: stat.growth >= 0 ? '#059669' : '#DC2626' }
+                ]}>
+                  {Math.abs(stat.growth)}%
+                </Text>
+              </View>
+            </View>
+            <Text style={styles.statValue}>{stat.value}</Text>
+            <Text style={styles.statLabel}>{stat.label}</Text>
           </View>
-          
-          {projects.length === 0 ? (
-            <Text style={styles.emptyText}>Tidak ada proyek aktif.</Text>
-          ) : (
-            projects.map((item: any, i) => (
-              <Card key={i} style={styles.projectCard}>
-                <Card.Content>
-                  <View style={styles.rowBetween}>
-                    <Text style={styles.projectTitle}>{item.title}</Text>
-                    <View style={styles.badge}><Text style={styles.badgeText}>{item.status}</Text></View>
-                  </View>
-                  <Text style={styles.projectSub}>{item.client} • Deadline: {item.deadline}</Text>
-                  <View style={styles.progressBox}>
-                    <View style={styles.progressBar}>
-                      <View style={[styles.progressFill, { width: `${item.progress}%` }]} />
-                    </View>
-                    <Text style={styles.progressPercent}>{item.progress}%</Text>
-                  </View>
-                </Card.Content>
-              </Card>
-            ))
-          )}
+        ))}
+      </View>
+
+      <View style={styles.sectionContainer}>
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionTitle}>Proyek Berjalan</Text>
+          <TouchableOpacity onPress={() => router.push('/freelancer/jobs')}>
+            <Text style={styles.seeAllText}>Lihat Semua</Text>
+          </TouchableOpacity>
         </View>
 
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Rekomendasi Pekerjaan</Text>
-          {jobs.map((job: any, i) => (
-            <TouchableOpacity key={i} style={styles.jobItem}>
-              <View style={styles.rowBetween}>
-                <Text style={styles.jobTitle}>{job.title}</Text>
+        {activeProjects.length === 0 ? (
+           <View style={styles.emptyState}>
+             <Text style={styles.emptyText}>Tidak ada proyek aktif.</Text>
+           </View>
+        ) : (
+          activeProjects.map((project, idx) => {
+            const statusStyle = getStatusColor(project.status);
+            return (
+              <View key={project.id || idx} style={styles.projectCard}>
+                <View style={styles.projectHeader}>
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.projectTitle} numberOfLines={1}>{project.title}</Text>
+                    <Text style={styles.projectClient}>
+                      {project.client} • <Text style={[styles.deadline, String(project.deadline).includes('Terlewat') && styles.textRed]}>{project.deadline}</Text>
+                    </Text>
+                  </View>
+                  <View style={[styles.statusBadge, { backgroundColor: statusStyle.bg }]}>
+                    <Text style={[styles.statusText, { color: statusStyle.text }]}>
+                      {project.status}
+                    </Text>
+                  </View>
+                </View>
+                
+                <View style={styles.progressContainer}>
+                  <View style={styles.progressLabel}>
+                    <Text style={styles.progressText}>Progress</Text>
+                    <Text style={styles.progressPercent}>{project.progress}%</Text>
+                  </View>
+                  <View style={styles.progressBarBg}>
+                    <View style={[styles.progressBarFill, { width: `${project.progress}%` }]} />
+                  </View>
+                </View>
+              </View>
+            );
+          })
+        )}
+      </View>
+
+      <View style={styles.sectionContainer}>
+        <Text style={[styles.sectionTitle, { marginBottom: 12 }]}>Rekomendasi Pekerjaan</Text>
+        
+        {recommendedJobs.length === 0 ? (
+          <View style={styles.emptyState}>
+            <Text style={styles.emptyText}>Belum ada rekomendasi baru.</Text>
+          </View>
+        ) : (
+          recommendedJobs.map((job) => (
+            <TouchableOpacity 
+              key={job.id} 
+              style={styles.jobCard}
+              onPress={() => router.push(`/freelancer/jobs/${job.id}` as any)}
+            >
+              <View style={styles.jobHeader}>
+                <Text style={styles.jobTitle} numberOfLines={1}>{job.title}</Text>
                 <Text style={styles.jobBudget}>{job.budget}</Text>
               </View>
-              <Text style={styles.jobDesc} numberOfLines={2}>{job.description}</Text>
-              <View style={styles.tagContainer}>
-                {job.tags.map((tag: string, j: number) => (
-                  <View key={j} style={styles.tag}><Text style={styles.tagText}>{tag}</Text></View>
+              <Text style={styles.jobDescription} numberOfLines={2}>{job.description}</Text>
+              <View style={styles.tagsContainer}>
+                {job.tags.map((tag, idx) => (
+                  <View key={idx} style={styles.tag}>
+                    <Text style={styles.tagText}>{tag}</Text>
+                  </View>
                 ))}
               </View>
             </TouchableOpacity>
-          ))}
-        </View>
+          ))
+        )}
 
-      </ScrollView>
-    </SafeAreaView>
-  );
-}
+        <TouchableOpacity 
+          style={styles.moreButton}
+          onPress={() => router.push('/(dashboard)/freelancer/jobs')}
+        >
+          <Text style={styles.moreButtonText}>Cari Lebih Banyak</Text>
+          <ArrowRight size={16} color="#475569" />
+        </TouchableOpacity>
+      </View>
 
-function StatCard({ label, value, icon, color, growth }: any) {
-  return (
-    <Card style={styles.statCard}>
-      <Card.Content>
-        <View style={styles.rowBetween}>
-          <Avatar.Icon size={40} icon={icon} color={color} style={{ backgroundColor: color + '15' }} />
-          <View style={[styles.growthBadge, { backgroundColor: growth >= 0 ? '#d1fae5' : '#fee2e2' }]}>
-            <Text style={{ fontSize: 10, color: growth >= 0 ? '#065f46' : '#991b1b', fontWeight: 'bold' }}>
-              {growth >= 0 ? '↑' : '↓'} {Math.abs(growth)}%
-            </Text>
-          </View>
-        </View>
-        <Text style={styles.statValue}>{value}</Text>
-        <Text style={styles.statLabel}>{label}</Text>
-      </Card.Content>
-    </Card>
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#f8fafc' },
-  loadingCenter: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  scrollContent: { padding: 16 },
-  header: { marginBottom: 20 },
-  title: { fontSize: 22, fontWeight: 'bold', color: '#0f172a' },
-  subtitle: { fontSize: 14, color: '#64748b', marginTop: 4 },
-  statsGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12, marginBottom: 24 },
-  statCard: { width: '48%', backgroundColor: '#fff', elevation: 0, borderWidth: 1, borderColor: '#e2e8f0', borderRadius: 16 },
-  statValue: { fontSize: 16, fontWeight: 'bold', marginTop: 12, color: '#0f172a' },
-  statLabel: { fontSize: 12, color: '#64748b' },
-  growthBadge: { paddingHorizontal: 6, paddingVertical: 2, borderRadius: 12 },
-  section: { marginBottom: 24 },
-  sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
-  sectionTitle: { fontSize: 18, fontWeight: 'bold', color: '#0f172a' },
-  linkText: { color: '#3b82f6', fontSize: 14, fontWeight: '600' },
-  projectCard: { marginBottom: 12, borderRadius: 12, backgroundColor: '#fff', borderWidth: 1, borderColor: '#f1f5f9', elevation: 0 },
-  projectTitle: { fontSize: 15, fontWeight: 'bold', flex: 1 },
-  projectSub: { fontSize: 12, color: '#64748b', marginVertical: 6 },
-  progressBox: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 4 },
-  progressBar: { flex: 1, height: 6, backgroundColor: '#e2e8f0', borderRadius: 3 },
-  progressFill: { height: '100%', backgroundColor: '#3b82f6', borderRadius: 3 },
-  progressPercent: { fontSize: 11, fontWeight: 'bold', color: '#475569' },
-  badge: { backgroundColor: '#dbeafe', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6 },
-  badgeText: { fontSize: 10, color: '#1e40af', fontWeight: 'bold' },
-  rowBetween: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  jobItem: { backgroundColor: '#fff', padding: 16, borderRadius: 16, borderWidth: 1, borderColor: '#e2e8f0', marginBottom: 12 },
-  jobTitle: { fontSize: 15, fontWeight: 'bold', color: '#0f172a' },
-  jobBudget: { fontSize: 13, fontWeight: 'bold', color: '#0f172a' },
-  jobDesc: { fontSize: 12, color: '#64748b', marginTop: 4 },
-  tagContainer: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 12 },
-  tag: { backgroundColor: '#f1f5f9', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6 },
-  tagText: { fontSize: 10, color: '#475569' },
-  emptyText: { textAlign: 'center', color: '#94a3b8', marginVertical: 20 }
+  container: {
+    flex: 1,
+    backgroundColor: '#F8FAFC', 
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#F8FAFC',
+  },
+  loadingText: {
+    marginTop: 10,
+    color: '#64748B',
+  },
+  header: {
+    padding: 20,
+    paddingBottom: 10,
+  },
+  greetingTitle: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#0F172A',
+  },
+  greetingSubtitle: {
+    fontSize: 14,
+    color: '#64748B',
+    marginTop: 4,
+  },
+  
+  statsGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    padding: 10,
+    justifyContent: 'space-between',
+  },
+  statCard: {
+    width: '48%', 
+    backgroundColor: 'white',
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 2,
+  },
+  statHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: 12,
+  },
+  iconBox: {
+    padding: 10,
+    borderRadius: 12,
+  },
+  badge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 100,
+  },
+  badgeText: {
+    fontSize: 10,
+    fontWeight: 'bold',
+    marginLeft: 2,
+  },
+  statValue: {
+    fontSize: 18, 
+    fontWeight: 'bold',
+    color: '#0F172A',
+  },
+  statLabel: {
+    fontSize: 12,
+    color: '#64748B',
+  },
+
+  sectionContainer: {
+    backgroundColor: 'white',
+    marginHorizontal: 16,
+    marginBottom: 20,
+    borderRadius: 16,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 2,
+  },
+  sectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F1F5F9',
+    paddingBottom: 12,
+  },
+  sectionTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#0F172A',
+  },
+  seeAllText: {
+    fontSize: 12,
+    color: '#2563EB',
+    fontWeight: '600',
+  },
+  emptyState: {
+    padding: 20,
+    alignItems: 'center',
+  },
+  emptyText: {
+    color: '#94A3B8',
+    fontSize: 14,
+  },
+
+  projectCard: {
+    backgroundColor: 'white',
+    marginBottom: 16,
+    paddingBottom: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F1F5F9',
+  },
+  projectHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: 12,
+  },
+  projectTitle: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#0F172A',
+    marginBottom: 4,
+    maxWidth: '70%',
+  },
+  projectClient: {
+    fontSize: 12,
+    color: '#64748B',
+  },
+  deadline: {
+    fontWeight: '500',
+    color: '#EF4444',
+  },
+  textRed: {
+    color: '#DC2626',
+  },
+  statusBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 100,
+  },
+  statusText: {
+    fontSize: 10,
+    fontWeight: 'bold',
+    textTransform: 'capitalize',
+  },
+  progressContainer: {
+    marginTop: 4,
+  },
+  progressLabel: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 6,
+  },
+  progressText: {
+    fontSize: 12,
+    color: '#64748B',
+  },
+  progressPercent: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#334155',
+  },
+  progressBarBg: {
+    height: 8,
+    backgroundColor: '#F1F5F9',
+    borderRadius: 10,
+    overflow: 'hidden',
+  },
+  progressBarFill: {
+    height: '100%',
+    backgroundColor: '#2563EB',
+    borderRadius: 10,
+  },
+
+  jobCard: {
+    padding: 12,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    borderRadius: 12,
+    marginBottom: 12,
+    backgroundColor: '#FFFFFF',
+  },
+  jobHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: 6,
+  },
+  jobTitle: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#0F172A',
+    flex: 1,
+    marginRight: 8,
+  },
+  jobBudget: {
+    fontSize: 12,
+    fontWeight: 'bold',
+    color: '#0F172A',
+  },
+  jobDescription: {
+    fontSize: 12,
+    color: '#64748B',
+    marginBottom: 10,
+    lineHeight: 18,
+  },
+  tagsContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 6,
+  },
+  tag: {
+    backgroundColor: '#F1F5F9',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
+  },
+  tagText: {
+    fontSize: 10,
+    color: '#475569',
+  },
+  moreButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 12,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    borderRadius: 8,
+    marginTop: 8,
+    gap: 8,
+  },
+  moreButtonText: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: '#475569',
+  }
 });
