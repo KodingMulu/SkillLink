@@ -1,24 +1,17 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, TextInput } from 'react-native';
-import { Search, Bell } from 'lucide-react-native'; // Hapus import Menu
-// Hapus import useNavigation dan DrawerActions
+import { Search, Bell } from 'lucide-react-native'; 
 import { useAuth } from '../../context/AuthContext'; 
 
 export default function DashboardHeader() {
-  // const navigation = useNavigation(); <-- Hapus ini
   const { user } = useAuth();
   
   const rawRole = user?.role || 'Guest';
   const displayRole = rawRole.charAt(0).toUpperCase() + rawRole.slice(1).toLowerCase();
 
-  // Hapus fungsi toggleDrawer
-
   return (
     <View style={styles.headerContainer}>
-      {/* BAGIAN KIRI: Search Bar (Sekarang full width di kiri) */}
       <View style={styles.leftSection}>
-        {/* Tombol Menu Dihapus */}
-        
         <View style={styles.searchContainer}>
           <Search size={18} color="#94A3B8" />
           <TextInput 
@@ -29,7 +22,6 @@ export default function DashboardHeader() {
         </View>
       </View>
 
-      {/* BAGIAN KANAN: Notifikasi & Profil */}
       <View style={styles.rightSection}>
         <TouchableOpacity style={styles.iconButton}>
           <View style={styles.badgeContainer}>
@@ -60,9 +52,9 @@ export default function DashboardHeader() {
 const styles = StyleSheet.create({
   headerContainer: {
     flexDirection: 'row',
-    height: 80, // Tinggi disesuaikan
+    height: 80, 
     backgroundColor: '#FFFFFF',
-    alignItems: 'flex-end', // Agar konten turun ke bawah (aman dari status bar)
+    alignItems: 'flex-end', 
     paddingBottom: 12,
     justifyContent: 'space-between',
     paddingHorizontal: 16,
@@ -95,7 +87,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     paddingHorizontal: 10,
     height: 38,
-    flex: 1, // Search bar mengisi sisa ruang
+    flex: 1, 
   },
   searchInput: {
     marginLeft: 8,

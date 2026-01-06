@@ -1,17 +1,14 @@
 import { Tabs } from 'expo-router';
 import { LayoutDashboard, Briefcase, Wallet, User } from 'lucide-react-native';
-import DashboardHeader from '../../../components/dashboard/DashboardHeader'; // Import Header Custom
+import DashboardHeader from '@/components/dashboard/DashboardHeader';
 
 export default function FreelancerLayout() {
   return (
     <Tabs
       screenOptions={{
-        // 1. Ganti Header Bawaan Tabs dengan Header Custom Kita
         header: () => <DashboardHeader />,
-        
-        // 2. Styling Tab Bar Bawah
-        tabBarActiveTintColor: '#2563EB', // Warna Biru saat aktif
-        tabBarInactiveTintColor: '#94A3B8', // Warna abu saat tidak aktif
+        tabBarActiveTintColor: '#2563EB', 
+        tabBarInactiveTintColor: '#94A3B8',
         tabBarStyle: {
           height: 60,
           paddingBottom: 8,
@@ -24,7 +21,7 @@ export default function FreelancerLayout() {
       }}
     >
       <Tabs.Screen
-        name="index" // Dashboard Utama
+        name="index" 
         options={{
           title: 'Overview',
           tabBarIcon: ({ color }) => <LayoutDashboard size={24} color={color} />,
@@ -33,7 +30,7 @@ export default function FreelancerLayout() {
       <Tabs.Screen
         name="jobs"
         options={{
-          title: 'Lowongan', // Cari Kerja
+          title: 'Lowongan', 
           tabBarIcon: ({ color }) => <Briefcase size={24} color={color} />,
         }}
       />
@@ -45,7 +42,6 @@ export default function FreelancerLayout() {
         }}
       />
       
-      {/* Sembunyikan route lain yang tidak perlu muncul di menu bawah */}
       <Tabs.Screen name="profile/index" options={{ href: null }} /> 
       <Tabs.Screen name="settings/index" options={{ href: null }} /> 
       <Tabs.Screen name="contracts/index" options={{ href: null }} /> 
