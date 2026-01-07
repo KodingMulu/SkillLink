@@ -1,74 +1,78 @@
-// context/AuthContext.tsx
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { createContext, useContext, useState, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import axios from 'axios';
 
-type User = {
+interface User {
   id: string;
-  email: string;
-  role: 'CLIENT' | 'FREELANCER' | 'ADMIN';
   username: string;
-};
-
-type AuthContextType = {
-  user: User | null;
-  token: string | null;
-  isLoading: boolean;
-  signIn: (token: string, user: User) => Promise<void>;
-  signOut: () => Promise<void>;
-};
-
-const AuthContext = createContext<AuthContextType | null>(null);
-
-export function useAuth() {
-  const context = useContext(AuthContext);
-  if (!context) throw new Error('useAuth must be used within an AuthProvider');
-  return context;
+  email: string;
+  role: string;
 }
+
+interface AuthContextType {
+  user: User | null;
+  isLoading: boolean;
+  login: (token: string, userData: User) => Promise<void>;
+  logout: () => Promise<void>;
+}
+
+const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
-  const [token, setToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Cek login saat aplikasi baru dibuka (mirip cek cookies)
   useEffect(() => {
-    const loadStorage = async () => {
-      try {
-        const storedUser = await AsyncStorage.getItem('user');
-        const storedToken = await AsyncStorage.getItem('token');
-        
-        if (storedUser && storedToken) {
-          setUser(JSON.parse(storedUser));
-          setToken(storedToken);
-        }
-      } catch (e) {
-        console.error('Failed to load auth storage');
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    loadStorage();
+    checkUser();
   }, []);
 
-  // Fungsi Login (Menyimpan data)
-  const signIn = async (newToken: string, newUser: User) => {
-    setUser(newUser);
-    setToken(newToken);
-    await AsyncStorage.setItem('token', newToken);
-    await AsyncStorage.setItem('user', JSON.stringify(newUser));
+  const checkUser = async () => {
+    try {
+      const token = await AsyncStorage.getItem('token');
+      const userData = await AsyncStorage.getItem('user');
+      
+      if (token && userData) {
+        setUser(JSON.parse(userData));
+        axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+      }
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  // Fungsi Logout (Hapus data)
-  const signOut = async () => {
-    setUser(null);
-    setToken(null);
-    await AsyncStorage.removeItem('token');
-    await AsyncStorage.removeItem('user');
+  const login = async (token: string, userData: User) => {
+    await AsyncStorage.setItem('token', token);
+    await AsyncStorage.setItem('user', JSON.stringify(userData));
+    axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+    setUser(userData);
+  };
+
+  const logout = async () => {
+    try {
+      const apiUrl = process.env.EXPO_PUBLIC_API_URL;
+      await axios.post(`${apiUrl}/auth/logout`); 
+    } catch (error) {
+    } finally {
+      await AsyncStorage.removeItem('token');
+      await AsyncStorage.removeItem('user');
+      delete axios.defaults.headers.common['Authorization'];
+      setUser(null);
+    }
   };
 
   return (
-    <AuthContext.Provider value={{ user, token, isLoading, signIn, signOut }}>
+    <AuthContext.Provider value={{ user, isLoading, login, logout }}>
       {children}
     </AuthContext.Provider>
   );
+}
+
+export function useAuth() {
+  const context = useContext(AuthContext);
+  if (context === undefined) {
+    throw new Error('useAuth must be used within an AuthProvider');
+  }
+  return context;
 }

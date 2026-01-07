@@ -20,7 +20,7 @@ const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://10.109.161.89/api';
 
 export default function LoginScreen() {
   const router = useRouter();
-  const { signIn } = useAuth();
+  const { login: signIn } = useAuth();
   const [formData, setFormData] = useState({
     email: '',
     password: ''

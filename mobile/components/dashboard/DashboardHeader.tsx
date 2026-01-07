@@ -5,11 +5,9 @@ import {
 import { Search, Bell, LogOut, User as UserIcon, Settings } from 'lucide-react-native';
 import { useAuth } from '../../context/AuthContext';
 import { useRouter } from 'expo-router';
-import axios from 'axios';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export default function DashboardHeader() {
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
   const router = useRouter();
   const [isMenuVisible, setIsMenuVisible] = useState(false);
 
@@ -19,15 +17,9 @@ export default function DashboardHeader() {
   const dashboardPath = user?.role === 'CLIENT' ? '/(dashboard)/client' : user?.role === 'ADMIN' ? '/(dashboard)/admin' : '/(dashboard)/freelancer';
 
   const handleLogout = async () => {
-    try {
-      const apiUrl = process.env.EXPO_PUBLIC_API_URL;
-      await axios.post(`${apiUrl}/auth/logout`);
-      await AsyncStorage.removeItem('token');
-      router.replace('/login');
-    } catch (error) {
-      await AsyncStorage.removeItem('token');
-      router.replace('/login');
-    }
+    setIsMenuVisible(false);
+    await logout();
+    router.replace('/(auth)/login');
   };
 
   const navigateTo = (path: string) => {

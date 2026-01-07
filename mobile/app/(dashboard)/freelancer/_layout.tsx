@@ -1,5 +1,5 @@
 import { Tabs } from 'expo-router';
-import { LayoutDashboard, Briefcase, Wallet, User } from 'lucide-react-native';
+import { Briefcase, FolderKanban, LayoutDashboard, Wallet } from 'lucide-react-native';
 import DashboardHeader from '@/components/dashboard/DashboardHeader';
 
 export default function FreelancerLayout() {
@@ -7,44 +7,78 @@ export default function FreelancerLayout() {
     <Tabs
       screenOptions={{
         header: () => <DashboardHeader />,
-        tabBarActiveTintColor: '#2563EB', 
+        tabBarActiveTintColor: '#2563EB',
         tabBarInactiveTintColor: '#94A3B8',
         tabBarStyle: {
-          height: 60,
+          height: 120,
+          paddingTop: 6,
           paddingBottom: 8,
-          paddingTop: 8,
         },
+        tabBarItemStyle: {
+          paddingVertical: 4,
+        },
+        
         tabBarLabelStyle: {
-          fontSize: 12,
+          fontSize: 11,
           fontWeight: '500',
-        }
+        },
       }}
     >
       <Tabs.Screen
-        name="index" 
+        name="index"
         options={{
           title: 'Overview',
-          tabBarIcon: ({ color }) => <LayoutDashboard size={24} color={color} />,
+          tabBarIcon: ({ focused }) => (
+            <LayoutDashboard
+              size={20}
+              color={focused ? '#2563EB' : '#94A3B8'}
+            />
+          ),
         }}
       />
+
       <Tabs.Screen
         name="jobs"
         options={{
-          title: 'Lowongan', 
-          tabBarIcon: ({ color }) => <Briefcase size={24} color={color} />,
+          title: 'Jobs',
+          tabBarIcon: ({ focused }) => (
+            <Briefcase
+              size={20}
+              color={focused ? '#2563EB' : '#94A3B8'}
+            />
+          ),
         }}
       />
+
+      <Tabs.Screen
+        name="portfolio"
+        options={{
+          title: 'Portfolio',
+          tabBarIcon: ({ focused }) => (
+            <FolderKanban
+              size={20}
+              color={focused ? '#2563EB' : '#94A3B8'}
+            />
+          ),
+        }}
+      />
+
       <Tabs.Screen
         name="wallet"
         options={{
-          title: 'Saldo',
-          tabBarIcon: ({ color }) => <Wallet size={24} color={color} />,
+          title: 'Wallet',
+          tabBarIcon: ({ focused }) => (
+            <Wallet
+              size={20}
+              color={focused ? '#2563EB' : '#94A3B8'}
+            />
+          ),
         }}
       />
-      
-      <Tabs.Screen name="profile/index" options={{ href: null }} /> 
-      <Tabs.Screen name="settings/index" options={{ href: null }} /> 
-      <Tabs.Screen name="contracts/index" options={{ href: null }} /> 
+
+      <Tabs.Screen name="profile/index" options={{ href: null }} />
+      <Tabs.Screen name="settings/index" options={{ href: null }} />
+      <Tabs.Screen name="contracts/index" options={{ href: null }} />
     </Tabs>
   );
 }
