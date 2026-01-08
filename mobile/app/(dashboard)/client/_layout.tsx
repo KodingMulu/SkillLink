@@ -79,9 +79,9 @@ export default function ClientLayout() {
           ),
         }}
       />
-      <Tabs.Screen name="applicants" options={{ href: null }} />
-      <Tabs.Screen name="contracts" options={{ href: null }} />
-      <Tabs.Screen name="settings" options={{ href: null }} />
+      <Tabs.Screen name="settings/index" options={{ href: null }} />
+      <Tabs.Screen name="contracts/[id]/index" options={{ href: null }} />
+      <Tabs.Screen name="applicants/[id]/index" options={{ href: null }} />
     </Tabs>
   );
 }
