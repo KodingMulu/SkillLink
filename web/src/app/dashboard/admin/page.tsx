@@ -44,13 +44,8 @@ interface ApiMainStat {
   subtext: string;
 }
 
-interface AdminStatsResponse {
-  mainStats: ApiMainStat[];
-  projectStats: ApiProjectStat[];
-}
-
 interface User {
-  id: number;
+  id: string;
   name: string;
   email: string;
   role: string;
@@ -58,6 +53,12 @@ interface User {
   joined: string;
   projects: number;
   rating: number;
+}
+
+interface AdminStatsResponse {
+  mainStats: ApiMainStat[];
+  projectStats: ApiProjectStat[];
+  recentUsers: User[];
 }
 
 interface AdminDashboardProps {
@@ -77,72 +78,14 @@ export default function AdminDashboard({ backgroundImage, backgroundColor }: Adm
   const [isExportModalOpen, setIsExportModalOpen] = useState<boolean>(false);
   const [isAddUserModalOpen, setIsAddUserModalOpen] = useState<boolean>(false);
   const [stats, setStats] = useState<Stat[]>([]);
+  const [recentUsers, setRecentUsers] = useState<User[]>([]);
 
   const statConfig = {
-    users: {
-      icon: Users,
-      color: "text-blue-600",
-      bg: "bg-blue-50",
-    },
-    active_projects: {
-      icon: Briefcase,
-      color: "text-emerald-600",
-      bg: "bg-emerald-50",
-    },
-    revenue: {
-      icon: DollarSign,
-      color: "text-purple-600",
-      bg: "bg-purple-50",
-    },
-    pending: {
-      icon: AlertTriangle,
-      color: "text-orange-600",
-      bg: "bg-orange-50",
-    },
+    users: { icon: Users, color: "text-blue-600", bg: "bg-blue-50" },
+    active_projects: { icon: Briefcase, color: "text-emerald-600", bg: "bg-emerald-50" },
+    revenue: { icon: DollarSign, color: "text-purple-600", bg: "bg-purple-50" },
+    pending: { icon: AlertTriangle, color: "text-orange-600", bg: "bg-orange-50" },
   };
-
-  const recentUsers: User[] = [
-    {
-      id: 1,
-      name: "fatoni",
-      email: "fatoni@email.com",
-      role: "Freelancer",
-      status: "active",
-      joined: "2 jam lalu",
-      projects: 3,
-      rating: 4.8
-    },
-    {
-      id: 2,
-      name: "PT Digital Innovation",
-      email: "contact@digital.com",
-      role: "Client",
-      status: "active",
-      joined: "5 jam lalu",
-      projects: 8,
-      rating: 4.9
-    },
-    {
-      id: 3,
-      name: "egy",
-      email: "egy@email.com",
-      role: "Freelancer",
-      status: "pending",
-      joined: "1 hari lalu",
-      projects: 0,
-      rating: 0
-    },
-    {
-      id: 4,
-      name: "CV Kreatif Media",
-      email: "info@kreatifmedia.com",
-      role: "Client",
-      status: "active",
-      joined: "2 hari lalu",
-      projects: 5,
-      rating: 4.7
-    },
-  ];
 
   const getStatusBadge = (status: User['status']) => {
     const styles: Record<User['status'], string> = {
@@ -171,9 +114,17 @@ export default function AdminDashboard({ backgroundImage, backgroundColor }: Adm
   useEffect(() => {
     const fetchStats = async () => {
       try {
-        const res = await axios.get<AdminStatsResponse>(
-          `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'}/user/admin/stats`
-        );
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL 
+          ? `${process.env.NEXT_PUBLIC_API_URL}/user/admin/stats` 
+          : '/api/user/admin/stats';
+
+        const res = await axios.get<AdminStatsResponse>(apiUrl, {
+          withCredentials: true 
+        });
+
+        if (res.data.recentUsers) {
+          setRecentUsers(res.data.recentUsers);
+        }
 
         const mappedStats: Stat[] = res.data.mainStats.map((item) => {
           const config = statConfig[item.type] || statConfig.users;
@@ -187,7 +138,7 @@ export default function AdminDashboard({ backgroundImage, backgroundColor }: Adm
               maximumFractionDigits: 1
             }).format(item.value);
           } else {
-             displayValue = new Intl.NumberFormat("en-US").format(item.value);
+            displayValue = new Intl.NumberFormat("en-US").format(item.value);
           }
 
           return {
@@ -237,11 +188,10 @@ export default function AdminDashboard({ backgroundImage, backgroundColor }: Adm
           <p className="text-slate-500">Kelola dan pantau aktivitas platform secara real-time.</p>
         </div>
 
-        {/* Stats Cards */}
         <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
           {stats.length === 0 ? (
             [...Array(4)].map((_, i) => (
-               <div key={i} className="bg-white p-6 rounded-2xl h-40 animate-pulse border border-slate-200"></div>
+              <div key={i} className="bg-white p-6 rounded-2xl h-40 animate-pulse border border-slate-200"></div>
             ))
           ) : (
             stats.map((stat, idx) => {
@@ -265,9 +215,7 @@ export default function AdminDashboard({ backgroundImage, backgroundColor }: Adm
           )}
         </section>
 
-        {/* Main Content Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* User Management Section */}
           <div className="lg:col-span-2">
             <section className="bg-white/95 backdrop-blur-sm rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
               <div className="p-6 border-b border-slate-100 flex justify-between items-center">
@@ -280,60 +228,67 @@ export default function AdminDashboard({ backgroundImage, backgroundColor }: Adm
                 </button>
               </div>
               <div className="divide-y divide-slate-100">
-                {recentUsers.map((user) => (
-                  <div key={user.id} className="p-6 hover:bg-slate-50 transition-colors">
-                    <div className="flex items-start justify-between mb-4">
-                      <div className="flex items-center gap-3">
-                        <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center font-bold text-white shadow-sm">
-                          {user.name.charAt(0)}
-                        </div>
-                        <div>
-                          <h4 className="font-semibold text-slate-900 text-sm">{user.name}</h4>
-                          <p className="text-xs text-slate-500">{user.email}</p>
-                          <div className="flex items-center gap-2 mt-1">
-                            <span className="text-xs text-slate-400">{user.role}</span>
-                            <span className="text-slate-300">•</span>
-                            <span className="text-xs text-slate-400">{user.joined}</span>
+                {recentUsers.length === 0 ? (
+                  <div className="p-6 text-center text-slate-500">Belum ada data user terbaru.</div>
+                ) : (
+                  recentUsers.map((user) => (
+                    <div key={user.id} className="p-6 hover:bg-slate-50 transition-colors">
+                      <div className="flex items-start justify-between mb-4">
+                        <div className="flex items-center gap-3">
+                          <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center font-bold text-white shadow-sm">
+                            {user.name.charAt(0).toUpperCase()}
+                          </div>
+                          <div>
+                            <h4 className="font-semibold text-slate-900 text-sm">{user.name}</h4>
+                            <p className="text-xs text-slate-500">{user.email}</p>
+                            <div className="flex items-center gap-2 mt-1">
+                              <span className="text-xs text-slate-400">{user.role}</span>
+                              <span className="text-slate-300">•</span>
+                              <span className="text-xs text-slate-400">
+                                {new Date(user.joined).toLocaleDateString('id-ID', {
+                                  day: 'numeric',
+                                  month: 'short',
+                                  year: 'numeric'
+                                })}
+                              </span>
+                            </div>
                           </div>
                         </div>
+                        {getStatusBadge(user.status)}
                       </div>
-                      {getStatusBadge(user.status)}
-                    </div>
 
-                    {/* User Stats */}
-                    <div className="flex items-center gap-4 mb-4 text-sm">
-                      <div className="flex items-center gap-1">
-                        <Briefcase className="w-4 h-4 text-slate-400" />
-                        <span className="text-slate-600">{user.projects} proyek</span>
-                      </div>
-                      {user.rating > 0 && (
+                      <div className="flex items-center gap-4 mb-4 text-sm">
                         <div className="flex items-center gap-1">
-                          <span className="text-yellow-500">⭐</span>
-                          <span className="text-slate-600">{user.rating}</span>
+                          <Briefcase className="w-4 h-4 text-slate-400" />
+                          <span className="text-slate-600">{user.projects} proyek</span>
                         </div>
-                      )}
-                    </div>
+                        {user.rating > 0 && (
+                          <div className="flex items-center gap-1">
+                            <span className="text-yellow-500">⭐</span>
+                            <span className="text-slate-600">{user.rating}</span>
+                          </div>
+                        )}
+                      </div>
 
-                    {/* Action Buttons */}
-                    <div className="flex gap-2">
-                      <button className="flex-1 py-2 bg-blue-50 text-blue-600 rounded-lg text-xs font-medium flex items-center justify-center gap-2 hover:bg-blue-100 transition-colors">
-                        <Eye className="w-3 h-3" />
-                        Detail
-                      </button>
-                      <button className="flex-1 py-2 bg-emerald-50 text-emerald-600 rounded-lg text-xs font-medium flex items-center justify-center gap-2 hover:bg-emerald-100 transition-colors">
-                        <UserCheck className="w-3 h-3" />
-                        Approve
-                      </button>
-                      <button className="px-4 py-2 bg-red-50 text-red-600 rounded-lg text-xs font-medium hover:bg-red-100 transition-colors flex items-center gap-2">
-                        <Ban className="w-3 h-3" />
-                        Suspend
-                      </button>
+                      <div className="flex gap-2">
+                        <button className="flex-1 py-2 bg-blue-50 text-blue-600 rounded-lg text-xs font-medium flex items-center justify-center gap-2 hover:bg-blue-100 transition-colors">
+                          <Eye className="w-3 h-3" />
+                          Detail
+                        </button>
+                        <button className="flex-1 py-2 bg-emerald-50 text-emerald-600 rounded-lg text-xs font-medium flex items-center justify-center gap-2 hover:bg-emerald-100 transition-colors">
+                          <UserCheck className="w-3 h-3" />
+                          Approve
+                        </button>
+                        <button className="px-4 py-2 bg-red-50 text-red-600 rounded-lg text-xs font-medium hover:bg-red-100 transition-colors flex items-center gap-2">
+                          <Ban className="w-3 h-3" />
+                          Suspend
+                        </button>
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  ))
+                )}
               </div>
 
-              {/* View All Button */}
               <div className="p-4 border-t border-slate-100 bg-slate-50">
                 <button className="w-full py-2 text-sm font-medium text-blue-600 hover:text-blue-700 transition-colors">
                   Lihat Semua User →
@@ -342,9 +297,7 @@ export default function AdminDashboard({ backgroundImage, backgroundColor }: Adm
             </section>
           </div>
 
-          {/* Sidebar - Quick Actions & Stats */}
           <div className="space-y-6">
-            {/* Quick Actions */}
             <section className="bg-white/95 backdrop-blur-sm rounded-2xl border border-slate-200 shadow-sm p-6">
               <h2 className="font-bold text-slate-900 mb-4">Quick Actions</h2>
               <div className="space-y-3">
@@ -372,7 +325,6 @@ export default function AdminDashboard({ backgroundImage, backgroundColor }: Adm
               </div>
             </section>
 
-            {/* Recent Activity */}
             <section className="bg-white/95 backdrop-blur-sm rounded-2xl border border-slate-200 shadow-sm p-6">
               <h2 className="font-bold text-slate-900 mb-4">Aktivitas Terbaru</h2>
               <div className="space-y-4">
@@ -402,7 +354,6 @@ export default function AdminDashboard({ backgroundImage, backgroundColor }: Adm
           </div>
         </div>
 
-        {/* Modals */}
         <ExportModal
           isOpen={isExportModalOpen}
           onClose={() => setIsExportModalOpen(false)}

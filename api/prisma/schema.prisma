@@ -1,6 +1,5 @@
 generator client {
   provider = "prisma-client-js"
-  output   = "../src/generated/prisma"
 }
 
 datasource db {
@@ -42,46 +41,44 @@ enum UserStatus {
 enum TransactionType {
   DEPOSIT
   WITHDRAWAL
-  PAYMENT_OUT 
-  PAYMENT_IN 
+  PAYMENT_OUT
+  PAYMENT_IN
   REFUND
 }
 
 model User {
-  id       String     @id @default(cuid())
-  email    String     @unique
-  username String?
-  password String
-  role     Role       @default(FREELANCER)
-  status   UserStatus @default(ACTIVE)
-
-  title    String?
-  bio      String? @db.Text
-  phone    String?
-  location String?
-  skills     String[]
-  proposals  Proposal[]
-  clientJobs Job[]       @relation("ClientJobs")
-  freelancerProjects Project[] @relation("FreelancerProjects")
-  clientProjects     Project[] @relation("ClientProjects")
-  wallet     Wallet?
-  portfolios Portfolio[]
-  verificationCode    String?
+  id                 String         @id @default(cuid())
+  email              String         @unique
+  username           String?
+  password           String
+  role               Role           @default(FREELANCER)
+  status             UserStatus     @default(ACTIVE)
+  title              String?
+  bio                String?        @db.Text
+  phone              String?
+  location           String?
+  skills             String[]
+  verificationCode   String?
   verificationExpires DateTime?
-  isVerified          Boolean   @default(false)
-  conversations Conversation[] @relation("ConversationParticipants")
-  messagesSent  Message[]      @relation("MessagesSent")
-  
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  isVerified         Boolean        @default(false)
+  createdAt          DateTime       @default(now())
+  updatedAt          DateTime       @updatedAt
+
+  proposals          Proposal[]
+  clientJobs         Job[]          @relation("ClientJobs")
+  freelancerProjects Project[]      @relation("FreelancerProjects")
+  clientProjects     Project[]      @relation("ClientProjects")
+  wallet             Wallet?
+  portfolios         Portfolio[]
+  conversations      Conversation[] @relation("ConversationParticipants")
+  messagesSent       Message[]      @relation("MessagesSent")
 }
 
 model Conversation {
-  id        String    @id @default(cuid())
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
-
-  participants User[] @relation("ConversationParticipants")
+  id           String    @id @default(cuid())
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  participants User[]    @relation("ConversationParticipants")
   messages     Message[]
 }
 
@@ -89,13 +86,10 @@ model Message {
   id             String       @id @default(cuid())
   content        String       @db.Text
   isRead         Boolean      @default(false)
-  
   conversationId String
   conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
-
   senderId       String
   sender         User         @relation("MessagesSent", fields: [senderId], references: [id])
-
   createdAt      DateTime     @default(now())
 }
 
@@ -106,15 +100,13 @@ model Portfolio {
   image       String?
   link        String?
   tags        String[]
-
-  userId String
-  user   User   @relation(fields: [userId], references: [id])
-
-  createdAt DateTime @default(now())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id])
+  createdAt   DateTime @default(now())
 }
 
 model Job {
-  id              String    @id @default(cuid())
+  id              String     @id @default(cuid())
   title           String
   description     String
   category        String
@@ -123,78 +115,68 @@ model Job {
   location        String?
   duration        String?
   experienceLevel String?
-  
-  status          JobStatus @default(OPEN)
+  status          JobStatus  @default(OPEN)
   tags            String[]
-
-  clientId String
-  client   User   @relation("ClientJobs", fields: [clientId], references: [id])
-
-  proposals Proposal[]
-  project   Project?
-  createdAt DateTime   @default(now())
-  updatedAt DateTime   @updatedAt
+  clientId        String
+  client          User       @relation("ClientJobs", fields: [clientId], references: [id])
+  proposals       Proposal[]
+  project         Project?
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
 }
 
 model Proposal {
-  id          String         @id @default(cuid())
-  coverLetter String
-  bidAmount   Float
-  status      ProposalStatus @default(PENDING)
-
+  id           String         @id @default(cuid())
+  coverLetter  String
+  bidAmount    Float
+  status       ProposalStatus @default(PENDING)
   jobId        String
-  job          Job    @relation(fields: [jobId], references: [id])
+  job          Job            @relation(fields: [jobId], references: [id])
   freelancerId String
-  freelancer   User   @relation(fields: [freelancerId], references: [id])
+  freelancer   User           @relation(fields: [freelancerId], references: [id])
 }
 
 model Project {
-  id       String    @id @default(cuid())
-  status   JobStatus @default(IN_PROGRESS)
-  progress Int       @default(0)
-  jobId        String @unique
-  job          Job    @relation(fields: [jobId], references: [id])
+  id           String    @id @default(cuid())
+  status       JobStatus @default(IN_PROGRESS)
+  progress     Int       @default(0)
+  jobId        String    @unique
+  job          Job       @relation(fields: [jobId], references: [id])
   freelancerId String
-  freelancer   User   @relation("FreelancerProjects", fields: [freelancerId], references: [id])
+  freelancer   User      @relation("FreelancerProjects", fields: [freelancerId], references: [id])
   clientId     String
-  client       User   @relation("ClientProjects", fields: [clientId], references: [id])
-
-  review    Review?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  client       User      @relation("ClientProjects", fields: [clientId], references: [id])
+  review       Review?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
 }
 
 model Wallet {
-  id      String @id @default(cuid())
-  balance Decimal @db.Decimal(15, 2) @default(0)
-
+  id            String        @id @default(cuid())
+  balance       Decimal       @default(0) @db.Decimal(15, 2)
   bankName      String?
   accountNumber String?
   accountHolder String?
-
-  userId       String        @unique
-  user         User          @relation(fields: [userId], references: [id])
-  transactions Transaction[]
+  userId        String        @unique
+  user          User          @relation(fields: [userId], references: [id])
+  transactions  Transaction[]
 }
 
 model Transaction {
-  id     String            @id @default(cuid())
-  amount Decimal @db.Decimal(15, 2)
-  type   TransactionType
-  status TransactionStatus @default(COMPLETED)
-
+  id        String            @id @default(cuid())
+  amount    Decimal           @db.Decimal(15, 2)
+  type      TransactionType
+  status    TransactionStatus @default(COMPLETED)
   walletId  String
-  wallet    Wallet   @relation(fields: [walletId], references: [id])
-  createdAt DateTime @default(now())
+  wallet    Wallet            @relation(fields: [walletId], references: [id])
+  createdAt DateTime          @default(now())
 }
 
 model Review {
-  id      String  @id @default(cuid())
-  rating  Int
-  comment String?
-
-  projectId String  @unique
-  project   Project @relation(fields: [projectId], references: [id])
-
+  id        String   @id @default(cuid())
+  rating    Int
+  comment   String?
+  projectId String   @unique
+  project   Project  @relation(fields: [projectId], references: [id])
   createdAt DateTime @default(now())
 }
