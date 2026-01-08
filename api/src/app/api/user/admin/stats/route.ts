@@ -12,7 +12,11 @@ export async function GET() {
     const currentMonth = new Date(now.getFullYear(), now.getMonth(), 1);
     const lastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
 
-    const totalUsers = await prisma.user.count();
+    const [totalUsers, pendingUsers, newUsers] = await prisma.$transaction([
+            prisma.user.count(),
+            prisma.user.count({ where: { status: 'PENDING' } }),
+            prisma.user.count({ where: { createdAt: { gte: currentMonth } } })
+        ]);
     const pendingVerificationUsers = await prisma.user.count({ where: { isVerified: false } });
     const newUsersOfMonth = await prisma.user.count({ where: { createdAt: { gte: currentMonth } } });
     const newUsersLastMonth = await prisma.user.count({ where: { createdAt: { gte: lastMonth, lt: currentMonth } } });
@@ -119,30 +123,6 @@ export async function GET() {
         { type: "success", label: "Berhasil", value: successTrx, icon: "check-circle", color: "emerald" },
         { type: "pending", label: "Menunggu", value: pendingTrx, icon: "clock", color: "orange" },
         { type: "failed", label: "Gagal/Batal", value: failedTrx, icon: "x-circle", color: "red" }
-      ],
-      userStats: [
-        {
-            type: "total_users",
-            label: "Total User",
-            value: totalUsers,
-            icon: "users",
-            color: "blue"
-        },
-        {
-            type: "pending_verification",
-            label: "Menunggu Verifikasi",
-            value: pendingVerificationUsers,
-            icon: "clock",
-            color: "orange"
-        },
-        {
-            type: "active_monthly",
-            label: "Aktif Bulan Ini",
-            value: newUsersOfMonth,
-            prefix: "+",
-            icon: "check",
-            color: "emerald"
-        }
       ]
     });
   } catch (error) {
