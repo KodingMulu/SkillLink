@@ -1,200 +1,629 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
-  View,
-  StyleSheet,
-  ScrollView,
-  TouchableOpacity,
-  FlatList,
-  Image,
-  Modal,
-  TextInput,
+  View, Text, StyleSheet, TouchableOpacity, Image,
+  ScrollView, Modal, TextInput, ActivityIndicator,
+  Alert, Dimensions, KeyboardAvoidingView, Platform
 } from 'react-native';
-import { Text, Card } from 'react-native-paper';
-import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import {
+  Plus, ExternalLink, Trash2, Edit3, Image as ImageIcon,
+  X, Loader2, Briefcase
+} from 'lucide-react-native';
+import axios from 'axios';
 
 interface Project {
-  id: number;
+  id: string;
   title: string;
   category: string;
   image: string;
+  description?: string;
 }
 
-const INITIAL_PROJECTS: Project[] = [
-  {
-    id: 1,
-    title: "E-Commerce Re-design",
-    category: "Web Development",
-    image: "https://images.unsplash.com/photo-1557821552-17105176677c?w=500&q=80",
-  },
-  {
-    id: 2,
-    title: "Mobile Banking App",
-    category: "UI/UX Design",
-    image: "https://images.unsplash.com/photo-1563986768609-322da13575f3?w=500&q=80",
-  },
-  {
-    id: 3,
-    title: "Brand Identity - TechFlow",
-    category: "Graphic Design",
-    image: "https://images.unsplash.com/photo-1522542550221-31fd19575a2d?w=500&q=80",
-  }
-];
+const API_URL = process.env.EXPO_PUBLIC_API_URL;
+const { width } = Dimensions.get('window');
 
-export default function PortfolioPage() {
-  const [projects] = useState<Project[]>(INITIAL_PROJECTS);
-  const [activeFilter, setActiveFilter] = useState('Semua');
+export default function PortfolioScreen() {
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
-
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [activeFilter, setActiveFilter] = useState('Semua');
+  
   const categories = ['Semua', 'Web Development', 'UI/UX Design', 'Graphic Design'];
 
-  const filteredProjects = activeFilter === 'Semua' 
-    ? projects 
+  const [formData, setFormData] = useState({
+    title: '',
+    category: 'Web Development',
+    image: '',
+    description: ''
+  });
+
+  const fetchProjects = async () => {
+    setIsLoading(true);
+    try {
+      const res = await axios.get(`${API_URL}/api/portfolio`, { withCredentials: true });
+      setProjects(res.data.data);
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchProjects();
+  }, []);
+
+  const handleInputChange = (name: string, value: string) => {
+    setFormData({ ...formData, [name]: value });
+  };
+
+  const handleSubmit = async () => {
+    if (!formData.title || !formData.image) {
+      Alert.alert("Error", "Judul dan URL Gambar wajib diisi");
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      await axios.post(`${API_URL}/user/freelancer/portfolio`, formData, { withCredentials: true });
+      await fetchProjects();
+      setIsModalOpen(false);
+      setFormData({ title: '', category: 'Web Development', image: '', description: '' });
+    } catch (error) {
+      Alert.alert("Error", "Gagal menyimpan portfolio");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const filteredProjects = activeFilter === 'Semua'
+    ? projects
     : projects.filter(p => p.category === activeFilter);
 
-  const renderProjectItem = ({ item }: { item: Project }) => (
-    <Card style={styles.projectCard}>
-      <View style={styles.imageWrapper}>
-        <Image source={{ uri: item.image }} style={styles.projectImage} />
-        <View style={styles.imageOverlay}>
-          <TouchableOpacity style={styles.editIconBtn}>
-            <MaterialCommunityIcons name="pencil" size={18} color="#0f172a" />
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.deleteIconBtn}>
-            <MaterialCommunityIcons name="trash-can-outline" size={18} color="#fff" />
-          </TouchableOpacity>
-        </View>
-      </View>
-      
-      <Card.Content style={styles.cardInfo}>
-        <View style={styles.categoryBadge}>
-          <Text style={styles.categoryBadgeText}>{item.category.toUpperCase()}</Text>
-        </View>
-        <Text style={styles.projectTitle}>{item.title}</Text>
-        
-        <View style={styles.cardDivider} />
-        
-        <TouchableOpacity style={styles.detailBtn}>
-          {/* PERBAIKAN: name diubah dari 'external-link' menjadi 'open-in-new' */}
-          <MaterialCommunityIcons name="open-in-new" size={16} color="#94a3b8" />
-          <Text style={styles.detailBtnText}>Lihat Detail Proyek</Text>
-        </TouchableOpacity>
-      </Card.Content>
-    </Card>
-  );
-
   return (
-    <SafeAreaView style={styles.container} edges={['bottom']}>
-      <View style={styles.header}>
-        <View>
-          <Text style={styles.mainTitle}>Portofolio Saya</Text>
-          <Text style={styles.mainSubtitle}>Pamerkan hasil kerja terbaik Anda</Text>
+    <View style={s.container}>
+      <View style={s.header}>
+        <View style={s.headerTextContainer}>
+          <Text style={s.headerTitle}>Portofolio Saya</Text>
+          <Text style={s.headerSubtitle}>Pamerkan hasil kerja terbaik Anda</Text>
         </View>
-        <TouchableOpacity style={styles.addButton} onPress={() => setIsModalOpen(true)}>
-          <MaterialCommunityIcons name="plus" size={24} color="#fff" />
+        <TouchableOpacity
+          onPress={() => setIsModalOpen(true)}
+          style={s.addButton}
+        >
+          <Plus size={20} color="white" />
+          <Text style={s.addButtonText}>Tambah</Text>
         </TouchableOpacity>
       </View>
 
-      <View style={styles.filterContainer}>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filterScroll}>
+      <View style={s.filterContainer}>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.filterScroll}>
           {categories.map((cat) => (
-            <TouchableOpacity 
-              key={cat} 
+            <TouchableOpacity
+              key={cat}
               onPress={() => setActiveFilter(cat)}
-              style={[styles.filterBtn, activeFilter === cat && styles.filterBtnActive]}
+              style={[
+                s.filterBadge,
+                activeFilter === cat ? s.filterBadgeActive : s.filterBadgeInactive
+              ]}
             >
-              <Text style={[styles.filterBtnText, activeFilter === cat && styles.filterBtnTextActive]}>{cat}</Text>
+              <Text style={[
+                s.filterText,
+                activeFilter === cat ? s.filterTextActive : s.filterTextInactive
+              ]}>
+                {cat}
+              </Text>
             </TouchableOpacity>
           ))}
         </ScrollView>
       </View>
 
-      <FlatList
-        data={filteredProjects}
-        renderItem={renderProjectItem}
-        keyExtractor={(item) => item.id.toString()}
-        contentContainerStyle={styles.listPadding}
-        ListFooterComponent={
-          <TouchableOpacity style={styles.addQuickCard} onPress={() => setIsModalOpen(true)}>
-            <View style={styles.addQuickIcon}>
-              <MaterialCommunityIcons name="plus" size={32} color="#2563eb" />
-            </View>
-            <Text style={styles.addQuickText}>Tambah Karya Baru</Text>
-          </TouchableOpacity>
-        }
-      />
+      <ScrollView contentContainerStyle={s.scrollContent} showsVerticalScrollIndicator={false}>
+        {isLoading ? (
+          <View style={s.loaderContainer}>
+            <ActivityIndicator size="large" color="#2563EB" />
+          </View>
+        ) : (
+          <View style={s.grid}>
+            {filteredProjects.map((project) => (
+              <View key={project.id} style={s.card}>
+                <View style={s.imageContainer}>
+                  <Image
+                    source={{ uri: project.image || "https://via.placeholder.com/500?text=No+Image" }}
+                    style={s.cardImage}
+                    resizeMode="cover"
+                  />
+                  <View style={s.imageOverlay}>
+                    <TouchableOpacity style={s.overlayBtn}>
+                      <Edit3 size={16} color="#1E293B" />
+                    </TouchableOpacity>
+                    <TouchableOpacity style={[s.overlayBtn, s.deleteBtn]}>
+                      <Trash2 size={16} color="white" />
+                    </TouchableOpacity>
+                  </View>
+                </View>
 
-      <Modal visible={isModalOpen} transparent animationType="slide">
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Tambah Proyek</Text>
+                <View style={s.cardContent}>
+                  <View style={s.categoryBadge}>
+                    <Text style={s.categoryBadgeText}>{project.category}</Text>
+                  </View>
+                  <Text style={s.cardTitle} numberOfLines={1}>{project.title}</Text>
+                  
+                  <View style={s.cardDivider} />
+                  
+                  <TouchableOpacity style={s.detailBtn}>
+                    <ExternalLink size={14} color="#64748B" />
+                    <Text style={s.detailBtnText}>Lihat Detail</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            ))}
+
+            <TouchableOpacity 
+              style={s.addNewCard}
+              onPress={() => setIsModalOpen(true)}
+            >
+              <View style={s.addNewIconCircle}>
+                <Plus size={32} color="#2563EB" />
+              </View>
+              <Text style={s.addNewText}>Tambah Karya Baru</Text>
+              <Text style={s.addNewSubtext}>Format: JPG, PNG</Text>
+            </TouchableOpacity>
+          </View>
+        )}
+      </ScrollView>
+
+      <Modal
+        visible={isModalOpen}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setIsModalOpen(false)}
+      >
+        <KeyboardAvoidingView 
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
+          style={s.modalOverlay}
+        >
+          <View style={s.modalContent}>
+            <View style={s.modalHeader}>
+              <Text style={s.modalTitle}>Tambah Proyek</Text>
               <TouchableOpacity onPress={() => setIsModalOpen(false)}>
-                <MaterialCommunityIcons name="close" size={24} color="#94a3b8" />
+                <X size={24} color="#64748B" />
               </TouchableOpacity>
             </View>
-            <ScrollView style={styles.modalBody}>
-              <View style={styles.inputGroup}>
-                <Text style={styles.inputLabel}>NAMA PROYEK</Text>
-                <TextInput style={styles.textInput} placeholder="Masukkan judul..." placeholderTextColor="#cbd5e1" />
+
+            <ScrollView style={s.formScroll}>
+              <View style={s.formGroup}>
+                <Text style={s.label}>Nama Proyek</Text>
+                <TextInput
+                  style={s.input}
+                  placeholder="Masukkan judul karya..."
+                  value={formData.title}
+                  onChangeText={(t) => handleInputChange('title', t)}
+                />
               </View>
-              <TouchableOpacity style={styles.uploadBox}>
-                <MaterialCommunityIcons name="image-outline" size={40} color="#cbd5e1" />
-                <Text style={styles.uploadLabel}>UPLOAD GAMBAR</Text>
-              </TouchableOpacity>
+
+              <View style={s.formGroup}>
+                <Text style={s.label}>Kategori</Text>
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} style={s.catSelectScroll}>
+                  {categories.filter(c => c !== 'Semua').map(c => (
+                    <TouchableOpacity
+                      key={c}
+                      onPress={() => handleInputChange('category', c)}
+                      style={[
+                        s.catSelectBadge,
+                        formData.category === c && s.catSelectBadgeActive
+                      ]}
+                    >
+                      <Text style={[
+                        s.catSelectText,
+                        formData.category === c && s.catSelectTextActive
+                      ]}>{c}</Text>
+                    </TouchableOpacity>
+                  ))}
+                </ScrollView>
+              </View>
+
+              <View style={s.formGroup}>
+                <Text style={s.label}>URL Gambar</Text>
+                <View style={s.inputIconContainer}>
+                  <TextInput
+                    style={[s.input, s.inputWithIcon]}
+                    placeholder="https://..."
+                    value={formData.image}
+                    onChangeText={(t) => handleInputChange('image', t)}
+                  />
+                  <ImageIcon size={20} color="#94A3B8" style={s.inputIcon} />
+                </View>
+              </View>
+
+              <View style={s.formGroup}>
+                <Text style={s.label}>Deskripsi</Text>
+                <TextInput
+                  style={[s.input, s.textArea]}
+                  placeholder="Deskripsi singkat..."
+                  multiline
+                  numberOfLines={4}
+                  textAlignVertical="top"
+                  value={formData.description}
+                  onChangeText={(t) => handleInputChange('description', t)}
+                />
+              </View>
             </ScrollView>
-            <View style={styles.modalFooter}>
-              <TouchableOpacity style={styles.saveBtn}>
-                <Text style={styles.saveBtnText}>Simpan Karya</Text>
+
+            <View style={s.modalFooter}>
+              <TouchableOpacity 
+                style={s.cancelButton}
+                onPress={() => setIsModalOpen(false)}
+                disabled={isSubmitting}
+              >
+                <Text style={s.cancelButtonText}>Batal</Text>
+              </TouchableOpacity>
+              <TouchableOpacity 
+                style={s.submitButton}
+                onPress={handleSubmit}
+                disabled={isSubmitting}
+              >
+                {isSubmitting ? (
+                  <ActivityIndicator size="small" color="white" />
+                ) : (
+                  <Text style={s.submitButtonText}>Simpan Karya</Text>
+                )}
               </TouchableOpacity>
             </View>
           </View>
-        </View>
+        </KeyboardAvoidingView>
       </Modal>
-    </SafeAreaView>
+    </View>
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#f8fafc' },
-  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 24, paddingTop: 20 },
-  mainTitle: { fontSize: 26, fontWeight: '900', color: '#0f172a' },
-  mainSubtitle: { fontSize: 14, color: '#64748b' },
-  addButton: { width: 52, height: 52, borderRadius: 18, backgroundColor: '#2563eb', justifyContent: 'center', alignItems: 'center' },
-  filterContainer: { marginTop: 20 },
-  filterScroll: { paddingHorizontal: 24 },
-  filterBtn: { paddingHorizontal: 16, paddingVertical: 10, borderRadius: 14, backgroundColor: '#fff', borderWidth: 1, borderColor: '#e2e8f0', marginRight: 10 },
-  filterBtnActive: { backgroundColor: '#2563eb', borderColor: '#2563eb' },
-  filterBtnText: { fontSize: 13, fontWeight: 'bold', color: '#64748b' },
-  filterBtnTextActive: { color: '#fff' },
-  listPadding: { padding: 24, paddingBottom: 40 },
-  projectCard: { borderRadius: 28, backgroundColor: '#fff', marginBottom: 20, overflow: 'hidden', borderWidth: 1, borderColor: '#e2e8f0' },
-  imageWrapper: { height: 200, backgroundColor: '#f1f5f9' },
-  projectImage: { width: '100%', height: '100%' },
-  imageOverlay: { position: 'absolute', top: 12, right: 12, flexDirection: 'row' },
-  editIconBtn: { width: 36, height: 36, borderRadius: 10, backgroundColor: '#fff', justifyContent: 'center', alignItems: 'center', marginRight: 8 },
-  deleteIconBtn: { width: 36, height: 36, borderRadius: 10, backgroundColor: 'rgba(239, 68, 68, 0.9)', justifyContent: 'center', alignItems: 'center' },
-  cardInfo: { padding: 20 },
-  categoryBadge: { backgroundColor: '#eff6ff', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8, alignSelf: 'flex-start', marginBottom: 10 },
-  categoryBadgeText: { fontSize: 10, fontWeight: '900', color: '#2563eb' },
-  projectTitle: { fontSize: 18, fontWeight: 'bold', color: '#0f172a' },
-  cardDivider: { height: 1, backgroundColor: '#f1f5f9', marginVertical: 15 },
-  detailBtn: { flexDirection: 'row', alignItems: 'center' },
-  detailBtnText: { fontSize: 12, fontWeight: 'bold', color: '#94a3b8', marginLeft: 6 },
-  addQuickCard: { borderWidth: 2, borderStyle: 'dashed', borderColor: '#cbd5e1', borderRadius: 28, padding: 40, alignItems: 'center', backgroundColor: '#fff' },
-  addQuickIcon: { width: 60, height: 60, borderRadius: 18, backgroundColor: '#f8fafc', justifyContent: 'center', alignItems: 'center', marginBottom: 12 },
-  addQuickText: { fontSize: 15, fontWeight: 'bold', color: '#0f172a' },
-  modalOverlay: { flex: 1, backgroundColor: 'rgba(15, 23, 42, 0.6)', justifyContent: 'flex-end' },
-  modalContent: { backgroundColor: '#fff', borderTopLeftRadius: 32, borderTopRightRadius: 32, paddingBottom: 40 },
-  modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 24, borderBottomWidth: 1, borderBottomColor: '#f1f5f9' },
-  modalTitle: { fontSize: 20, fontWeight: 'bold', color: '#0f172a' },
-  modalBody: { padding: 24 },
-  inputGroup: { marginBottom: 20 },
-  inputLabel: { fontSize: 10, fontWeight: '900', color: '#94a3b8', marginBottom: 8 },
-  textInput: { backgroundColor: '#f8fafc', borderRadius: 16, padding: 16, fontSize: 15, borderWidth: 1, borderColor: '#e2e8f0' },
-  uploadBox: { height: 150, borderWidth: 2, borderStyle: 'dashed', borderColor: '#cbd5e1', borderRadius: 20, justifyContent: 'center', alignItems: 'center', backgroundColor: '#f8fafc' },
-  uploadLabel: { fontSize: 11, fontWeight: '900', color: '#94a3b8', marginTop: 10 },
-  modalFooter: { paddingHorizontal: 24 },
-  saveBtn: { backgroundColor: '#2563eb', borderRadius: 16, paddingVertical: 16, alignItems: 'center' },
-  saveBtnText: { color: '#fff', fontWeight: 'bold' }
+const s = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#F8FAFC',
+  },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-end',
+    padding: 24,
+    backgroundColor: 'white',
+    borderBottomWidth: 1,
+    borderBottomColor: '#E2E8F0',
+  },
+  headerTextContainer: {
+    flex: 1,
+    marginRight: 12,
+  },
+  headerTitle: {
+    fontSize: 24,
+    fontWeight: '800',
+    color: '#0F172A',
+    marginBottom: 4,
+  },
+  headerSubtitle: {
+    fontSize: 14,
+    color: '#64748B',
+  },
+  addButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#2563EB',
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: 12,
+    gap: 6,
+    shadowColor: '#2563EB',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  addButtonText: {
+    color: 'white',
+    fontWeight: 'bold',
+    fontSize: 14,
+  },
+  filterContainer: {
+    paddingVertical: 16,
+  },
+  filterScroll: {
+    paddingHorizontal: 24,
+    gap: 8,
+  },
+  filterBadge: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 12,
+    borderWidth: 1,
+    marginRight: 8,
+  },
+  filterBadgeActive: {
+    backgroundColor: 'white',
+    borderColor: '#E2E8F0',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 1,
+  },
+  filterBadgeInactive: {
+    backgroundColor: 'transparent',
+    borderColor: 'transparent',
+  },
+  filterText: {
+    fontSize: 12,
+    fontWeight: 'bold',
+  },
+  filterTextActive: {
+    color: '#2563EB',
+  },
+  filterTextInactive: {
+    color: '#64748B',
+  },
+  scrollContent: {
+    paddingHorizontal: 24,
+    paddingBottom: 40,
+  },
+  loaderContainer: {
+    paddingVertical: 40,
+    alignItems: 'center',
+  },
+  grid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+  },
+  card: {
+    width: (width - 48 - 12) / 2, 
+    backgroundColor: 'white',
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    marginBottom: 16,
+    overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  imageContainer: {
+    height: 120,
+    backgroundColor: '#F1F5F9',
+    position: 'relative',
+  },
+  cardImage: {
+    width: '100%',
+    height: '100%',
+  },
+  imageOverlay: {
+    position: 'absolute',
+    bottom: 8,
+    right: 8,
+    flexDirection: 'row',
+    gap: 6,
+  },
+  overlayBtn: {
+    width: 28,
+    height: 28,
+    borderRadius: 8,
+    backgroundColor: 'white',
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  deleteBtn: {
+    backgroundColor: '#EF4444',
+  },
+  cardContent: {
+    padding: 12,
+  },
+  categoryBadge: {
+    backgroundColor: '#EFF6FF',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
+    alignSelf: 'flex-start',
+    marginBottom: 8,
+  },
+  categoryBadgeText: {
+    fontSize: 10,
+    fontWeight: '800',
+    color: '#2563EB',
+    textTransform: 'uppercase',
+  },
+  cardTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#0F172A',
+    marginBottom: 12,
+  },
+  cardDivider: {
+    height: 1,
+    backgroundColor: '#F1F5F9',
+    marginBottom: 12,
+  },
+  detailBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  detailBtnText: {
+    fontSize: 12,
+    fontWeight: 'bold',
+    color: '#64748B',
+  },
+  addNewCard: {
+    width: (width - 48 - 12) / 2,
+    height: 240, 
+    borderWidth: 2,
+    borderColor: '#E2E8F0',
+    borderStyle: 'dashed',
+    borderRadius: 20,
+    backgroundColor: '#F8FAFC',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 16,
+  },
+  addNewIconCircle: {
+    width: 64,
+    height: 64,
+    backgroundColor: 'white',
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: '#F1F5F9',
+    marginBottom: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  addNewText: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    color: '#0F172A',
+    marginBottom: 4,
+    textAlign: 'center',
+  },
+  addNewSubtext: {
+    fontSize: 12,
+    color: '#94A3B8',
+    textAlign: 'center',
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(15, 23, 42, 0.6)',
+    justifyContent: 'flex-end',
+  },
+  modalContent: {
+    backgroundColor: 'white',
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    height: '85%',
+    padding: 24,
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingBottom: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F1F5F9',
+    marginBottom: 16,
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#0F172A',
+  },
+  formScroll: {
+    flex: 1,
+  },
+  formGroup: {
+    marginBottom: 20,
+  },
+  label: {
+    fontSize: 12,
+    fontWeight: '800',
+    color: '#94A3B8',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+    marginBottom: 8,
+  },
+  input: {
+    backgroundColor: '#F8FAFC',
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    borderRadius: 16,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    fontSize: 14,
+    color: '#0F172A',
+    fontWeight: '500',
+  },
+  inputIconContainer: {
+    position: 'relative',
+    justifyContent: 'center',
+  },
+  inputWithIcon: {
+    paddingLeft: 44,
+  },
+  inputIcon: {
+    position: 'absolute',
+    left: 14,
+  },
+  textArea: {
+    height: 100,
+  },
+  catSelectScroll: {
+    flexDirection: 'row',
+  },
+  catSelectBadge: {
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    backgroundColor: '#F8FAFC',
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    borderRadius: 12,
+    marginRight: 8,
+  },
+  catSelectBadgeActive: {
+    backgroundColor: '#EFF6FF',
+    borderColor: '#2563EB',
+  },
+  catSelectText: {
+    fontSize: 14,
+    color: '#64748B',
+    fontWeight: '500',
+  },
+  catSelectTextActive: {
+    color: '#2563EB',
+    fontWeight: 'bold',
+  },
+  modalFooter: {
+    flexDirection: 'row',
+    gap: 12,
+    paddingTop: 16,
+    borderTopWidth: 1,
+    borderTopColor: '#F1F5F9',
+  },
+  cancelButton: {
+    flex: 1,
+    paddingVertical: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 16,
+    backgroundColor: 'white',
+  },
+  cancelButtonText: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    color: '#64748B',
+  },
+  submitButton: {
+    flex: 1,
+    paddingVertical: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 16,
+    backgroundColor: '#2563EB',
+    shadowColor: '#2563EB',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  submitButtonText: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    color: 'white',
+  },
 });

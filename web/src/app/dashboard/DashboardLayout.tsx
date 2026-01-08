@@ -5,7 +5,8 @@ import {
   Briefcase, LayoutDashboard, MessageSquare,
   Settings, LogOut, Bell, Search, Menu, User,
   TrendingUp, Users, DollarSign,
-  Wallet
+  Wallet,
+  BookCheck
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
@@ -96,6 +97,7 @@ export default function DashboardLayout({
           { icon: Search, label: 'Cari Kerja', href: '/dashboard/freelancer/jobs' },
           { icon: MessageSquare, label: 'Pesan', href: '/dashboard/freelancer/messages' },
           { icon: Wallet, label: 'Saldo Saya', href: '/dashboard/freelancer/wallet' },
+          { icon: BookCheck, label: 'Portofolio', href: '/dashboard/freelancer/portfolio' },
         ];
     }
   };
