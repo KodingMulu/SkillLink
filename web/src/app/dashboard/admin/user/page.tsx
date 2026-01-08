@@ -79,11 +79,13 @@ export default function UserManagementPage({ backgroundImage, backgroundColor }:
     const fetchStats = async () => {
       try {
         const res = await axios.get<AdminStatsResponse>(
-          `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/user/admin/stats`
+          `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/user/admin/stats`,
+          { withCredentials: true }
         );
-        setStats(res.data.userStats);
+        setStats(res.data?.userStats || []);
       } catch (error) {
-        console.error("Gagal mengambil user stats:", error);
+        console.error(error);
+        setStats([]); 
       } finally {
         setLoadingStats(false);
       }
@@ -101,14 +103,19 @@ export default function UserManagementPage({ backgroundImage, backgroundColor }:
             params: {
               page: pagination.page,
               limit: 10,
-              search: searchTerm
-            }
+              search: searchTerm,
+              status: statusFilter
+            },
+            withCredentials: true
           }
         );
-        setUsers(res.data.data);
-        setPagination(prev => ({ ...prev, ...res.data.pagination }));
+        setUsers(res.data?.data || []);
+        if (res.data?.pagination) {
+          setPagination(prev => ({ ...prev, ...res.data.pagination }));
+        }
       } catch (error) {
-        console.error("Gagal mengambil list user:", error);
+        console.error(error);
+        setUsers([]); 
       } finally {
         setLoadingUsers(false);
       }
@@ -119,13 +126,11 @@ export default function UserManagementPage({ backgroundImage, backgroundColor }:
     }, 500);
 
     return () => clearTimeout(timeoutId);
-  }, [searchTerm, pagination.page]);
+  }, [searchTerm, statusFilter, pagination.page]);
 
-
-  const filteredUsers = users.filter(user => {
-    const matchesStatus = statusFilter === 'all' || user.status === statusFilter;
-    return matchesStatus;
-  });
+  useEffect(() => {
+    setPagination(prev => ({ ...prev, page: 1 }));
+  }, [searchTerm, statusFilter]);
 
   const getIcon = (iconName: string): LucideIcon => {
     switch (iconName) {
@@ -155,10 +160,10 @@ export default function UserManagementPage({ backgroundImage, backgroundColor }:
   };
 
   const toggleSelectAll = () => {
-    if (selectedUsers.length === filteredUsers.length) {
+    if (selectedUsers.length === users.length) {
       setSelectedUsers([]);
     } else {
-      setSelectedUsers(filteredUsers.map(u => u.id));
+      setSelectedUsers(users.map(u => u.id));
     }
   };
 
@@ -192,14 +197,13 @@ export default function UserManagementPage({ backgroundImage, backgroundColor }:
             </div>
           </div>
 
-          {/* STATS CARDS */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {loadingStats ? (
               [...Array(3)].map((_, i) => (
                 <div key={i} className="bg-white/95 backdrop-blur-sm p-4 rounded-2xl border border-slate-200 h-24 animate-pulse" />
               ))
             ) : (
-              stats.map((stat, idx) => {
+              (stats || []).map((stat, idx) => {
                 const IconComponent = getIcon(stat.icon);
                 const styles = getColorStyles(stat.color);
 
@@ -220,7 +224,6 @@ export default function UserManagementPage({ backgroundImage, backgroundColor }:
             )}
           </div>
 
-          {/* TABLE & FILTER SECTION */}
           <div className="bg-white/95 backdrop-blur-sm rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
             <div className="p-4 border-b border-slate-100 flex flex-col lg:flex-row gap-4 justify-between items-center bg-slate-50/50">
               <div className="flex items-center gap-2 w-full lg:w-auto">
@@ -263,8 +266,8 @@ export default function UserManagementPage({ backgroundImage, backgroundColor }:
                       <input
                         type="checkbox"
                         className="rounded border-slate-300 text-blue-600 focus:ring-blue-500"
-                        disabled={loadingUsers || filteredUsers.length === 0}
-                        checked={filteredUsers.length > 0 && selectedUsers.length === filteredUsers.length}
+                        disabled={loadingUsers || users.length === 0}
+                        checked={users.length > 0 && selectedUsers.length === users.length}
                         onChange={toggleSelectAll}
                       />
                     </th>
@@ -281,14 +284,14 @@ export default function UserManagementPage({ backgroundImage, backgroundColor }:
                     <tr>
                       <td colSpan={7} className="text-center py-8 text-slate-500">Memuat data pengguna...</td>
                     </tr>
-                  ) : filteredUsers.length === 0 ? (
+                  ) : users.length === 0 ? (
                     <tr>
                       <td colSpan={7} className="text-center py-8 text-slate-500">
                         {searchTerm ? "Tidak ada user yang cocok dengan pencarian." : "Belum ada data user."}
                       </td>
                     </tr>
                   ) : (
-                    filteredUsers.map((user) => (
+                    (users || []).map((user) => (
                       <tr key={user.id} className="hover:bg-slate-50/80 transition-colors group">
                         <td className="px-6 py-4">
                           <input
@@ -353,10 +356,9 @@ export default function UserManagementPage({ backgroundImage, backgroundColor }:
               </table>
             </div>
 
-            {/* PAGINATION SECTION */}
             <div className="px-6 py-4 border-t border-slate-100 flex items-center justify-between bg-slate-50/30">
               <p className="text-sm text-slate-500">
-                Menampilkan <span className="font-medium text-slate-900">{filteredUsers.length}</span> dari <span className="font-medium text-slate-900">{pagination.total}</span> user
+                Menampilkan <span className="font-medium text-slate-900">{users.length}</span> dari <span className="font-medium text-slate-900">{pagination.total}</span> user
               </p>
               <div className="flex items-center gap-2">
                 <button
@@ -399,7 +401,6 @@ export default function UserManagementPage({ backgroundImage, backgroundColor }:
           </div>
         </div>
 
-        {/* Modal Tambah User */}
         <AddUserModal
           isOpen={isAddUserModalOpen}
           onClose={() => setIsAddUserModalOpen(false)}

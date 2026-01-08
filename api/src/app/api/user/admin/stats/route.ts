@@ -119,6 +119,30 @@ export async function GET() {
         { type: "success", label: "Berhasil", value: successTrx, icon: "check-circle", color: "emerald" },
         { type: "pending", label: "Menunggu", value: pendingTrx, icon: "clock", color: "orange" },
         { type: "failed", label: "Gagal/Batal", value: failedTrx, icon: "x-circle", color: "red" }
+      ],
+      userStats: [
+        {
+            type: "total_users",
+            label: "Total User",
+            value: totalUsers,
+            icon: "users",
+            color: "blue"
+        },
+        {
+            type: "pending_verification",
+            label: "Menunggu Verifikasi",
+            value: pendingVerificationUsers,
+            icon: "clock",
+            color: "orange"
+        },
+        {
+            type: "active_monthly",
+            label: "Aktif Bulan Ini",
+            value: newUsersOfMonth,
+            prefix: "+",
+            icon: "check",
+            color: "emerald"
+        }
       ]
     });
   } catch (error) {

@@ -43,47 +43,94 @@ interface TransactionRow {
   date: string;
 }
 
-const TRANSACTIONS_DATA = [
-  { id: "TX-90210", user: "Budi Santoso", project: "Redesain Aplikasi Mobile", amount: "Rp 15.000.000", method: "Bank Transfer", status: "success", date: "2023-12-15 14:30" },
-  { id: "TX-90211", user: "PT Digital Innovation", project: "Top Up Saldo", amount: "Rp 25.000.000", method: "Landmark", status: "pending", date: "2023-12-16 09:15" },
-  { id: "TX-90212", user: "Sarah Wijaya", project: "Withdrawal", amount: "Rp 5.200.000", method: "Wallet", status: "success", date: "2023-12-16 10:45" },
-  { id: "TX-90213", user: "Ahmad Rizki", project: "Audit Keamanan", amount: "Rp 40.000.000", method: "Bank Transfer", status: "failed", date: "2023-12-14 16:20" },
-  { id: "TX-90214", user: "Indah Permata", project: "Landing Page", amount: "Rp 3.500.000", method: "Credit Card", status: "success", date: "2023-12-17 08:00" },
-  { id: "TX-90215", user: "Rizky Fauzi", project: "API E-commerce", amount: "Rp 8.500.000", method: "Wallet", status: "pending", date: "2023-12-17 11:30" },
-];
+interface PaginationMeta {
+  page: number;
+  limit: number;
+  total: number;
+  totalPages: number;
+}
+
+interface TransactionListResponse {
+  data: TransactionRow[];
+  pagination: PaginationMeta;
+}
 
 export default function TransactionManagementPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [isTaxModalOpen, setIsTaxModalOpen] = useState(false);
   
-  // State untuk Data Statistik dari API
   const [stats, setStats] = useState<TransactionStatApi[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [transactions, setTransactions] = useState<TransactionRow[]>([]);
+  
+  const [loadingStats, setLoadingStats] = useState(true);
+  const [loadingTable, setLoadingTable] = useState(true);
+
+  const [pagination, setPagination] = useState<PaginationMeta>({
+    page: 1, limit: 10, total: 0, totalPages: 1
+  });
 
   useEffect(() => {
     const fetchStats = async () => {
       try {
         const res = await axios.get<AdminStatsResponse>(
-          `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/user/admin/stats`
+          `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/user/admin/stats`,
+          { withCredentials: true }
         );
-        setStats(res.data.transactionStats);
+        setStats(res.data.transactionStats || []);
       } catch (error) {
-        console.error("Gagal mengambil transaction stats:", error);
+        setStats([]);
       } finally {
-        setLoading(false);
+        setLoadingStats(false);
       }
     };
 
     fetchStats();
   }, []);
 
-  const filteredTransactions = TRANSACTIONS_DATA.filter(tx => {
-    const matchesSearch = tx.id.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                         tx.user.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesStatus = statusFilter === 'all' || tx.status === statusFilter;
-    return matchesSearch && matchesStatus;
-  });
+  useEffect(() => {
+    const fetchTransactions = async () => {
+      setLoadingTable(true);
+      try {
+        const res = await axios.get<TransactionListResponse>(
+          `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/user/admin/transactions`,
+          {
+            params: {
+              page: pagination.page,
+              limit: 10,
+              search: searchTerm,
+              status: statusFilter
+            },
+            withCredentials: true
+          }
+        );
+        setTransactions(res.data.data || []);
+        if (res.data.pagination) {
+          setPagination(prev => ({ ...prev, ...res.data.pagination }));
+        }
+      } catch (error) {
+        setTransactions([]);
+      } finally {
+        setLoadingTable(false);
+      }
+    };
+
+    const timeoutId = setTimeout(() => {
+      fetchTransactions();
+    }, 500);
+
+    return () => clearTimeout(timeoutId);
+  }, [searchTerm, statusFilter, pagination.page]);
+
+  useEffect(() => {
+    setPagination(prev => ({ ...prev, page: 1 }));
+  }, [searchTerm, statusFilter]);
+
+  const handlePageChange = (newPage: number) => {
+    if (newPage >= 1 && newPage <= pagination.totalPages) {
+      setPagination(prev => ({ ...prev, page: newPage }));
+    }
+  };
 
   const getStatusStyle = (status: string) => {
     switch(status) {
@@ -95,12 +142,10 @@ export default function TransactionManagementPage() {
   };
 
   const getMethodIcon = (method: string) => {
-    switch(method) {
-      case 'Bank Transfer': return <Landmark className="w-3 h-3" />;
-      case 'Wallet': return <Wallet className="w-3 h-3" />;
-      case 'Credit Card': return <CreditCard className="w-3 h-3" />;
-      default: return <DollarSign className="w-3 h-3" />;
-    }
+    const normalized = method.toLowerCase();
+    if (normalized.includes('bank') || normalized.includes('landmark')) return <Landmark className="w-3 h-3" />;
+    if (normalized.includes('card')) return <CreditCard className="w-3 h-3" />;
+    return <Wallet className="w-3 h-3" />;
   };
 
   const getStatIcon = (type: string) => {
@@ -116,7 +161,6 @@ export default function TransactionManagementPage() {
   return (
     <DashboardLayout role="admin">
       <div className="space-y-6">
-        {/* Header Section */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
             <h1 className="text-2xl font-bold text-slate-900">Manajemen Transaksi</h1>
@@ -137,9 +181,8 @@ export default function TransactionManagementPage() {
           </div>
         </div>
 
-        {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          {loading ? (
+          {loadingStats ? (
              [...Array(4)].map((_, i) => (
                <div key={i} className="bg-white p-5 rounded-2xl border border-slate-200 h-32 animate-pulse" />
              ))
@@ -171,9 +214,7 @@ export default function TransactionManagementPage() {
           )}
         </div>
 
-        {/* Table Section */}
         <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-          {/* Table Filters */}
           <div className="p-4 border-b border-slate-100 flex flex-col lg:flex-row gap-4 justify-between items-center bg-slate-50/50">
             <div className="flex items-center gap-2 w-full lg:w-auto">
               <div className="relative flex-1 lg:w-80">
@@ -208,7 +249,6 @@ export default function TransactionManagementPage() {
             </div>
           </div>
 
-          {/* Table Body */}
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse">
               <thead>
@@ -222,52 +262,91 @@ export default function TransactionManagementPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
-                {filteredTransactions.map((tx) => (
-                  <tr key={tx.id} className="hover:bg-slate-50/80 transition-colors group">
-                    <td className="px-6 py-4">
-                      <div className="text-sm font-bold text-slate-900">{tx.id}</div>
-                      <div className="text-[10px] text-slate-400 mt-1">{tx.date}</div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="text-sm font-semibold text-slate-800">{tx.user}</div>
-                      <div className="text-xs text-slate-500 truncate max-w-[180px]">{tx.project}</div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="flex items-center gap-2 text-xs text-slate-600 bg-slate-100 w-fit px-2 py-1 rounded-md font-medium">
-                        {getMethodIcon(tx.method)}
-                        {tx.method}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="text-sm font-bold text-slate-900">{tx.amount}</div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <span className={`px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider ${getStatusStyle(tx.status)}`}>
-                        {tx.status}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 text-right">
-                      <button className="p-2 text-slate-400 hover:text-slate-600 hover:bg-white rounded-lg transition border border-transparent hover:border-slate-200">
-                        <MoreVertical className="w-4 h-4" />
-                      </button>
+                {loadingTable ? (
+                  <tr>
+                    <td colSpan={6} className="text-center py-8 text-slate-500">Memuat data transaksi...</td>
+                  </tr>
+                ) : transactions.length === 0 ? (
+                  <tr>
+                    <td colSpan={6} className="text-center py-8 text-slate-500">
+                      {searchTerm ? "Tidak ada transaksi yang cocok." : "Belum ada riwayat transaksi."}
                     </td>
                   </tr>
-                ))}
+                ) : (
+                  transactions.map((tx) => (
+                    <tr key={tx.id} className="hover:bg-slate-50/80 transition-colors group">
+                      <td className="px-6 py-4">
+                        <div className="text-sm font-bold text-slate-900">{tx.id}</div>
+                        <div className="text-[10px] text-slate-400 mt-1">{tx.date}</div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="text-sm font-semibold text-slate-800">{tx.user}</div>
+                        <div className="text-xs text-slate-500 truncate max-w-[180px]">{tx.project}</div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="flex items-center gap-2 text-xs text-slate-600 bg-slate-100 w-fit px-2 py-1 rounded-md font-medium">
+                          {getMethodIcon(tx.method)}
+                          {tx.method}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="text-sm font-bold text-slate-900">{tx.amount}</div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <span className={`px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider ${getStatusStyle(tx.status)}`}>
+                          {tx.status}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 text-right">
+                        <button className="p-2 text-slate-400 hover:text-slate-600 hover:bg-white rounded-lg transition border border-transparent hover:border-slate-200">
+                          <MoreVertical className="w-4 h-4" />
+                        </button>
+                      </td>
+                    </tr>
+                  ))
+                )}
               </tbody>
             </table>
           </div>
 
-          {/* Pagination */}
           <div className="px-6 py-4 border-t border-slate-100 flex items-center justify-between bg-slate-50/30">
             <p className="text-sm text-slate-500">
-              Menampilkan <span className="font-medium text-slate-900">{filteredTransactions.length}</span> transaksi
+              Menampilkan <span className="font-medium text-slate-900">{transactions.length}</span> dari <span className="font-medium text-slate-900">{pagination.total}</span> transaksi
             </p>
             <div className="flex items-center gap-2">
-              <button className="p-2 border border-slate-200 rounded-lg hover:bg-white disabled:opacity-50 transition" disabled>
+              <button 
+                onClick={() => handlePageChange(pagination.page - 1)}
+                disabled={pagination.page <= 1 || loadingTable}
+                className="p-2 border border-slate-200 rounded-lg hover:bg-white disabled:opacity-50 transition"
+              >
                 <ChevronLeft className="w-4 h-4" />
               </button>
-              <button className="px-3 py-1 bg-blue-600 text-white rounded-lg text-sm font-medium">1</button>
-              <button className="p-2 border border-slate-200 rounded-lg hover:bg-white transition">
+              
+              {Array.from({ length: pagination.totalPages }, (_, i) => i + 1).map((pageNum) => {
+                  if (pageNum === 1 || pageNum === pagination.totalPages || (pageNum >= pagination.page - 1 && pageNum <= pagination.page + 1)) {
+                    return (
+                      <button
+                        key={pageNum}
+                        onClick={() => handlePageChange(pageNum)}
+                        className={`px-3 py-1 rounded-lg text-sm font-medium transition ${pagination.page === pageNum
+                            ? 'bg-blue-600 text-white'
+                            : 'hover:bg-white border border-transparent hover:border-slate-200 text-slate-600'
+                          }`}
+                      >
+                        {pageNum}
+                      </button>
+                    )
+                  }
+                  if (pageNum === 2 && pagination.page > 4) return <span key={pageNum} className="px-1">...</span>;
+                  if (pageNum === pagination.totalPages - 1 && pagination.page < pagination.totalPages - 3) return <span key={pageNum} className="px-1">...</span>;
+                  return null;
+                })}
+
+              <button 
+                onClick={() => handlePageChange(pagination.page + 1)}
+                disabled={pagination.page >= pagination.totalPages || loadingTable}
+                className="p-2 border border-slate-200 rounded-lg hover:bg-white disabled:opacity-50 transition"
+              >
                 <ChevronRight className="w-4 h-4" />
               </button>
             </div>
@@ -275,7 +354,6 @@ export default function TransactionManagementPage() {
         </div>
       </div>
 
-      {/* Tax Report Modal */}
       <TaxReportModal 
         isOpen={isTaxModalOpen} 
         onClose={() => setIsTaxModalOpen(false)} 
@@ -285,9 +363,6 @@ export default function TransactionManagementPage() {
   );
 }
 
-/**
- * Reusable Stat Card Component for cleaner code
- */
 function StatCard({ icon, label, value, trend, color }: StatCardProps) {
   const colorMap: Record<StatCardProps['color'], string> = {
     blue: "bg-blue-50",

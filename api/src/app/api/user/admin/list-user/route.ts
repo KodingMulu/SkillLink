@@ -1,27 +1,28 @@
 import prisma from "@/lib/prisma";
-import { Prisma } from "@/generated/prisma";
+import { Prisma } from "@prisma/client";
 import { NextResponse } from "next/server";
 
 export async function GET(request: Request) {
     try {
         const { searchParams } = new URL(request.url);
         const search = searchParams.get("search") || "";
+        const status = searchParams.get("status") || "all";
         const page = parseInt(searchParams.get("page") || "1");
         const limit = parseInt(searchParams.get("limit") || "10");
         const skip = (page - 1) * limit;
 
         const whereCondition: Prisma.UserWhereInput = {
-            status: {
-                in: ['ACTIVE', 'PENDING']
-            },
-            AND: search ? [
-                {
+            AND: [
+                search ? {
                     OR: [
                         { username: { contains: search, mode: 'insensitive' } },
                         { email: { contains: search, mode: 'insensitive' } }
                     ]
-                }
-            ] : undefined
+                } : {},
+                status !== 'all' ? {
+                    status: status.toUpperCase() as Prisma.EnumUserStatusFilter
+                } : {}
+            ]
         };
 
         const [users, total] = await prisma.$transaction([
@@ -36,7 +37,8 @@ export async function GET(request: Request) {
                     createdAt: true,
                     _count: {
                         select: {
-                            projects: true
+                            freelancerProjects: true,
+                            clientProjects: true
                         }
                     }
                 },
@@ -56,7 +58,7 @@ export async function GET(request: Request) {
             role: user.role,
             status: user.status.toLowerCase(),
             joined: user.createdAt.toISOString(),
-            projects: user._count.projects,
+            projects: user._count.freelancerProjects + user._count.clientProjects,
             rating: 0
         }));
 
@@ -69,8 +71,8 @@ export async function GET(request: Request) {
                 limit
             }
         });
+
     } catch (error) {
-        console.error("List User API Error:", error);
         return NextResponse.json(
             { error: "Internal Server Error" },
             { status: 500 }

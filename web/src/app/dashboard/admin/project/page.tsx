@@ -11,6 +11,8 @@ import {
   CheckCircle,
   Clock,
   Banknote,
+  ChevronLeft,
+  ChevronRight,
   type LucideIcon
 } from "lucide-react";
 import DashboardLayout from '../../DashboardLayout';
@@ -33,7 +35,7 @@ interface Stat {
 }
 
 interface Project {
-  id: number;
+  id: string;
   title: string;
   client: string;
   freelancer: string;
@@ -55,6 +57,18 @@ interface AdminStatsResponse {
     projectStats: ApiProjectStat[]; 
 }
 
+interface PaginationMeta {
+  page: number;
+  limit: number;
+  total: number;
+  totalPages: number;
+}
+
+interface ProjectListResponse {
+  data: Project[];
+  pagination: PaginationMeta;
+}
+
 interface ProjectPageProps {
   backgroundImage?: string;
   backgroundColor?: string;
@@ -73,16 +87,16 @@ export default function ProjectManagement({ backgroundImage, backgroundColor }: 
   const [filterStatus, setFilterStatus] = useState('all');
   
   const [stats, setStats] = useState<Stat[]>([]);
+  const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadingProjects, setLoadingProjects] = useState(true);
 
-  const projects: Project[] = [
-    { id: 1, title: "Redesain Aplikasi Mobile", client: "PT Tech Solution", freelancer: "Nazril Afandi", budget: "Rp 15.000.000", deadline: "20/1/2024", status: "active", progress: 65 },
-    { id: 2, title: "Pengembangan API E-commerce", client: "Budi Santoso", freelancer: "Siska Putri", budget: "Rp 8.500.000", deadline: "15/12/2023", status: "completed", progress: 100 },
-    { id: 3, title: "Sistem Manajemen Inventori", client: "Global Mandiri", freelancer: "Ahmad Rivai", budget: "Rp 12.000.000", deadline: "10/2/2024", status: "pending", progress: 20 }
-  ];
+  const [pagination, setPagination] = useState<PaginationMeta>({
+    page: 1, limit: 10, total: 0, totalPages: 1
+  });
 
   const getStatusBadge = (status: Project['status']) => {
-    const styles = {
+    const styles: Record<string, string> = {
       active: "bg-blue-100 text-blue-700",
       completed: "bg-emerald-100 text-emerald-700",
       pending: "bg-orange-100 text-orange-700",
@@ -115,14 +129,13 @@ export default function ProjectManagement({ backgroundImage, backgroundColor }: 
     const fetchStats = async () => {
         try {
             const res = await axios.get<AdminStatsResponse>(
-                `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/user/admin/stats`
+                `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/user/admin/stats`,
+                { withCredentials: true }
             );
             
-            // Ambil 'projectStats'
-            const mappedStats: Stat[] = res.data.projectStats.map((item) => {
+            const mappedStats: Stat[] = (res.data.projectStats || []).map((item) => {
                 const styles = getColorClasses(item.color);
                 
-                // Format Value
                 let displayValue = item.value.toString();
                 if (item.type === 'value') {
                     displayValue = new Intl.NumberFormat("id-ID", {
@@ -144,7 +157,7 @@ export default function ProjectManagement({ backgroundImage, backgroundColor }: 
 
             setStats(mappedStats);
         } catch (error) {
-            console.error("Error fetching project stats:", error);
+            setStats([]);
         } finally {
             setLoading(false);
         }
@@ -153,10 +166,53 @@ export default function ProjectManagement({ backgroundImage, backgroundColor }: 
     fetchStats();
   }, []);
 
+  useEffect(() => {
+    const fetchProjects = async () => {
+      setLoadingProjects(true);
+      try {
+        const res = await axios.get<ProjectListResponse>(
+          `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/user/admin/projects`,
+          {
+            params: {
+              page: pagination.page,
+              limit: 10,
+              search: searchQuery,
+              status: filterStatus
+            },
+            withCredentials: true
+          }
+        );
+        setProjects(res.data.data || []);
+        if (res.data.pagination) {
+            setPagination(prev => ({ ...prev, ...res.data.pagination }));
+        }
+      } catch (error) {
+        setProjects([]);
+      } finally {
+        setLoadingProjects(false);
+      }
+    };
+
+    const timeoutId = setTimeout(() => {
+      fetchProjects();
+    }, 500);
+
+    return () => clearTimeout(timeoutId);
+  }, [searchQuery, filterStatus, pagination.page]);
+
+  useEffect(() => {
+    setPagination(prev => ({ ...prev, page: 1 }));
+  }, [searchQuery, filterStatus]);
+
+  const handlePageChange = (newPage: number) => {
+    if (newPage >= 1 && newPage <= pagination.totalPages) {
+      setPagination(prev => ({ ...prev, page: newPage }));
+    }
+  };
+
   return (
     <div style={backgroundStyle} className="min-h-screen">
       <DashboardLayout role="admin">
-        {/* Header */}
         <div className="mb-8">
           <div className="flex items-center justify-between mb-2">
             <div>
@@ -179,7 +235,6 @@ export default function ProjectManagement({ backgroundImage, backgroundColor }: 
           </div>
         </div>
 
-        {/* Stats Cards */}
         <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
           {loading ? (
              [...Array(4)].map((_, i) => (
@@ -203,7 +258,6 @@ export default function ProjectManagement({ backgroundImage, backgroundColor }: 
           )}
         </section>
 
-        {/* Search and Filter */}
         <div className="bg-white/95 backdrop-blur-sm rounded-2xl border border-slate-200 shadow-sm p-6 mb-6">
           <div className="flex flex-col md:flex-row gap-4">
             <div className="flex-1 relative">
@@ -222,7 +276,6 @@ export default function ProjectManagement({ backgroundImage, backgroundColor }: 
             </button>
           </div>
 
-          {/* Filter Tabs */}
           <div className="flex gap-2 mt-4 overflow-x-auto">
             {['all', 'active', 'completed', 'pending', 'cancelled'].map((status) => (
               <button
@@ -240,7 +293,6 @@ export default function ProjectManagement({ backgroundImage, backgroundColor }: 
           </div>
         </div>
 
-        {/* Projects Table */}
         <div className="bg-white/95 backdrop-blur-sm rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full">
@@ -264,51 +316,105 @@ export default function ProjectManagement({ backgroundImage, backgroundColor }: 
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-200">
-                {projects.map((project) => (
-                  <tr key={project.id} className="hover:bg-slate-50 transition-colors">
-                    <td className="px-6 py-4">
-                      <div>
-                        <h4 className="font-semibold text-slate-900">{project.title}</h4>
-                        <p className="text-xs text-slate-500 mt-1">
-                          <Clock className="w-3 h-3 inline mr-1" />
-                          Deadline: {project.deadline}
-                        </p>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="text-sm">
-                        <p className="text-slate-700">🏢 {project.client}</p>
-                        <p className="text-slate-500">👤 {project.freelancer}</p>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <p className="font-semibold text-slate-900">{project.budget}</p>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="space-y-2">
-                        {getStatusBadge(project.status)}
-                        <div className="w-full bg-slate-200 rounded-full h-2">
-                          <div 
-                            className="bg-blue-600 h-2 rounded-full transition-all"
-                            style={{ width: `${project.progress}%` }}
-                          />
-                        </div>
-                        <p className="text-xs text-slate-500">{project.progress}% Complete</p>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <button className="px-4 py-2 bg-blue-50 text-blue-600 rounded-lg text-sm font-medium hover:bg-blue-100 transition-colors">
-                        Detail
-                      </button>
+                {loadingProjects ? (
+                  <tr>
+                    <td colSpan={5} className="text-center py-8 text-slate-500">Memuat data proyek...</td>
+                  </tr>
+                ) : projects.length === 0 ? (
+                  <tr>
+                    <td colSpan={5} className="text-center py-8 text-slate-500">
+                      {searchQuery ? "Tidak ada proyek yang cocok." : "Belum ada data proyek."}
                     </td>
                   </tr>
-                ))}
+                ) : (
+                  projects.map((project) => (
+                    <tr key={project.id} className="hover:bg-slate-50 transition-colors">
+                      <td className="px-6 py-4">
+                        <div>
+                          <h4 className="font-semibold text-slate-900">{project.title}</h4>
+                          <p className="text-xs text-slate-500 mt-1">
+                            <Clock className="w-3 h-3 inline mr-1" />
+                            Deadline: {project.deadline}
+                          </p>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="text-sm">
+                          <p className="text-slate-700">🏢 {project.client}</p>
+                          <p className="text-slate-500">👤 {project.freelancer}</p>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <p className="font-semibold text-slate-900">{project.budget}</p>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="space-y-2">
+                          {getStatusBadge(project.status)}
+                          <div className="w-full bg-slate-200 rounded-full h-2">
+                            <div 
+                              className="bg-blue-600 h-2 rounded-full transition-all"
+                              style={{ width: `${project.progress}%` }}
+                            />
+                          </div>
+                          <p className="text-xs text-slate-500">{project.progress}% Complete</p>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <button className="px-4 py-2 bg-blue-50 text-blue-600 rounded-lg text-sm font-medium hover:bg-blue-100 transition-colors">
+                          Detail
+                        </button>
+                      </td>
+                    </tr>
+                  ))
+                )}
               </tbody>
             </table>
           </div>
+
+          <div className="px-6 py-4 border-t border-slate-100 flex items-center justify-between bg-slate-50/30">
+            <p className="text-sm text-slate-500">
+              Menampilkan <span className="font-medium text-slate-900">{projects.length}</span> dari <span className="font-medium text-slate-900">{pagination.total}</span> proyek
+            </p>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => handlePageChange(pagination.page - 1)}
+                disabled={pagination.page <= 1 || loadingProjects}
+                className="p-2 border border-slate-200 rounded-lg hover:bg-white disabled:opacity-50 transition"
+              >
+                <ChevronLeft className="w-4 h-4" />
+              </button>
+
+              {Array.from({ length: pagination.totalPages }, (_, i) => i + 1).map((pageNum) => {
+                if (pageNum === 1 || pageNum === pagination.totalPages || (pageNum >= pagination.page - 1 && pageNum <= pagination.page + 1)) {
+                  return (
+                    <button
+                      key={pageNum}
+                      onClick={() => handlePageChange(pageNum)}
+                      className={`px-3 py-1 rounded-lg text-sm font-medium transition ${pagination.page === pageNum
+                          ? 'bg-blue-600 text-white'
+                          : 'hover:bg-white border border-transparent hover:border-slate-200 text-slate-600'
+                        }`}
+                    >
+                      {pageNum}
+                    </button>
+                  )
+                }
+                if (pageNum === 2 && pagination.page > 4) return <span key={pageNum} className="px-1">...</span>;
+                if (pageNum === pagination.totalPages - 1 && pagination.page < pagination.totalPages - 3) return <span key={pageNum} className="px-1">...</span>;
+                return null;
+              })}
+
+              <button
+                onClick={() => handlePageChange(pagination.page + 1)}
+                disabled={pagination.page >= pagination.totalPages || loadingProjects}
+                className="p-2 border border-slate-200 rounded-lg hover:bg-white disabled:opacity-50 transition"
+              >
+                <ChevronRight className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
         </div>
 
-        {/* Modal */}
         <CreateProjectModal 
           isOpen={isCreateProjectModalOpen}
           onClose={() => setIsCreateProjectModalOpen(false)}
