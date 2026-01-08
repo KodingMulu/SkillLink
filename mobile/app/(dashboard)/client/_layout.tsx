@@ -1,6 +1,6 @@
 import { Tabs } from 'expo-router';
-import { Briefcase, LayoutDashboard, Users, Wallet } from 'lucide-react-native';
 import DashboardHeader from '@/components/dashboard/DashboardHeader';
+import { Icon } from 'react-native-paper';
 
 export default function ClientLayout() {
   return (
@@ -14,10 +14,6 @@ export default function ClientLayout() {
           paddingTop: 6,
           paddingBottom: 8,
         },
-        tabBarItemStyle: {
-          paddingVertical: 4,
-        },
-
         tabBarLabelStyle: {
           fontSize: 11,
           fontWeight: '500',
@@ -28,54 +24,38 @@ export default function ClientLayout() {
         name="index"
         options={{
           title: 'Overview',
-          tabBarIcon: ({ focused }) => (
-            <LayoutDashboard
-              size={20}
-              strokeWidth={2}
-              color={focused ? '#2563EB' : '#94A3B8'}
-            />
+          tabBarIcon: ({ color }) => (
+            <Icon source="view-dashboard-outline" color={color} size={20} />
           ),
         }}
       />
 
       <Tabs.Screen
-        name="jobs"
+        name="jobs/index"
         options={{
           title: 'Jobs',
-          tabBarIcon: ({ focused }) => (
-            <Briefcase
-              size={20}
-              strokeWidth={2}
-              color={focused ? '#2563EB' : '#94A3B8'}
-            />
+          tabBarIcon: ({ color }) => (
+            <Icon source="briefcase-outline" color={color} size={20} />
           ),
         }}
       />
 
       <Tabs.Screen
-        name="talents"
+        name="talents/index"
         options={{
           title: 'Talents',
-          tabBarIcon: ({ focused }) => (
-            <Users
-              size={20}
-              strokeWidth={2}
-              color={focused ? '#2563EB' : '#94A3B8'}
-            />
+          tabBarIcon: ({ color }) => (
+            <Icon source="account-group-outline" color={color} size={20} />
           ),
         }}
       />
 
       <Tabs.Screen
-        name="wallet"
+        name="wallet/index"
         options={{
           title: 'Wallet',
-          tabBarIcon: ({ focused }) => (
-            <Wallet
-              size={20}
-              strokeWidth={2}
-              color={focused ? '#2563EB' : '#94A3B8'}
-            />
+          tabBarIcon: ({ color }) => (
+            <Icon source="wallet-outline" color={color} size={20} />
           ),
         }}
       />

@@ -1,6 +1,6 @@
 import { Tabs } from 'expo-router';
-import { Briefcase, FolderKanban, LayoutDashboard, Wallet } from 'lucide-react-native';
 import DashboardHeader from '@/components/dashboard/DashboardHeader';
+import { Icon } from 'react-native-paper';
 
 export default function FreelancerLayout() {
   return (
@@ -17,7 +17,6 @@ export default function FreelancerLayout() {
         tabBarItemStyle: {
           paddingVertical: 4,
         },
-        
         tabBarLabelStyle: {
           fontSize: 11,
           fontWeight: '500',
@@ -28,50 +27,38 @@ export default function FreelancerLayout() {
         name="index"
         options={{
           title: 'Overview',
-          tabBarIcon: ({ focused }) => (
-            <LayoutDashboard
-              size={20}
-              color={focused ? '#2563EB' : '#94A3B8'}
-            />
+          tabBarIcon: ({ color }) => (
+            <Icon source="view-dashboard-outline" size={20} color={color} />
           ),
         }}
       />
 
       <Tabs.Screen
-        name="jobs"
+        name="jobs/index"
         options={{
           title: 'Jobs',
-          tabBarIcon: ({ focused }) => (
-            <Briefcase
-              size={20}
-              color={focused ? '#2563EB' : '#94A3B8'}
-            />
+          tabBarIcon: ({ color }) => (
+            <Icon source="briefcase-outline" size={20} color={color} />
           ),
         }}
       />
 
       <Tabs.Screen
-        name="portfolio"
+        name="portfolio/index"
         options={{
           title: 'Portfolio',
-          tabBarIcon: ({ focused }) => (
-            <FolderKanban
-              size={20}
-              color={focused ? '#2563EB' : '#94A3B8'}
-            />
+          tabBarIcon: ({ color }) => (
+            <Icon source="folder-account-outline" size={20} color={color} />
           ),
         }}
       />
 
       <Tabs.Screen
-        name="wallet"
+        name="wallet/index"
         options={{
           title: 'Wallet',
-          tabBarIcon: ({ focused }) => (
-            <Wallet
-              size={20}
-              color={focused ? '#2563EB' : '#94A3B8'}
-            />
+          tabBarIcon: ({ color }) => (
+            <Icon source="wallet-outline" size={20} color={color} />
           ),
         }}
       />

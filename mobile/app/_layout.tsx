@@ -1,12 +1,15 @@
 import { Slot, useRouter, useSegments } from 'expo-router';
 import { useEffect } from 'react';
 import { View, ActivityIndicator } from 'react-native';
-import { AuthProvider, useAuth } from '../context/AuthContext'; 
+import { AuthProvider, useAuth } from '../context/AuthContext';
+import { PaperProvider } from 'react-native-paper';
 
 export default function RootLayout() {
   return (
     <AuthProvider>
-      <MainLayout />
+      <PaperProvider>
+        <MainLayout />
+      </PaperProvider>
     </AuthProvider>
   );
 }
@@ -31,14 +34,14 @@ function MainLayout() {
         } else if (user.role === 'FREELANCER') {
           router.replace('/(dashboard)/freelancer');
         }
-      } 
+      }
       else if (inDashboardGroup) {
-         const specificGroup = segments[1];
-         if (specificGroup === 'client' && user.role !== 'CLIENT') {
-             router.replace('/(dashboard)/freelancer');
-         } else if (specificGroup === 'freelancer' && user.role !== 'FREELANCER') {
-             router.replace('/(dashboard)/client');
-         }
+        const specificGroup = segments[1];
+        if (specificGroup === 'client' && user.role !== 'CLIENT') {
+          router.replace('/(dashboard)/freelancer');
+        } else if (specificGroup === 'freelancer' && user.role !== 'FREELANCER') {
+          router.replace('/(dashboard)/client');
+        }
       }
     }
   }, [user, segments, isLoading]);
