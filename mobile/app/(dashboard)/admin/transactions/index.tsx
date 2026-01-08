@@ -1,16 +1,16 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import {
   View, Text, StyleSheet, FlatList, TouchableOpacity,
-  TextInput, ActivityIndicator, RefreshControl, ScrollView
+  TextInput, ActivityIndicator, RefreshControl, ScrollView, Modal,
+  Dimensions
 } from 'react-native';
 import {
   DollarSign, Search, Filter, Download,
   ArrowUpRight, Clock, CheckCircle2, XCircle,
-  MoreVertical, FileText, Landmark, Wallet, CreditCard
+  MoreVertical, ChevronLeft, ChevronRight, FileText,
+  CreditCard, Wallet, Landmark, Calendar, Check, AlertCircle, X
 } from 'lucide-react-native';
 import axios from 'axios';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import TaxReportModal from './components/TaxReportModal';
 
 interface TransactionStatApi {
   type: "total_volume" | "success" | "pending" | "failed";
@@ -18,42 +18,195 @@ interface TransactionStatApi {
   value: number;
   growth?: number;
   color: "blue" | "emerald" | "orange" | "red";
+  icon?: string;
 }
 
-const TRANSACTIONS_DATA = [
-  { id: "TX-90210", user: "Budi Santoso", project: "Redesain Aplikasi Mobile", amount: "Rp 15.000.000", method: "Bank Transfer", status: "success", date: "2023-12-15 14:30" },
-  { id: "TX-90211", user: "PT Digital Innovation", project: "Top Up Saldo", amount: "Rp 25.000.000", method: "Landmark", status: "pending", date: "2023-12-16 09:15" },
-  { id: "TX-90212", user: "Sarah Wijaya", project: "Withdrawal", amount: "Rp 5.200.000", method: "Wallet", status: "success", date: "2023-12-16 10:45" },
-  { id: "TX-90213", user: "Ahmad Rizki", project: "Audit Keamanan", amount: "Rp 40.000.000", method: "Bank Transfer", status: "failed", date: "2023-12-14 16:20" },
-  { id: "TX-90214", user: "Indah Permata", project: "Landing Page", amount: "Rp 3.500.000", method: "Credit Card", status: "success", date: "2023-12-17 08:00" },
-  { id: "TX-90215", user: "Rizky Fauzi", project: "API E-commerce", amount: "Rp 8.500.000", method: "Wallet", status: "pending", date: "2023-12-17 11:30" },
-];
+interface TransactionRow {
+  id: string;
+  user: string;
+  project: string;
+  amount: string;
+  method: string;
+  status: 'success' | 'pending' | 'failed';
+  date: string;
+}
+
+interface PaginationMeta {
+  page: number;
+  limit: number;
+  total: number;
+  totalPages: number;
+}
+
+const API_URL = process.env.EXPO_PUBLIC_API_URL;
+
+interface TaxReportModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onSuccess?: () => void;
+}
+
+const TaxReportModal = ({ isOpen, onClose, onSuccess }: TaxReportModalProps) => {
+  const [formData, setFormData] = useState({
+    periodType: 'monthly',
+    month: '',
+    year: new Date().getFullYear().toString(),
+    reportFormat: 'pdf'
+  });
+  const [loading, setLoading] = useState(false);
+  const [success, setSuccess] = useState(false);
+
+  const handleGenerate = () => {
+    setLoading(true);
+    setTimeout(() => {
+      setLoading(false);
+      setSuccess(true);
+      setTimeout(() => {
+        setSuccess(false);
+        if (onSuccess) onSuccess();
+        onClose();
+      }, 1500);
+    }, 2000);
+  };
+
+  return (
+    <Modal visible={isOpen} transparent animationType="fade" onRequestClose={onClose}>
+      <View style={s.modalOverlay}>
+        <View style={s.modalContent}>
+          <View style={s.modalHeader}>
+            <View style={s.modalHeaderLeft}>
+              <View style={[s.iconBox, { backgroundColor: '#2563EB' }]}>
+                <FileText size={20} color="white" />
+              </View>
+              <View>
+                <Text style={s.modalTitle}>Laporan Pajak</Text>
+                <Text style={s.modalSubtitle}>Periode pelaporan arus kas</Text>
+              </View>
+            </View>
+            <TouchableOpacity onPress={onClose}>
+              <X size={24} color="#64748B" />
+            </TouchableOpacity>
+          </View>
+
+          {success ? (
+            <View style={s.successState}>
+              <View style={s.successIcon}>
+                <Check size={40} color="#059669" />
+              </View>
+              <Text style={s.successTitle}>Laporan Siap!</Text>
+              <Text style={s.successDesc}>File Anda sedang diproses.</Text>
+            </View>
+          ) : (
+            <ScrollView style={s.modalBody}>
+              <View style={s.alertBox}>
+                <AlertCircle size={16} color="#B45309" />
+                <Text style={s.alertText}>
+                  Pastikan data transaksi sudah diverifikasi sebelum generate laporan.
+                </Text>
+              </View>
+
+              <Text style={s.formLabel}>Tipe Periode</Text>
+              <View style={s.periodGrid}>
+                {['monthly', 'quarterly', 'yearly', 'custom'].map((type) => (
+                  <TouchableOpacity
+                    key={type}
+                    style={[s.periodBtn, formData.periodType === type && s.periodBtnActive]}
+                    onPress={() => setFormData({...formData, periodType: type})}
+                  >
+                    <Text style={[s.periodBtnText, formData.periodType === type && s.periodBtnTextActive]}>
+                      {type === 'monthly' ? 'Bulanan' : type === 'quarterly' ? 'Kuartal' : type === 'yearly' ? 'Tahunan' : 'Custom'}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+
+              <Text style={s.formLabel}>Format Output</Text>
+              <View style={s.formatRow}>
+                {['pdf', 'excel'].map((format) => (
+                  <TouchableOpacity 
+                    key={format} 
+                    style={s.radioRow}
+                    onPress={() => setFormData({...formData, reportFormat: format})}
+                  >
+                    <View style={[s.radioOuter, formData.reportFormat === format && s.radioOuterActive]}>
+                      {formData.reportFormat === format && <View style={s.radioInner} />}
+                    </View>
+                    <Text style={s.radioText}>{format.toUpperCase()}</Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </ScrollView>
+          )}
+
+          {!success && (
+            <View style={s.modalFooter}>
+              <TouchableOpacity onPress={onClose} style={s.cancelBtn}>
+                <Text style={s.cancelBtnText}>Batal</Text>
+              </TouchableOpacity>
+              <TouchableOpacity 
+                style={[s.generateBtn, loading && { opacity: 0.7 }]}
+                onPress={handleGenerate}
+                disabled={loading}
+              >
+                {loading ? (
+                  <ActivityIndicator color="white" size="small" />
+                ) : (
+                  <>
+                    <Download size={16} color="white" style={{ marginRight: 8 }} />
+                    <Text style={s.generateBtnText}>Generate</Text>
+                  </>
+                )}
+              </TouchableOpacity>
+            </View>
+          )}
+        </View>
+      </View>
+    </Modal>
+  );
+};
 
 export default function TransactionManagementScreen() {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [isTaxModalOpen, setIsTaxModalOpen] = useState(false);
   const [stats, setStats] = useState<TransactionStatApi[]>([]);
+  const [transactions, setTransactions] = useState<TransactionRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [pagination, setPagination] = useState<PaginationMeta>({
+    page: 1, limit: 10, total: 0, totalPages: 1
+  });
 
-  const fetchData = async () => {
+  const fetchStats = async () => {
     try {
-      const apiUrl = process.env.EXPO_PUBLIC_API_URL;
-      const token = await AsyncStorage.getItem('token');
-      // Simulasi API Stats, ganti dengan endpoint asli jika sudah ada
-      // const res = await axios.get(`${apiUrl}/user/admin/stats`, { headers: { Authorization: `Bearer ${token}` } });
-      // setStats(res.data.transactionStats);
-      
-      // Mock data sementara agar UI tampil
-      setStats([
-        { type: "total_volume", label: "Total Volume", value: 150000000, growth: 12.5, color: "blue" },
-        { type: "success", label: "Berhasil", value: 124, growth: 5.2, color: "emerald" },
-        { type: "pending", label: "Menunggu", value: 12, growth: -2.1, color: "orange" },
-        { type: "failed", label: "Gagal", value: 5, growth: 0, color: "red" },
-      ]);
+      const res = await axios.get(`${API_URL}/user/admin/stats`, {
+        withCredentials: true
+      });
+      setStats(res.data?.transactionStats || []);
     } catch (error) {
       console.error(error);
+      setStats([]);
+    }
+  };
+
+  const fetchTransactions = async () => {
+    try {
+      const res = await axios.get(`${API_URL}/user/admin/transactions`, {
+        params: {
+          page: pagination.page,
+          limit: 10,
+          search: searchTerm,
+          status: statusFilter
+        },
+        withCredentials: true
+      });
+      setTransactions(res.data?.data || []);
+      if (res.data?.pagination) {
+        setPagination(prev => ({ ...prev, ...res.data.pagination }));
+      }
+    } catch (error) {
+      console.error(error);
+      setTransactions([]);
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -61,31 +214,37 @@ export default function TransactionManagementScreen() {
   };
 
   useEffect(() => {
-    fetchData();
+    fetchStats();
   }, []);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      fetchTransactions();
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [searchTerm, statusFilter, pagination.page]);
 
   const onRefresh = useCallback(() => {
     setRefreshing(true);
-    fetchData();
+    fetchStats();
+    fetchTransactions();
   }, []);
 
   const getStatusStyle = (status: string) => {
     switch (status) {
       case 'success': return { bg: '#D1FAE5', text: '#047857', label: 'Success' };
       case 'pending': return { bg: '#FFEDD5', text: '#C2410C', label: 'Pending' };
-      case 'failed': return { bg: '#FEE2E2', text: '#B91C1C', label: 'Failed' };
-      default: return { bg: '#F1F5F9', text: '#475569', label: status };
+      case 'failed': return { bg: '#FEE2E2', text: '#DC2626', label: 'Failed' };
+      default: return { bg: '#F1F5F9', text: '#64748B', label: status };
     }
   };
 
   const getMethodIcon = (method: string) => {
+    const normalized = method.toLowerCase();
     const props = { size: 14, color: '#475569' };
-    switch (method) {
-      case 'Bank Transfer': return <Landmark {...props} />;
-      case 'Wallet': return <Wallet {...props} />;
-      case 'Credit Card': return <CreditCard {...props} />;
-      default: return <DollarSign {...props} />;
-    }
+    if (normalized.includes('bank') || normalized.includes('landmark')) return <Landmark {...props} />;
+    if (normalized.includes('card')) return <CreditCard {...props} />;
+    return <Wallet {...props} />;
   };
 
   const getStatIcon = (type: string, color: string) => {
@@ -99,18 +258,20 @@ export default function TransactionManagementScreen() {
     }
   };
 
-  const filteredTransactions = TRANSACTIONS_DATA.filter(tx => {
-    const matchesSearch = tx.id.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                         tx.user.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesStatus = statusFilter === 'all' || tx.status === statusFilter;
-    return matchesSearch && matchesStatus;
-  });
+  const getColor = (colorName: string) => {
+    switch (colorName) {
+      case 'blue': return { bg: '#EFF6FF', text: '#2563EB' };
+      case 'orange': return { bg: '#FFF7ED', text: '#EA580C' };
+      case 'emerald': return { bg: '#ECFDF5', text: '#059669' };
+      case 'red': return { bg: '#FEF2F2', text: '#DC2626' };
+      default: return { bg: '#F1F5F9', text: '#64748B' };
+    }
+  };
 
-  const renderStatCard = (item: TransactionStatApi) => {
-    const iconColor = item.color === 'blue' ? '#2563EB' : item.color === 'emerald' ? '#059669' : item.color === 'orange' ? '#EA580C' : '#DC2626';
-    const bgIcon = item.color === 'blue' ? '#EFF6FF' : item.color === 'emerald' ? '#ECFDF5' : item.color === 'orange' ? '#FFF7ED' : '#FEF2F2';
-
+  const renderStatCard = ({ item }: { item: TransactionStatApi }) => {
+    const styles = getColor(item.color);
     let displayValue = item.value.toString();
+    
     if (item.type === 'total_volume') {
       displayValue = new Intl.NumberFormat("id-ID", {
         style: "currency",
@@ -123,49 +284,49 @@ export default function TransactionManagementScreen() {
     }
 
     return (
-      <View key={item.type} style={styles.statCard}>
-        <View style={[styles.statHeader]}>
-          <View style={[styles.statIconContainer, { backgroundColor: bgIcon }]}>
-            {getStatIcon(item.type, iconColor)}
+      <View style={s.statCard}>
+        <View style={s.statHeader}>
+          <View style={[s.statIcon, { backgroundColor: styles.bg }]}>
+            {getStatIcon(item.type, styles.text)}
           </View>
           {item.growth !== undefined && (
-            <View style={styles.trendBadge}>
-              <Text style={styles.trendText}>
+            <View style={s.trendBadge}>
+              <Text style={s.trendText}>
                 {item.growth > 0 ? '+' : ''}{item.growth}%
               </Text>
             </View>
           )}
         </View>
-        <Text style={styles.statLabel}>{item.label}</Text>
-        <Text style={styles.statValue}>{displayValue}</Text>
+        <Text style={s.statLabel}>{item.label}</Text>
+        <Text style={s.statValue}>{displayValue}</Text>
       </View>
     );
   };
 
-  const renderTransactionItem = ({ item }: { item: typeof TRANSACTIONS_DATA[0] }) => {
+  const renderTransactionItem = ({ item }: { item: TransactionRow }) => {
     const statusStyle = getStatusStyle(item.status);
     return (
-      <View style={styles.card}>
-        <View style={styles.cardHeader}>
+      <View style={s.card}>
+        <View style={s.cardHeader}>
           <View>
-            <Text style={styles.txId}>{item.id}</Text>
-            <Text style={styles.txDate}>{item.date}</Text>
+            <Text style={s.cardId}>{item.id}</Text>
+            <Text style={s.cardDate}>{item.date}</Text>
           </View>
-          <View style={[styles.statusBadge, { backgroundColor: statusStyle.bg }]}>
-            <Text style={[styles.statusText, { color: statusStyle.text }]}>{statusStyle.label}</Text>
+          <View style={[s.statusBadge, { backgroundColor: statusStyle.bg }]}>
+            <Text style={[s.statusText, { color: statusStyle.text }]}>{statusStyle.label}</Text>
           </View>
         </View>
-        
-        <View style={styles.cardBody}>
-          <Text style={styles.userText}>{item.user}</Text>
-          <Text style={styles.projectText}>{item.project}</Text>
+
+        <View style={s.cardBody}>
+          <Text style={s.userName}>{item.user}</Text>
+          <Text style={s.projectName} numberOfLines={1}>{item.project}</Text>
           
-          <View style={styles.cardFooter}>
-            <View style={styles.methodBadge}>
+          <View style={s.cardFooter}>
+            <View style={s.methodBadge}>
               {getMethodIcon(item.method)}
-              <Text style={styles.methodText}>{item.method}</Text>
+              <Text style={s.methodText}>{item.method}</Text>
             </View>
-            <Text style={styles.amountText}>{item.amount}</Text>
+            <Text style={s.amountText}>{item.amount}</Text>
           </View>
         </View>
       </View>
@@ -173,19 +334,18 @@ export default function TransactionManagementScreen() {
   };
 
   return (
-    <View style={styles.container}>
-      {/* Header */}
-      <View style={styles.header}>
+    <View style={s.container}>
+      <View style={s.header}>
         <View style={{ flex: 1 }}>
-          <Text style={styles.title}>Transaksi</Text>
-          <Text style={styles.subtitle}>Pantau arus kas</Text>
+          <Text style={s.title}>Transaksi</Text>
+          <Text style={s.subtitle}>Pantau arus kas</Text>
         </View>
-        <View style={styles.headerActions}>
-          <TouchableOpacity style={styles.actionButton}>
+        <View style={s.headerActions}>
+          <TouchableOpacity style={s.iconBtn}>
             <Download size={20} color="#64748B" />
           </TouchableOpacity>
           <TouchableOpacity 
-            style={[styles.actionButton, styles.primaryButton]}
+            style={[s.iconBtn, { backgroundColor: '#2563EB', borderColor: '#2563EB' }]}
             onPress={() => setIsTaxModalOpen(true)}
           >
             <FileText size={20} color="white" />
@@ -194,40 +354,44 @@ export default function TransactionManagementScreen() {
       </View>
 
       <ScrollView 
-        contentContainerStyle={styles.scrollContent}
+        contentContainerStyle={s.scrollContent}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={['#2563EB']} />}
       >
-        {/* Stats Section */}
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.statsScroll}>
-          {loading ? (
-             <ActivityIndicator size="small" color="#2563EB" />
-          ) : stats.map(renderStatCard)}
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={s.statsContainer}>
+          {loading && !refreshing ? (
+            <ActivityIndicator size="small" color="#2563EB" />
+          ) : (
+            (stats || []).map((stat, idx) => (
+              <View key={idx} style={{ marginRight: 12 }}>
+                {renderStatCard({ item: stat })}
+              </View>
+            ))
+          )}
         </ScrollView>
 
-        {/* Filters */}
-        <View style={styles.filterSection}>
-          <View style={styles.searchContainer}>
+        <View style={s.filterSection}>
+          <View style={s.searchContainer}>
             <Search size={18} color="#94A3B8" />
             <TextInput
-              style={styles.searchInput}
-              placeholder="Cari transaksi..."
+              style={s.searchInput}
+              placeholder="Cari ID atau User..."
               value={searchTerm}
               onChangeText={setSearchTerm}
             />
           </View>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filterScroll}>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={s.filterScroll}>
             {['all', 'success', 'pending', 'failed'].map((status) => (
               <TouchableOpacity
                 key={status}
                 onPress={() => setStatusFilter(status)}
                 style={[
-                  styles.filterPill,
-                  statusFilter === status && styles.filterPillActive
+                  s.filterPill,
+                  statusFilter === status && s.filterPillActive
                 ]}
               >
                 <Text style={[
-                  styles.filterText,
-                  statusFilter === status && styles.filterTextActive
+                  s.filterText,
+                  statusFilter === status && s.filterTextActive
                 ]}>
                   {status}
                 </Text>
@@ -236,32 +400,53 @@ export default function TransactionManagementScreen() {
           </ScrollView>
         </View>
 
-        {/* List */}
-        <View style={styles.listContainer}>
-          {filteredTransactions.map(item => (
-            <View key={item.id}>
-              {renderTransactionItem({ item })}
+        <View style={s.listContainer}>
+          {loading && !refreshing ? (
+            <ActivityIndicator size="large" color="#2563EB" style={{ marginTop: 20 }} />
+          ) : transactions.length === 0 ? (
+            <View style={s.emptyState}>
+              <Text style={s.emptyText}>Tidak ada transaksi ditemukan.</Text>
             </View>
-          ))}
-          {filteredTransactions.length === 0 && (
-            <View style={styles.emptyState}>
-              <Text style={styles.emptyText}>Tidak ada transaksi ditemukan.</Text>
-            </View>
+          ) : (
+            (transactions || []).map(item => (
+              <View key={item.id} style={{ marginBottom: 12 }}>
+                {renderTransactionItem({ item })}
+              </View>
+            ))
           )}
+        </View>
+
+        <View style={s.pagination}>
+          <TouchableOpacity
+            disabled={pagination.page <= 1}
+            onPress={() => setPagination(prev => ({ ...prev, page: prev.page - 1 }))}
+            style={[s.pageBtn, pagination.page <= 1 && s.pageBtnDisabled]}
+          >
+            <ChevronLeft size={20} color={pagination.page <= 1 ? "#CBD5E1" : "#1E293B"} />
+          </TouchableOpacity>
+          <Text style={s.pageText}>
+            Hal {pagination.page} dari {pagination.totalPages}
+          </Text>
+          <TouchableOpacity
+            disabled={pagination.page >= pagination.totalPages}
+            onPress={() => setPagination(prev => ({ ...prev, page: prev.page + 1 }))}
+            style={[s.pageBtn, pagination.page >= pagination.totalPages && s.pageBtnDisabled]}
+          >
+            <ChevronRight size={20} color={pagination.page >= pagination.totalPages ? "#CBD5E1" : "#1E293B"} />
+          </TouchableOpacity>
         </View>
       </ScrollView>
 
-      {/* Tax Report Modal */}
       <TaxReportModal 
         isOpen={isTaxModalOpen} 
         onClose={() => setIsTaxModalOpen(false)} 
-        onSuccess={() => console.log("Report Generated")}
+        onSuccess={() => { console.log('Generated') }}
       />
     </View>
   );
 }
 
-const styles = StyleSheet.create({
+const s = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#F8FAFC',
@@ -287,7 +472,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: 8,
   },
-  actionButton: {
+  iconBtn: {
     width: 40,
     height: 40,
     borderRadius: 10,
@@ -297,14 +482,10 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     backgroundColor: 'white',
   },
-  primaryButton: {
-    backgroundColor: '#2563EB',
-    borderColor: '#2563EB',
-  },
   scrollContent: {
     paddingBottom: 40,
   },
-  statsScroll: {
+  statsContainer: {
     padding: 20,
     paddingBottom: 10,
   },
@@ -312,40 +493,39 @@ const styles = StyleSheet.create({
     backgroundColor: 'white',
     padding: 16,
     borderRadius: 16,
-    marginRight: 12,
-    minWidth: 150,
     borderWidth: 1,
     borderColor: '#E2E8F0',
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOpacity: 0.05,
-    shadowOffset: { width: 0, height: 2 },
+    minWidth: 160,
+    marginBottom: 4,
   },
   statHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     marginBottom: 12,
   },
-  statIconContainer: {
-    padding: 8,
-    borderRadius: 10,
+  statIcon: {
+    width: 44,
+    height: 44,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   trendBadge: {
     backgroundColor: '#ECFDF5',
     paddingHorizontal: 6,
-    paddingVertical: 2,
+    paddingVertical: 4,
     borderRadius: 6,
     justifyContent: 'center',
   },
   trendText: {
     fontSize: 10,
-    color: '#059669',
     fontWeight: 'bold',
+    color: '#059669',
   },
   statLabel: {
     fontSize: 12,
     color: '#64748B',
-    marginBottom: 4,
+    marginBottom: 2,
   },
   statValue: {
     fontSize: 18,
@@ -362,9 +542,9 @@ const styles = StyleSheet.create({
     backgroundColor: 'white',
     borderWidth: 1,
     borderColor: '#E2E8F0',
-    borderRadius: 10,
+    borderRadius: 12,
     paddingHorizontal: 12,
-    height: 44,
+    height: 48,
     marginBottom: 12,
   },
   searchInput: {
@@ -405,7 +585,6 @@ const styles = StyleSheet.create({
     backgroundColor: 'white',
     borderRadius: 16,
     padding: 16,
-    marginBottom: 12,
     borderWidth: 1,
     borderColor: '#E2E8F0',
   },
@@ -415,12 +594,12 @@ const styles = StyleSheet.create({
     alignItems: 'flex-start',
     marginBottom: 12,
   },
-  txId: {
+  cardId: {
     fontSize: 14,
     fontWeight: 'bold',
     color: '#0F172A',
   },
-  txDate: {
+  cardDate: {
     fontSize: 12,
     color: '#94A3B8',
     marginTop: 2,
@@ -436,29 +615,30 @@ const styles = StyleSheet.create({
     textTransform: 'capitalize',
   },
   cardBody: {
-    borderTopWidth: 1,
-    borderTopColor: '#F1F5F9',
-    paddingTop: 12,
+    gap: 4,
   },
-  userText: {
+  userName: {
     fontSize: 14,
     fontWeight: '600',
     color: '#1E293B',
   },
-  projectText: {
+  projectName: {
     fontSize: 12,
     color: '#64748B',
-    marginBottom: 12,
   },
   cardFooter: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    marginTop: 12,
+    paddingTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: '#F1F5F9',
   },
   methodBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
+    gap: 6,
     backgroundColor: '#F1F5F9',
     paddingHorizontal: 8,
     paddingVertical: 4,
@@ -476,9 +656,212 @@ const styles = StyleSheet.create({
   },
   emptyState: {
     alignItems: 'center',
-    padding: 20,
+    padding: 40,
   },
   emptyText: {
     color: '#64748B',
-  }
+  },
+  pagination: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: 16,
+    padding: 20,
+  },
+  pageBtn: {
+    padding: 8,
+    borderRadius: 8,
+    backgroundColor: 'white',
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+  },
+  pageBtnDisabled: {
+    backgroundColor: '#F1F5F9',
+    borderColor: '#E2E8F0',
+  },
+  pageText: {
+    fontSize: 12,
+    color: '#475569',
+    fontWeight: '500',
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'center',
+    padding: 20,
+  },
+  modalContent: {
+    backgroundColor: 'white',
+    borderRadius: 20,
+    maxHeight: '80%',
+    overflow: 'hidden',
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F1F5F9',
+    backgroundColor: '#F8FAFC',
+  },
+  modalHeaderLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  iconBox: {
+    width: 40,
+    height: 40,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#0F172A',
+  },
+  modalSubtitle: {
+    fontSize: 12,
+    color: '#64748B',
+  },
+  modalBody: {
+    padding: 20,
+  },
+  alertBox: {
+    flexDirection: 'row',
+    gap: 12,
+    padding: 12,
+    backgroundColor: '#FFFBEB',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#FEF3C7',
+    marginBottom: 20,
+  },
+  alertText: {
+    flex: 1,
+    fontSize: 12,
+    color: '#92400E',
+    lineHeight: 18,
+  },
+  formLabel: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    color: '#334155',
+    marginBottom: 12,
+    marginTop: 8,
+  },
+  periodGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    marginBottom: 16,
+  },
+  periodBtn: {
+    width: '48%',
+    padding: 12,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    alignItems: 'center',
+  },
+  periodBtnActive: {
+    backgroundColor: '#EFF6FF',
+    borderColor: '#2563EB',
+  },
+  periodBtnText: {
+    fontSize: 14,
+    color: '#64748B',
+    fontWeight: '600',
+  },
+  periodBtnTextActive: {
+    color: '#2563EB',
+  },
+  formatRow: {
+    flexDirection: 'row',
+    gap: 24,
+  },
+  radioRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  radioOuter: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    borderWidth: 2,
+    borderColor: '#CBD5E1',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  radioOuterActive: {
+    borderColor: '#2563EB',
+  },
+  radioInner: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    backgroundColor: '#2563EB',
+  },
+  radioText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#334155',
+  },
+  modalFooter: {
+    padding: 20,
+    borderTopWidth: 1,
+    borderTopColor: '#F1F5F9',
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    gap: 12,
+    backgroundColor: '#F8FAFC',
+  },
+  cancelBtn: {
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+  },
+  cancelBtnText: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    color: '#475569',
+  },
+  generateBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#2563EB',
+    paddingVertical: 10,
+    paddingHorizontal: 24,
+    borderRadius: 12,
+  },
+  generateBtnText: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    color: 'white',
+  },
+  successState: {
+    alignItems: 'center',
+    paddingVertical: 40,
+  },
+  successIcon: {
+    width: 80,
+    height: 80,
+    backgroundColor: '#D1FAE5',
+    borderRadius: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 16,
+  },
+  successTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#0F172A',
+  },
+  successDesc: {
+    fontSize: 14,
+    color: '#64748B',
+    marginTop: 4,
+  },
 });

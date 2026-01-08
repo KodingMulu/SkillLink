@@ -5,7 +5,7 @@ import {
 } from 'react-native';
 import {
   X, Briefcase, Calendar, DollarSign,
-  FileText, Tag, Check, AlertCircle
+  FileText, Tag, Check, AlertCircle, Clock
 } from 'lucide-react-native';
 
 interface CreateProjectModalProps {
@@ -25,19 +25,47 @@ interface FormData {
   priority: string;
 }
 
+interface FormErrors {
+  title?: string;
+  client?: string;
+  budget?: string;
+  deadline?: string;
+  category?: string;
+  description?: string;
+}
+
 export default function CreateProjectModal({ isOpen, onClose, onSuccess }: CreateProjectModalProps) {
   const [formData, setFormData] = useState<FormData>({
     title: '', client: '', freelancer: '', budget: '',
     deadline: '', category: '', description: '', priority: 'medium'
   });
+  const [errors, setErrors] = useState<FormErrors>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitSuccess, setSubmitSuccess] = useState(false);
 
   const handleChange = (name: keyof FormData, value: string) => {
     setFormData(prev => ({ ...prev, [name]: value }));
+    if (errors[name as keyof FormErrors]) {
+      setErrors(prev => ({ ...prev, [name]: undefined }));
+    }
+  };
+
+  const validateForm = (): boolean => {
+    const newErrors: FormErrors = {};
+    if (!formData.title.trim()) newErrors.title = 'Judul proyek wajib diisi';
+    if (!formData.client.trim()) newErrors.client = 'Nama klien wajib diisi';
+    if (!formData.budget.trim()) newErrors.budget = 'Anggaran wajib diisi';
+    if (!formData.deadline) newErrors.deadline = 'Deadline wajib diisi';
+    if (!formData.category) newErrors.category = 'Kategori wajib dipilih';
+    if (!formData.description.trim()) newErrors.description = 'Deskripsi wajib diisi';
+    
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
   };
 
   const handleSubmit = () => {
+    if (!validateForm()) return;
+
     setIsSubmitting(true);
     setTimeout(() => {
       setIsSubmitting(false);
@@ -48,136 +76,190 @@ export default function CreateProjectModal({ isOpen, onClose, onSuccess }: Creat
           title: '', client: '', freelancer: '', budget: '',
           deadline: '', category: '', description: '', priority: 'medium'
         });
+        setErrors({});
         if (onSuccess) onSuccess();
         onClose();
       }, 1500);
     }, 2000);
   };
 
+  const handleClose = () => {
+    if (!isSubmitting) {
+      setFormData({
+        title: '', client: '', freelancer: '', budget: '',
+        deadline: '', category: '', description: '', priority: 'medium'
+      });
+      setErrors({});
+      setSubmitSuccess(false);
+      onClose();
+    }
+  };
+
   return (
-    <Modal visible={isOpen} transparent={true} animationType="fade" onRequestClose={onClose}>
-      <View style={styles.overlay}>
-        <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.keyboardView}>
-          <View style={styles.container}>
-            <View style={styles.header}>
-              <View style={styles.headerTitle}>
-                <View style={styles.iconBox}>
+    <Modal visible={isOpen} transparent={true} animationType="fade" onRequestClose={handleClose}>
+      <View style={s.overlay}>
+        <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={s.keyboardView}>
+          <View style={s.container}>
+            
+            {/* Header */}
+            <View style={s.header}>
+              <View style={s.headerTitle}>
+                <View style={s.iconBox}>
                   <Briefcase size={20} color="white" />
                 </View>
                 <View>
-                  <Text style={styles.title}>Buat Proyek</Text>
-                  <Text style={styles.subtitle}>Isi detail proyek</Text>
+                  <Text style={s.title}>Buat Proyek Baru</Text>
+                  <Text style={s.subtitle}>Isi detail proyek</Text>
                 </View>
               </View>
-              <TouchableOpacity onPress={onClose} disabled={isSubmitting}>
+              <TouchableOpacity onPress={handleClose} disabled={isSubmitting}>
                 <X size={24} color="#64748B" />
               </TouchableOpacity>
             </View>
 
             {submitSuccess ? (
-              <View style={styles.successState}>
-                <View style={styles.successIcon}>
+              <View style={s.successState}>
+                <View style={s.successIcon}>
                   <Check size={40} color="#059669" />
                 </View>
-                <Text style={styles.successTitle}>Berhasil!</Text>
-                <Text style={styles.successDesc}>Proyek baru telah ditambahkan.</Text>
+                <Text style={s.successTitle}>Proyek Berhasil Dibuat!</Text>
+                <Text style={s.successDesc}>Proyek baru telah ditambahkan ke sistem.</Text>
               </View>
             ) : (
-              <ScrollView style={styles.content}>
-                <View style={styles.formGroup}>
-                  <Text style={styles.label}>Judul Proyek <Text style={styles.required}>*</Text></Text>
-                  <View style={styles.inputContainer}>
+              <ScrollView style={s.content}>
+                {/* Judul */}
+                <View style={s.formGroup}>
+                  <Text style={s.label}>Judul Proyek <Text style={s.required}>*</Text></Text>
+                  <View style={[s.inputContainer, errors.title && s.inputError]}>
                     <Briefcase size={18} color="#94A3B8" />
                     <TextInput
-                      style={styles.input}
+                      style={s.input}
                       placeholder="Contoh: Redesain Aplikasi"
                       value={formData.title}
                       onChangeText={(t) => handleChange('title', t)}
                     />
                   </View>
+                  {errors.title && <Text style={s.errorText}>{errors.title}</Text>}
                 </View>
 
-                <View style={styles.row}>
-                  <View style={[styles.formGroup, { flex: 1 }]}>
-                    <Text style={styles.label}>Klien <Text style={styles.required}>*</Text></Text>
+                {/* Klien & Freelancer */}
+                <View style={s.row}>
+                  <View style={[s.formGroup, { flex: 1 }]}>
+                    <Text style={s.label}>Klien <Text style={s.required}>*</Text></Text>
                     <TextInput
-                      style={[styles.inputContainer, styles.input, { paddingLeft: 12 }]}
+                      style={[s.inputContainer, s.inputOnly, errors.client && s.inputError]}
                       placeholder="Nama Klien"
                       value={formData.client}
                       onChangeText={(t) => handleChange('client', t)}
                     />
+                    {errors.client && <Text style={s.errorText}>{errors.client}</Text>}
                   </View>
-                  <View style={[styles.formGroup, { flex: 1 }]}>
-                    <Text style={styles.label}>Freelancer</Text>
+                  <View style={[s.formGroup, { flex: 1 }]}>
+                    <Text style={s.label}>Freelancer</Text>
                     <TextInput
-                      style={[styles.inputContainer, styles.input, { paddingLeft: 12 }]}
-                      placeholder="Nama"
+                      style={[s.inputContainer, s.inputOnly]}
+                      placeholder="Nama Freelancer"
                       value={formData.freelancer}
                       onChangeText={(t) => handleChange('freelancer', t)}
                     />
                   </View>
                 </View>
 
-                <View style={styles.row}>
-                  <View style={[styles.formGroup, { flex: 1 }]}>
-                    <Text style={styles.label}>Anggaran <Text style={styles.required}>*</Text></Text>
-                    <View style={styles.inputContainer}>
+                {/* Anggaran & Deadline */}
+                <View style={s.row}>
+                  <View style={[s.formGroup, { flex: 1 }]}>
+                    <Text style={s.label}>Anggaran <Text style={s.required}>*</Text></Text>
+                    <View style={[s.inputContainer, errors.budget && s.inputError]}>
                       <DollarSign size={18} color="#94A3B8" />
                       <TextInput
-                        style={styles.input}
+                        style={s.input}
                         placeholder="0"
                         keyboardType="numeric"
                         value={formData.budget}
                         onChangeText={(t) => handleChange('budget', t)}
                       />
                     </View>
+                    {errors.budget && <Text style={s.errorText}>{errors.budget}</Text>}
                   </View>
-                  <View style={[styles.formGroup, { flex: 1 }]}>
-                    <Text style={styles.label}>Deadline <Text style={styles.required}>*</Text></Text>
-                    <View style={styles.inputContainer}>
+                  <View style={[s.formGroup, { flex: 1 }]}>
+                    <Text style={s.label}>Deadline <Text style={s.required}>*</Text></Text>
+                    <View style={[s.inputContainer, errors.deadline && s.inputError]}>
                       <Calendar size={18} color="#94A3B8" />
                       <TextInput
-                        style={styles.input}
+                        style={s.input}
                         placeholder="YYYY-MM-DD"
                         value={formData.deadline}
                         onChangeText={(t) => handleChange('deadline', t)}
                       />
                     </View>
+                    {errors.deadline && <Text style={s.errorText}>{errors.deadline}</Text>}
                   </View>
                 </View>
 
-                <View style={styles.formGroup}>
-                  <Text style={styles.label}>Deskripsi <Text style={styles.required}>*</Text></Text>
-                  <View style={[styles.inputContainer, { alignItems: 'flex-start', height: 100, paddingVertical: 12 }]}>
+                {/* Kategori & Prioritas */}
+                <View style={s.row}>
+                  <View style={[s.formGroup, { flex: 1 }]}>
+                    <Text style={s.label}>Kategori <Text style={s.required}>*</Text></Text>
+                    <View style={[s.inputContainer, errors.category && s.inputError]}>
+                      <Tag size={18} color="#94A3B8" />
+                      <TextInput
+                        style={s.input}
+                        placeholder="Web, Mobile..."
+                        value={formData.category}
+                        onChangeText={(t) => handleChange('category', t)}
+                      />
+                    </View>
+                    {errors.category && <Text style={s.errorText}>{errors.category}</Text>}
+                  </View>
+                  <View style={[s.formGroup, { flex: 1 }]}>
+                    <Text style={s.label}>Prioritas</Text>
+                    <View style={s.inputContainer}>
+                      <Clock size={18} color="#94A3B8" />
+                      <TextInput
+                        style={s.input}
+                        placeholder="Low/Medium/High"
+                        value={formData.priority}
+                        onChangeText={(t) => handleChange('priority', t)}
+                      />
+                    </View>
+                  </View>
+                </View>
+
+                {/* Deskripsi */}
+                <View style={s.formGroup}>
+                  <Text style={s.label}>Deskripsi <Text style={s.required}>*</Text></Text>
+                  <View style={[s.inputContainer, { alignItems: 'flex-start', height: 100, paddingVertical: 12 }, errors.description && s.inputError]}>
                     <FileText size={18} color="#94A3B8" style={{ marginTop: 2 }} />
                     <TextInput
-                      style={[styles.input, { textAlignVertical: 'top', height: '100%' }]}
+                      style={[s.input, { textAlignVertical: 'top', height: '100%' }]}
                       placeholder="Jelaskan detail proyek..."
                       multiline
                       value={formData.description}
                       onChangeText={(t) => handleChange('description', t)}
                     />
                   </View>
+                  {errors.description && <Text style={s.errorText}>{errors.description}</Text>}
                 </View>
               </ScrollView>
             )}
 
+            {/* Footer */}
             {!submitSuccess && (
-              <View style={styles.footer}>
-                <TouchableOpacity onPress={onClose} style={styles.cancelBtn}>
-                  <Text style={styles.cancelText}>Batal</Text>
+              <View style={s.footer}>
+                <TouchableOpacity onPress={handleClose} style={s.cancelBtn}>
+                  <Text style={s.cancelText}>Batal</Text>
                 </TouchableOpacity>
                 <TouchableOpacity 
                   onPress={handleSubmit}
                   disabled={isSubmitting}
-                  style={[styles.submitBtn, isSubmitting && styles.disabledBtn]}
+                  style={[s.submitBtn, isSubmitting && s.disabledBtn]}
                 >
                   {isSubmitting ? (
                     <ActivityIndicator size="small" color="white" />
                   ) : (
                     <>
                       <Briefcase size={18} color="white" style={{ marginRight: 8 }} />
-                      <Text style={styles.submitText}>Buat Proyek</Text>
+                      <Text style={s.submitText}>Buat Proyek</Text>
                     </>
                   )}
                 </TouchableOpacity>
@@ -190,7 +272,7 @@ export default function CreateProjectModal({ isOpen, onClose, onSuccess }: Creat
   );
 }
 
-const styles = StyleSheet.create({
+const s = StyleSheet.create({
   overlay: {
     flex: 1,
     backgroundColor: 'rgba(15, 23, 42, 0.6)',
@@ -267,12 +349,24 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     height: 48,
   },
+  inputOnly: {
+    paddingLeft: 12,
+  },
+  inputError: {
+    borderColor: '#EF4444',
+    backgroundColor: '#FEF2F2',
+  },
   input: {
     flex: 1,
     marginLeft: 8,
     fontSize: 14,
     color: '#0F172A',
     height: '100%',
+  },
+  errorText: {
+    fontSize: 12,
+    color: '#EF4444',
+    marginTop: 4,
   },
   footer: {
     padding: 20,

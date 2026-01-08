@@ -41,16 +41,6 @@ export default function ClientLayout() {
       />
 
       <Tabs.Screen
-        name="reports/index"
-        options={{
-          title: 'Reports',
-          tabBarIcon: ({ color }) => (
-            <Icon source="book" color={color} size={20} />
-          ),
-        }}
-      />
-
-      <Tabs.Screen
         name="transactions/index"
         options={{
           title: 'Transactions',
@@ -68,7 +58,6 @@ export default function ClientLayout() {
           ),
         }}
       />
-      <Tabs.Screen name="transactions/components/TaxReportModal" options={{ href: null }} />
       <Tabs.Screen name="reports/components/ModerationPolicyModal" options={{ href: null }} />
       <Tabs.Screen name="projects/components/CreateProjectModal" options={{ href: null }} />
     </Tabs>

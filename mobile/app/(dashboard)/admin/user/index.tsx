@@ -1,14 +1,15 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import {
-  View, Text, StyleSheet, FlatList, TouchableOpacity,
-  TextInput, ActivityIndicator, RefreshControl, Modal, Image
+  View, Text, StyleSheet, TouchableOpacity,
+  TextInput, ActivityIndicator, RefreshControl, ScrollView, Modal
 } from 'react-native';
 import {
-  Users, Search, Filter, Mail, UserCheck, Ban, Edit2,
-  ChevronLeft, ChevronRight, Plus, Download, Clock, CheckCircle2
+  Users, UserPlus, Search, Filter,
+  Mail, UserCheck, Ban, Edit2,
+  ChevronLeft, ChevronRight, Download,
+  CheckCircle2, Clock, X
 } from 'lucide-react-native';
 import axios from 'axios';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 
 interface UserData {
   id: string;
@@ -37,19 +38,143 @@ interface PaginationMeta {
   totalPages: number;
 }
 
+const API_URL = process.env.EXPO_PUBLIC_API_URL;
+
+interface AddUserModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onSuccess: () => void;
+}
+
+const AddUserModal = ({ isOpen, onClose, onSuccess }: AddUserModalProps) => {
+  const [formData, setFormData] = useState({ name: '', email: '', role: 'FREELANCER' });
+  const [loading, setLoading] = useState(false);
+
+  const handleSubmit = async () => {
+    setLoading(true);
+    setTimeout(() => {
+      setLoading(false);
+      onSuccess();
+      onClose();
+    }, 1500);
+  };
+
+  return (
+    <Modal visible={isOpen} transparent animationType="fade" onRequestClose={onClose}>
+      <View style={s.modalOverlay}>
+        <View style={s.modalContent}>
+          <View style={s.modalHeader}>
+            <Text style={s.modalTitle}>Tambah User</Text>
+            <TouchableOpacity onPress={onClose}>
+              <X size={24} color="#64748B" />
+            </TouchableOpacity>
+          </View>
+          <View style={s.formGroup}>
+            <Text style={s.label}>Nama Lengkap</Text>
+            <TextInput 
+              style={s.input} 
+              placeholder="Nama User" 
+              value={formData.name}
+              onChangeText={(t) => setFormData({...formData, name: t})}
+            />
+          </View>
+          <View style={s.formGroup}>
+            <Text style={s.label}>Email</Text>
+            <TextInput 
+              style={s.input} 
+              placeholder="email@example.com" 
+              keyboardType="email-address"
+              autoCapitalize="none"
+              value={formData.email}
+              onChangeText={(t) => setFormData({...formData, email: t})}
+            />
+          </View>
+          <TouchableOpacity 
+            style={s.submitBtn} 
+            onPress={handleSubmit}
+            disabled={loading}
+          >
+            {loading ? (
+              <ActivityIndicator color="white" />
+            ) : (
+              <Text style={s.submitBtnText}>Simpan</Text>
+            )}
+          </TouchableOpacity>
+        </View>
+      </View>
+    </Modal>
+  );
+};
+
 export default function UserManagementScreen() {
-  const [users, setUsers] = useState<UserData[]>([]);
-  const [stats, setStats] = useState<UserStatApi[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
+  const [isAddUserModalOpen, setIsAddUserModalOpen] = useState(false);
+  const [users, setUsers] = useState<UserData[]>([]);
   const [pagination, setPagination] = useState<PaginationMeta>({
     page: 1, limit: 10, total: 0, totalPages: 1
   });
+  const [stats, setStats] = useState<UserStatApi[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+
+  const fetchStats = async () => {
+    try {
+      const res = await axios.get(`${API_URL}/user/admin/stats`, {
+        withCredentials: true
+      });
+      setStats(res.data?.userStats || []);
+    } catch (error) {
+      console.error(error);
+      setStats([]);
+    }
+  };
+
+  const fetchUsers = async () => {
+    try {
+      const res = await axios.get(`${API_URL}/user/admin/list-user`, {
+        params: {
+          page: pagination.page,
+          limit: 10,
+          search: searchTerm,
+          status: statusFilter !== 'all' ? statusFilter : undefined
+        },
+        withCredentials: true
+      });
+      
+      setUsers(res.data?.data || []);
+      
+      if (res.data?.pagination) {
+        setPagination(prev => ({ ...prev, ...res.data.pagination }));
+      }
+    } catch (error) {
+      console.error(error);
+      setUsers([]);
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchStats();
+  }, []);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      fetchUsers();
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [searchTerm, statusFilter, pagination.page]);
+
+  const onRefresh = useCallback(() => {
+    setRefreshing(true);
+    fetchStats();
+    fetchUsers();
+  }, []);
 
   const getIcon = (iconName: string, color: string) => {
-    const props = { size: 20, color };
+    const props = { size: 24, color };
     switch (iconName) {
       case 'users': return <Users {...props} />;
       case 'clock': return <Clock {...props} />;
@@ -58,124 +183,94 @@ export default function UserManagementScreen() {
     }
   };
 
-  const fetchData = async () => {
-    try {
-      const apiUrl = process.env.EXPO_PUBLIC_API_URL;
-      const token = await AsyncStorage.getItem('token');
-      const headers = { Authorization: `Bearer ${token}` };
-
-      const statsRes = await axios.get(`${apiUrl}/user/admin/stats`, { headers });
-      setStats(statsRes.data.userStats);
-
-      const usersRes = await axios.get(`${apiUrl}/user/admin/list-user`, {
-        headers,
-        params: {
-          page: pagination.page,
-          limit: 10,
-          search: searchTerm,
-          status: statusFilter !== 'all' ? statusFilter : undefined
-        }
-      });
-      
-      setUsers(usersRes.data.data);
-      setPagination(prev => ({ ...prev, ...usersRes.data.pagination }));
-
-    } catch (error) {
-      console.error(error);
-    } finally {
-      setLoading(false);
-      setRefreshing(false);
+  const getColor = (colorName: string) => {
+    switch (colorName) {
+      case 'blue': return { bg: '#EFF6FF', text: '#2563EB' };
+      case 'orange': return { bg: '#FFF7ED', text: '#EA580C' };
+      case 'emerald': return { bg: '#ECFDF5', text: '#059669' };
+      default: return { bg: '#F1F5F9', text: '#64748B' };
     }
   };
-
-  useEffect(() => {
-    fetchData();
-  }, [pagination.page, searchTerm, statusFilter]);
-
-  const onRefresh = useCallback(() => {
-    setRefreshing(true);
-    fetchData();
-  }, []);
 
   const getStatusStyle = (status: string) => {
     switch (status) {
-      case 'active': return { bg: '#D1FAE5', text: '#047857', label: 'Aktif' };
-      case 'pending': return { bg: '#FFEDD5', text: '#C2410C', label: 'Pending' };
-      case 'suspended': return { bg: '#FEE2E2', text: '#B91C1C', label: 'Suspended' };
-      default: return { bg: '#F1F5F9', text: '#475569', label: status };
+      case 'active': return { bg: '#D1FAE5', text: '#047857' };
+      case 'pending': return { bg: '#FFEDD5', text: '#C2410C' };
+      case 'suspended': return { bg: '#FEE2E2', text: '#DC2626' };
+      default: return { bg: '#F1F5F9', text: '#64748B' };
     }
   };
 
-  const renderStatCard = ({ item }: { item: UserStatApi }) => (
-    <View style={styles.statCard}>
-      <View style={[styles.statIcon, { backgroundColor: item.color === 'blue' ? '#EFF6FF' : item.color === 'orange' ? '#FFF7ED' : '#ECFDF5' }]}>
-        {getIcon(item.icon, item.color === 'blue' ? '#2563EB' : item.color === 'orange' ? '#EA580C' : '#059669')}
+  const renderStatCard = ({ item }: { item: UserStatApi }) => {
+    const styles = getColor(item.color);
+    return (
+      <View style={s.statCard}>
+        <View style={[s.statIcon, { backgroundColor: styles.bg }]}>
+          {getIcon(item.icon, styles.text)}
+        </View>
+        <View>
+          <Text style={s.statLabel}>{item.label}</Text>
+          <Text style={s.statValue}>
+            {item.prefix}{item.value.toLocaleString('id-ID')}
+          </Text>
+        </View>
       </View>
-      <View>
-        <Text style={styles.statLabel}>{item.label}</Text>
-        <Text style={styles.statValue}>{item.prefix}{item.value.toLocaleString('id-ID')}</Text>
-      </View>
-    </View>
-  );
+    );
+  };
 
   const renderUserCard = ({ item }: { item: UserData }) => {
     const statusStyle = getStatusStyle(item.status);
     return (
-      <View style={styles.userCard}>
-        <View style={styles.cardHeader}>
-          <View style={styles.userInfo}>
-            <View style={styles.avatar}>
-              <Text style={styles.avatarText}>{item.name.charAt(0).toUpperCase()}</Text>
+      <View style={s.card}>
+        <View style={s.cardHeader}>
+          <View style={s.userInfo}>
+            <View style={s.avatar}>
+              <Text style={s.avatarText}>{item.name.charAt(0).toUpperCase()}</Text>
             </View>
-            <View>
-              <Text style={styles.userName}>{item.name}</Text>
-              <Text style={styles.userEmail}>{item.email}</Text>
-            </View>
-          </View>
-          <View style={[styles.statusBadge, { backgroundColor: statusStyle.bg }]}>
-            <Text style={[styles.statusText, { color: statusStyle.text }]}>{statusStyle.label}</Text>
-          </View>
-        </View>
-
-        <View style={styles.cardBody}>
-          <View style={styles.infoRow}>
-            <Text style={styles.infoLabel}>Role:</Text>
-            <View style={[
-              styles.roleBadge, 
-              { backgroundColor: item.role === 'FREELANCER' ? '#FAF5FF' : '#EFF6FF' }
-            ]}>
-              <Text style={[
-                styles.roleText,
-                { color: item.role === 'FREELANCER' ? '#7E22CE' : '#1D4ED8' }
-              ]}>{item.role}</Text>
+            <View style={{ flex: 1 }}>
+              <Text style={s.userName} numberOfLines={1}>{item.name}</Text>
+              <Text style={s.userEmail} numberOfLines={1}>{item.email}</Text>
             </View>
           </View>
-          <View style={styles.infoRow}>
-            <Text style={styles.infoLabel}>Bergabung:</Text>
-            <Text style={styles.infoValue}>
-              {new Date(item.joined).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}
+          <View style={[s.statusBadge, { backgroundColor: statusStyle.bg }]}>
+            <Text style={[s.statusText, { color: statusStyle.text }]}>
+              {item.status.toUpperCase()}
             </Text>
           </View>
-          <View style={styles.infoRow}>
-            <Text style={styles.infoLabel}>Proyek:</Text>
-            <Text style={styles.infoValue}>{item.projects} Proyek</Text>
+        </View>
+
+        <View style={s.cardBody}>
+          <View style={s.infoRow}>
+            <Text style={s.infoLabel}>Role</Text>
+            <View style={[s.roleBadge, { backgroundColor: item.role === 'FREELANCER' ? '#FAF5FF' : '#EFF6FF' }]}>
+              <Text style={[s.roleText, { color: item.role === 'FREELANCER' ? '#7E22CE' : '#1D4ED8' }]}>
+                {item.role}
+              </Text>
+            </View>
+          </View>
+          <View style={s.infoRow}>
+            <Text style={s.infoLabel}>Bergabung</Text>
+            <Text style={s.infoValue}>
+              {new Date(item.joined).toLocaleDateString('id-ID')}
+            </Text>
+          </View>
+          <View style={s.infoRow}>
+            <Text style={s.infoLabel}>Proyek</Text>
+            <Text style={s.infoValue}>{item.projects}</Text>
           </View>
         </View>
 
-        <View style={styles.cardActions}>
+        <View style={s.cardFooter}>
           {item.status === 'pending' && (
-            <TouchableOpacity style={[styles.actionBtn, styles.btnApprove]}>
+            <TouchableOpacity style={[s.actionBtn, { backgroundColor: '#ECFDF5', borderColor: '#D1FAE5' }]}>
               <UserCheck size={16} color="#059669" />
-              <Text style={[styles.actionText, { color: '#059669' }]}>Verifikasi</Text>
             </TouchableOpacity>
           )}
-          <TouchableOpacity style={[styles.actionBtn, styles.btnEdit]}>
+          <TouchableOpacity style={[s.actionBtn, { backgroundColor: '#EFF6FF', borderColor: '#DBEAFE' }]}>
             <Edit2 size={16} color="#2563EB" />
-            <Text style={[styles.actionText, { color: '#2563EB' }]}>Edit</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={[styles.actionBtn, styles.btnSuspend]}>
+          <TouchableOpacity style={[s.actionBtn, { backgroundColor: '#FEF2F2', borderColor: '#FEE2E2' }]}>
             <Ban size={16} color="#DC2626" />
-            <Text style={[styles.actionText, { color: '#DC2626' }]}>Suspend</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -183,89 +278,119 @@ export default function UserManagementScreen() {
   };
 
   return (
-    <View style={styles.container}>
-      <View style={styles.header}>
-        <View>
-          <Text style={styles.title}>Manajemen User</Text>
-          <Text style={styles.subtitle}>Kelola pengguna platform</Text>
+    <View style={s.container}>
+      <View style={s.header}>
+        <View style={{ flex: 1 }}>
+          <Text style={s.title}>Manajemen User</Text>
+          <Text style={s.subtitle}>Kelola pengguna platform</Text>
         </View>
-        <TouchableOpacity style={styles.addButton}>
-          <Plus size={20} color="white" />
-        </TouchableOpacity>
+        <View style={s.headerActions}>
+          <TouchableOpacity style={s.iconBtn}>
+            <Download size={20} color="#64748B" />
+          </TouchableOpacity>
+          <TouchableOpacity 
+            style={[s.iconBtn, { backgroundColor: '#2563EB', borderColor: '#2563EB' }]}
+            onPress={() => setIsAddUserModalOpen(true)}
+          >
+            <UserPlus size={20} color="white" />
+          </TouchableOpacity>
+        </View>
       </View>
 
-      <View style={styles.statsContainer}>
-        <FlatList
-          horizontal
-          data={stats}
-          renderItem={renderStatCard}
-          keyExtractor={(item) => item.type}
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 10 }}
-        />
-      </View>
-
-      <View style={styles.filterSection}>
-        <View style={styles.searchContainer}>
-          <Search size={18} color="#94A3B8" />
-          <TextInput
-            style={styles.searchInput}
-            placeholder="Cari user..."
-            value={searchTerm}
-            onChangeText={setSearchTerm}
-          />
-        </View>
-        <TouchableOpacity style={styles.filterBtn}>
-          <Filter size={18} color="#64748B" />
-        </TouchableOpacity>
-      </View>
-
-      {loading && !refreshing ? (
-        <View style={styles.center}>
-          <ActivityIndicator size="large" color="#2563EB" />
-        </View>
-      ) : (
-        <FlatList
-          data={users}
-          renderItem={renderUserCard}
-          keyExtractor={(item) => item.id}
-          contentContainerStyle={styles.listContent}
-          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={['#2563EB']} />}
-          ListEmptyComponent={
-            <View style={styles.emptyState}>
-              <Text style={styles.emptyText}>Tidak ada user ditemukan.</Text>
-            </View>
-          }
-          ListFooterComponent={
-            users.length > 0 ? (
-              <View style={styles.pagination}>
-                <TouchableOpacity
-                  disabled={pagination.page <= 1}
-                  onPress={() => setPagination(prev => ({ ...prev, page: prev.page - 1 }))}
-                  style={[styles.pageBtn, pagination.page <= 1 && styles.pageBtnDisabled]}
-                >
-                  <ChevronLeft size={20} color={pagination.page <= 1 ? "#CBD5E1" : "#1E293B"} />
-                </TouchableOpacity>
-                <Text style={styles.pageText}>
-                  Hal {pagination.page} dari {pagination.totalPages}
-                </Text>
-                <TouchableOpacity
-                  disabled={pagination.page >= pagination.totalPages}
-                  onPress={() => setPagination(prev => ({ ...prev, page: prev.page + 1 }))}
-                  style={[styles.pageBtn, pagination.page >= pagination.totalPages && styles.pageBtnDisabled]}
-                >
-                  <ChevronRight size={20} color={pagination.page >= pagination.totalPages ? "#CBD5E1" : "#1E293B"} />
-                </TouchableOpacity>
+      <ScrollView 
+        contentContainerStyle={s.scrollContent}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={['#2563EB']} />}
+      >
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={s.statsContainer}>
+          {loading && !refreshing ? (
+            <ActivityIndicator size="small" color="#2563EB" />
+          ) : (
+            (stats || []).map((stat, idx) => (
+              <View key={idx} style={{ marginRight: 12 }}>
+                {renderStatCard({ item: stat })}
               </View>
-            ) : null
-          }
-        />
-      )}
+            ))
+          )}
+        </ScrollView>
+
+        <View style={s.filterSection}>
+          <View style={s.searchContainer}>
+            <Search size={18} color="#94A3B8" />
+            <TextInput
+              style={s.searchInput}
+              placeholder="Cari user..."
+              value={searchTerm}
+              onChangeText={setSearchTerm}
+            />
+          </View>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={s.filterScroll}>
+            {['all', 'active', 'pending', 'suspended'].map((status) => (
+              <TouchableOpacity
+                key={status}
+                onPress={() => setStatusFilter(status)}
+                style={[
+                  s.filterPill,
+                  statusFilter === status && s.filterPillActive
+                ]}
+              >
+                <Text style={[
+                  s.filterText,
+                  statusFilter === status && s.filterTextActive
+                ]}>
+                  {status}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+        </View>
+
+        <View style={s.listContainer}>
+          {loading && !refreshing ? (
+            <ActivityIndicator size="large" color="#2563EB" style={{ marginTop: 20 }} />
+          ) : users.length === 0 ? (
+            <View style={s.emptyState}>
+              <Text style={s.emptyText}>Tidak ada user ditemukan.</Text>
+            </View>
+          ) : (
+            (users || []).map(item => (
+              <View key={item.id} style={{ marginBottom: 12 }}>
+                {renderUserCard({ item })}
+              </View>
+            ))
+          )}
+        </View>
+
+        <View style={s.pagination}>
+          <TouchableOpacity
+            disabled={pagination.page <= 1}
+            onPress={() => setPagination(prev => ({ ...prev, page: prev.page - 1 }))}
+            style={[s.pageBtn, pagination.page <= 1 && s.pageBtnDisabled]}
+          >
+            <ChevronLeft size={20} color={pagination.page <= 1 ? "#CBD5E1" : "#1E293B"} />
+          </TouchableOpacity>
+          <Text style={s.pageText}>
+            Hal {pagination.page} dari {pagination.totalPages}
+          </Text>
+          <TouchableOpacity
+            disabled={pagination.page >= pagination.totalPages}
+            onPress={() => setPagination(prev => ({ ...prev, page: prev.page + 1 }))}
+            style={[s.pageBtn, pagination.page >= pagination.totalPages && s.pageBtnDisabled]}
+          >
+            <ChevronRight size={20} color={pagination.page >= pagination.totalPages ? "#CBD5E1" : "#1E293B"} />
+          </TouchableOpacity>
+        </View>
+      </ScrollView>
+
+      <AddUserModal 
+        isOpen={isAddUserModalOpen} 
+        onClose={() => setIsAddUserModalOpen(false)} 
+        onSuccess={() => { onRefresh(); }}
+      />
     </View>
   );
 }
 
-const styles = StyleSheet.create({
+const s = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#F8FAFC',
@@ -273,7 +398,6 @@ const styles = StyleSheet.create({
   header: {
     padding: 20,
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
     backgroundColor: 'white',
     borderBottomWidth: 1,
@@ -288,62 +412,69 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#64748B',
   },
-  addButton: {
-    backgroundColor: '#2563EB',
+  headerActions: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  iconBtn: {
     width: 40,
     height: 40,
     borderRadius: 10,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
     alignItems: 'center',
     justifyContent: 'center',
+    backgroundColor: 'white',
+  },
+  scrollContent: {
+    paddingBottom: 40,
   },
   statsContainer: {
-    marginTop: 16,
+    padding: 20,
+    paddingBottom: 10,
   },
   statCard: {
     backgroundColor: 'white',
-    padding: 12,
-    borderRadius: 12,
-    marginRight: 12,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
+    padding: 16,
+    borderRadius: 16,
     borderWidth: 1,
     borderColor: '#E2E8F0',
     minWidth: 160,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
   },
   statIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 10,
+    width: 44,
+    height: 44,
+    borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
   },
   statLabel: {
-    fontSize: 10,
+    fontSize: 12,
     color: '#64748B',
     marginBottom: 2,
   },
   statValue: {
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: 'bold',
     color: '#0F172A',
   },
   filterSection: {
-    paddingHorizontal: 20,
-    paddingBottom: 10,
-    flexDirection: 'row',
-    gap: 10,
+    padding: 20,
+    paddingTop: 10,
   },
   searchContainer: {
-    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: 'white',
     borderWidth: 1,
     borderColor: '#E2E8F0',
-    borderRadius: 10,
+    borderRadius: 12,
     paddingHorizontal: 12,
-    height: 44,
+    height: 48,
+    marginBottom: 12,
   },
   searchInput: {
     flex: 1,
@@ -351,30 +482,38 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#0F172A',
   },
-  filterBtn: {
-    width: 44,
-    height: 44,
-    backgroundColor: 'white',
+  filterScroll: {
+    flexGrow: 0,
+  },
+  filterPill: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 100,
     borderWidth: 1,
     borderColor: '#E2E8F0',
-    borderRadius: 10,
-    alignItems: 'center',
-    justifyContent: 'center',
+    backgroundColor: 'white',
+    marginRight: 8,
   },
-  listContent: {
-    padding: 20,
-    paddingTop: 0,
+  filterPillActive: {
+    backgroundColor: '#2563EB',
+    borderColor: '#2563EB',
   },
-  center: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+  filterText: {
+    fontSize: 12,
+    color: '#64748B',
+    fontWeight: '600',
+    textTransform: 'capitalize',
   },
-  userCard: {
+  filterTextActive: {
+    color: 'white',
+  },
+  listContainer: {
+    paddingHorizontal: 20,
+  },
+  card: {
     backgroundColor: 'white',
     borderRadius: 16,
     padding: 16,
-    marginBottom: 12,
     borderWidth: 1,
     borderColor: '#E2E8F0',
   },
@@ -382,12 +521,14 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
-    marginBottom: 12,
+    marginBottom: 16,
   },
   userInfo: {
     flexDirection: 'row',
+    alignItems: 'center',
     gap: 12,
     flex: 1,
+    marginRight: 8,
   },
   avatar: {
     width: 40,
@@ -423,10 +564,10 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   cardBody: {
-    borderTopWidth: 1,
-    borderTopColor: '#F1F5F9',
-    paddingVertical: 12,
-    gap: 8,
+    gap: 12,
+    paddingBottom: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F1F5F9',
   },
   infoRow: {
     flexDirection: 'row',
@@ -451,40 +592,22 @@ const styles = StyleSheet.create({
     fontSize: 10,
     fontWeight: '600',
   },
-  cardActions: {
+  cardFooter: {
     flexDirection: 'row',
+    justifyContent: 'flex-end',
     gap: 8,
-    marginTop: 4,
+    marginTop: 12,
   },
   actionBtn: {
-    flex: 1,
-    flexDirection: 'row',
+    padding: 8,
+    borderRadius: 8,
+    borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 8,
-    borderRadius: 8,
-    gap: 4,
-    borderWidth: 1,
-  },
-  btnApprove: {
-    backgroundColor: '#ECFDF5',
-    borderColor: '#D1FAE5',
-  },
-  btnEdit: {
-    backgroundColor: '#EFF6FF',
-    borderColor: '#DBEAFE',
-  },
-  btnSuspend: {
-    backgroundColor: '#FEF2F2',
-    borderColor: '#FEE2E2',
-  },
-  actionText: {
-    fontSize: 12,
-    fontWeight: '600',
   },
   emptyState: {
     alignItems: 'center',
-    padding: 20,
+    padding: 40,
   },
   emptyText: {
     color: '#64748B',
@@ -494,7 +617,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     gap: 16,
-    paddingVertical: 16,
+    padding: 20,
   },
   pageBtn: {
     padding: 8,
@@ -511,5 +634,56 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#475569',
     fontWeight: '500',
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'center',
+    padding: 20,
+  },
+  modalContent: {
+    backgroundColor: 'white',
+    borderRadius: 20,
+    padding: 24,
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 24,
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#0F172A',
+  },
+  formGroup: {
+    marginBottom: 16,
+  },
+  label: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#334155',
+    marginBottom: 8,
+  },
+  input: {
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    borderRadius: 12,
+    padding: 12,
+    fontSize: 14,
+    color: '#0F172A',
+  },
+  submitBtn: {
+    backgroundColor: '#2563EB',
+    padding: 14,
+    borderRadius: 12,
+    alignItems: 'center',
+    marginTop: 8,
+  },
+  submitBtnText: {
+    color: 'white',
+    fontWeight: 'bold',
+    fontSize: 14,
   },
 });

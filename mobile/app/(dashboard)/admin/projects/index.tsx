@@ -1,22 +1,23 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import {
-  View, Text, StyleSheet, FlatList, TouchableOpacity,
-  TextInput, ActivityIndicator, RefreshControl, ScrollView, Image
+  View, Text, StyleSheet, TouchableOpacity,
+  TextInput, ActivityIndicator, RefreshControl, ScrollView,
+  Dimensions
 } from 'react-native';
 import {
   Plus, Search, Filter, Download, Briefcase,
-  CheckCircle, Clock, Banknote, Calendar, User, Building
+  CheckCircle, Clock, Banknote, ChevronLeft, ChevronRight,
+  Building, User
 } from 'lucide-react-native';
 import axios from 'axios';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import CreateProjectModal from './components/CreateProjectModal';
 
 interface Project {
-  id: number;
+  id: string;
   title: string;
   client: string;
   freelancer: string;
-  budget: string;
+  budget: number;
   deadline: string;
   status: 'active' | 'completed' | 'pending' | 'cancelled';
   progress: number;
@@ -25,65 +26,39 @@ interface Project {
 interface Stat {
   label: string;
   value: string;
-  type: string;
+  icon: any;
   color: string;
   bg: string;
 }
 
-const PROJECTS_DATA: Project[] = [
-  { id: 1, title: "Redesain Aplikasi Mobile", client: "PT Tech Solution", freelancer: "Nazril Afandi", budget: "Rp 15.000.000", deadline: "20/1/2024", status: "active", progress: 65 },
-  { id: 2, title: "Pengembangan API E-commerce", client: "Budi Santoso", freelancer: "Siska Putri", budget: "Rp 8.500.000", deadline: "15/12/2023", status: "completed", progress: 100 },
-  { id: 3, title: "Sistem Manajemen Inventori", client: "Global Mandiri", freelancer: "Ahmad Rivai", budget: "Rp 12.000.000", deadline: "10/2/2024", status: "pending", progress: 20 }
-];
+interface PaginationMeta {
+  page: number;
+  limit: number;
+  total: number;
+  totalPages: number;
+}
+
+const API_URL = process.env.EXPO_PUBLIC_API_URL;
 
 export default function ProjectManagementScreen() {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
   const [stats, setStats] = useState<Stat[]>([]);
+  const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [pagination, setPagination] = useState<PaginationMeta>({
+    page: 1, limit: 10, total: 0, totalPages: 1
+  });
 
-  const fetchData = async () => {
-    try {
-      const apiUrl = process.env.EXPO_PUBLIC_API_URL;
-      const token = await AsyncStorage.getItem('token');
-      
-      // Simulasi fetch stats, ganti dengan endpoint asli
-      // const res = await axios.get(`${apiUrl}/user/admin/stats`, { headers: { Authorization: `Bearer ${token}` } });
-      
-      // Mock stats
-      setStats([
-        { label: "Total Proyek", value: "125", type: "total", color: "#2563EB", bg: "#EFF6FF" },
-        { label: "Selesai", value: "84", type: "completed", color: "#059669", bg: "#ECFDF5" },
-        { label: "Berjalan", value: "32", type: "in_progress", color: "#EA580C", bg: "#FFF7ED" },
-        { label: "Nilai Proyek", value: "1.2M", type: "value", color: "#7E22CE", bg: "#FAF5FF" },
-      ]);
-      
-    } catch (error) {
-      console.error(error);
-    } finally {
-      setLoading(false);
-      setRefreshing(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchData();
-  }, []);
-
-  const onRefresh = useCallback(() => {
-    setRefreshing(true);
-    fetchData();
-  }, []);
-
-  const getStatusStyle = (status: Project['status']) => {
+  const getStatusStyle = (status: string) => {
     switch (status) {
       case 'active': return { bg: '#DBEAFE', text: '#1D4ED8' };
       case 'completed': return { bg: '#D1FAE5', text: '#047857' };
       case 'pending': return { bg: '#FFEDD5', text: '#C2410C' };
-      case 'cancelled': return { bg: '#FEE2E2', text: '#B91C1C' };
-      default: return { bg: '#F1F5F9', text: '#475569' };
+      case 'cancelled': return { bg: '#FEE2E2', text: '#DC2626' };
+      default: return { bg: '#F1F5F9', text: '#64748B' };
     }
   };
 
@@ -98,74 +73,154 @@ export default function ProjectManagementScreen() {
     }
   };
 
-  const filteredProjects = PROJECTS_DATA.filter(project => {
-    const matchesSearch = project.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
-                          project.client.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesStatus = filterStatus === 'all' || project.status === filterStatus;
-    return matchesSearch && matchesStatus;
-  });
+  const getColorStyles = (colorName: string) => {
+    switch (colorName) {
+      case 'blue': return { color: "#2563EB", bg: "#EFF6FF" };
+      case 'emerald': return { color: "#059669", bg: "#ECFDF5" };
+      case 'orange': return { color: "#EA580C", bg: "#FFF7ED" };
+      case 'purple': return { color: "#7E22CE", bg: "#FAF5FF" };
+      default: return { color: "#64748B", bg: "#F8FAFC" };
+    }
+  };
 
-  const renderStatCard = (item: Stat) => (
-    <View key={item.label} style={styles.statCard}>
-      <View style={styles.statHeader}>
-        <View style={[styles.statIconContainer, { backgroundColor: item.bg }]}>
-          {getIcon(item.type, item.color)}
+  const fetchStats = async () => {
+    try {
+      const res = await axios.get(`${API_URL}/user/admin/stats`, {
+        withCredentials: true
+      });
+      
+      const mappedStats = (res.data.projectStats || []).map((item: any) => {
+        const styles = getColorStyles(item.color);
+        let displayValue = item.value.toString();
+        
+        if (item.type === 'value') {
+          displayValue = new Intl.NumberFormat("id-ID", {
+            style: "currency",
+            currency: "IDR",
+            notation: "compact",
+            maximumFractionDigits: 1
+          }).format(item.value);
+        }
+
+        return {
+          label: item.label,
+          value: displayValue,
+          icon: item.type,
+          color: styles.color,
+          bg: styles.bg
+        };
+      });
+      setStats(mappedStats);
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  const fetchProjects = async () => {
+    try {
+      const res = await axios.get(`${API_URL}/user/admin/projects`, {
+        params: {
+          page: pagination.page,
+          limit: 10,
+          search: searchQuery,
+          status: filterStatus
+        },
+        withCredentials: true
+      });
+      setProjects(res.data.data || []);
+      if (res.data.pagination) {
+        setPagination(prev => ({ ...prev, ...res.data.pagination }));
+      }
+    } catch (error) {
+      console.error(error);
+      setProjects([]);
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchStats();
+  }, []);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      fetchProjects();
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [searchQuery, filterStatus, pagination.page]);
+
+  const onRefresh = useCallback(() => {
+    setRefreshing(true);
+    fetchStats();
+    fetchProjects();
+  }, []);
+
+  const renderStatCard = (item: Stat, index: number) => (
+    <View key={index} style={s.statCard}>
+      <View style={s.statHeader}>
+        <View style={[s.statIcon, { backgroundColor: item.bg }]}>
+          {getIcon(item.icon, item.color)}
         </View>
       </View>
-      <Text style={styles.statValue}>{item.value}</Text>
-      <Text style={styles.statLabel}>{item.label}</Text>
+      <Text style={s.statValue}>{item.value}</Text>
+      <Text style={s.statLabel}>{item.label}</Text>
     </View>
   );
 
-  const renderProjectCard = ({ item }: { item: Project }) => {
+  const renderProjectCard = (item: Project) => {
     const statusStyle = getStatusStyle(item.status);
     return (
-      <View style={styles.card}>
-        <View style={styles.cardHeader}>
-          <Text style={styles.cardTitle} numberOfLines={1}>{item.title}</Text>
-          <View style={[styles.statusBadge, { backgroundColor: statusStyle.bg }]}>
-            <Text style={[styles.statusText, { color: statusStyle.text }]}>
+      <View key={item.id} style={s.card}>
+        <View style={s.cardHeader}>
+          <View style={{ flex: 1, marginRight: 8 }}>
+            <Text style={s.cardTitle} numberOfLines={1}>{item.title}</Text>
+            <View style={s.dateRow}>
+              <Clock size={12} color="#94A3B8" />
+              <Text style={s.dateText}>Deadline: {new Date(item.deadline).toLocaleDateString('id-ID')}</Text>
+            </View>
+          </View>
+          <View style={[s.statusBadge, { backgroundColor: statusStyle.bg }]}>
+            <Text style={[s.statusText, { color: statusStyle.text }]}>
               {item.status.toUpperCase()}
             </Text>
           </View>
         </View>
 
-        <View style={styles.cardBody}>
-          <View style={styles.metaRow}>
-            <View style={styles.metaItem}>
+        <View style={s.cardBody}>
+          <View style={s.metaContainer}>
+            <View style={s.metaItem}>
               <Building size={14} color="#64748B" />
-              <Text style={styles.metaText}>{item.client}</Text>
+              <Text style={s.metaText} numberOfLines={1}>{item.client}</Text>
             </View>
-            <View style={styles.metaItem}>
+            <View style={s.metaItem}>
               <User size={14} color="#64748B" />
-              <Text style={styles.metaText}>{item.freelancer}</Text>
+              <Text style={s.metaText} numberOfLines={1}>{item.freelancer}</Text>
             </View>
           </View>
 
-          <View style={styles.budgetRow}>
-            <Text style={styles.budgetLabel}>Anggaran:</Text>
-            <Text style={styles.budgetValue}>{item.budget}</Text>
+          <View style={s.budgetContainer}>
+            <Text style={s.budgetLabel}>Anggaran</Text>
+            <Text style={s.budgetValue}>
+              {new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR" }).format(item.budget)}
+            </Text>
           </View>
 
-          <View style={styles.progressContainer}>
-            <View style={styles.progressHeader}>
-              <Text style={styles.progressLabel}>Progress</Text>
-              <Text style={styles.progressPercent}>{item.progress}%</Text>
+          <View style={s.progressContainer}>
+            <View style={s.progressLabelRow}>
+              <Text style={s.progressLabel}>Progress</Text>
+              <Text style={s.progressValue}>{item.progress}%</Text>
             </View>
-            <View style={styles.progressBarBg}>
-              <View style={[styles.progressBarFill, { width: `${item.progress}%` }]} />
+            <View style={s.progressBarBg}>
+              <View style={[s.progressBarFill, { width: `${item.progress}%` }]} />
             </View>
-          </View>
-
-          <View style={styles.dateRow}>
-            <Clock size={14} color="#94A3B8" />
-            <Text style={styles.dateText}>Deadline: {item.deadline}</Text>
           </View>
         </View>
 
-        <View style={styles.cardFooter}>
-          <TouchableOpacity style={styles.detailButton}>
-            <Text style={styles.detailButtonText}>Detail Proyek</Text>
+        <View style={s.cardFooter}>
+          <TouchableOpacity style={s.detailBtn}>
+            <Text style={s.detailBtnText}>Detail</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -173,18 +228,18 @@ export default function ProjectManagementScreen() {
   };
 
   return (
-    <View style={styles.container}>
-      <View style={styles.header}>
+    <View style={s.container}>
+      <View style={s.header}>
         <View style={{ flex: 1 }}>
-          <Text style={styles.title}>Proyek</Text>
-          <Text style={styles.subtitle}>Kelola semua proyek</Text>
+          <Text style={s.title}>Proyek</Text>
+          <Text style={s.subtitle}>Monitor status proyek</Text>
         </View>
-        <View style={styles.headerActions}>
-          <TouchableOpacity style={styles.iconButton}>
+        <View style={s.headerActions}>
+          <TouchableOpacity style={s.iconBtn}>
             <Download size={20} color="#64748B" />
           </TouchableOpacity>
           <TouchableOpacity 
-            style={styles.addButton}
+            style={[s.iconBtn, { backgroundColor: '#2563EB', borderColor: '#2563EB' }]}
             onPress={() => setIsCreateModalOpen(true)}
           >
             <Plus size={20} color="white" />
@@ -193,36 +248,42 @@ export default function ProjectManagementScreen() {
       </View>
 
       <ScrollView 
-        contentContainerStyle={styles.scrollContent}
+        contentContainerStyle={s.scrollContent}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={['#2563EB']} />}
       >
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.statsScroll}>
-          {loading ? <ActivityIndicator size="small" color="#2563EB" /> : stats.map(renderStatCard)}
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={s.statsContainer}>
+          {loading && !refreshing ? (
+            <ActivityIndicator size="small" color="#2563EB" />
+          ) : stats.map((stat, idx) => (
+            <View key={idx} style={{ marginRight: 12 }}>
+              {renderStatCard(stat, idx)}
+            </View>
+          ))}
         </ScrollView>
 
-        <View style={styles.filterSection}>
-          <View style={styles.searchContainer}>
+        <View style={s.filterSection}>
+          <View style={s.searchContainer}>
             <Search size={18} color="#94A3B8" />
             <TextInput
-              style={styles.searchInput}
-              placeholder="Cari proyek..."
+              style={s.searchInput}
+              placeholder="Cari proyek atau klien..."
               value={searchQuery}
               onChangeText={setSearchQuery}
             />
           </View>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filterScroll}>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={s.filterScroll}>
             {['all', 'active', 'completed', 'pending', 'cancelled'].map((status) => (
               <TouchableOpacity
                 key={status}
                 onPress={() => setFilterStatus(status)}
                 style={[
-                  styles.filterPill,
-                  filterStatus === status && styles.filterPillActive
+                  s.filterPill,
+                  filterStatus === status && s.filterPillActive
                 ]}
               >
                 <Text style={[
-                  styles.filterText,
-                  filterStatus === status && styles.filterTextActive
+                  s.filterText,
+                  filterStatus === status && s.filterTextActive
                 ]}>
                   {status === 'all' ? 'All' : status.charAt(0).toUpperCase() + status.slice(1)}
                 </Text>
@@ -231,33 +292,49 @@ export default function ProjectManagementScreen() {
           </ScrollView>
         </View>
 
-        <View style={styles.listContainer}>
-          {filteredProjects.map(item => (
-            <View key={item.id}>
-              {renderProjectCard({ item })}
+        <View style={s.listContainer}>
+          {loading && !refreshing ? (
+            <ActivityIndicator size="large" color="#2563EB" style={{ marginTop: 20 }} />
+          ) : projects.length === 0 ? (
+            <View style={s.emptyState}>
+              <Text style={s.emptyText}>Tidak ada proyek ditemukan.</Text>
             </View>
-          ))}
-          {filteredProjects.length === 0 && (
-            <View style={styles.emptyState}>
-              <Text style={styles.emptyText}>Tidak ada proyek ditemukan.</Text>
-            </View>
+          ) : (
+            projects.map(renderProjectCard)
           )}
+        </View>
+
+        <View style={s.pagination}>
+          <TouchableOpacity
+            disabled={pagination.page <= 1}
+            onPress={() => setPagination(prev => ({ ...prev, page: prev.page - 1 }))}
+            style={[s.pageBtn, pagination.page <= 1 && s.pageBtnDisabled]}
+          >
+            <ChevronLeft size={20} color={pagination.page <= 1 ? "#CBD5E1" : "#1E293B"} />
+          </TouchableOpacity>
+          <Text style={s.pageText}>
+            Hal {pagination.page} dari {pagination.totalPages}
+          </Text>
+          <TouchableOpacity
+            disabled={pagination.page >= pagination.totalPages}
+            onPress={() => setPagination(prev => ({ ...prev, page: prev.page + 1 }))}
+            style={[s.pageBtn, pagination.page >= pagination.totalPages && s.pageBtnDisabled]}
+          >
+            <ChevronRight size={20} color={pagination.page >= pagination.totalPages ? "#CBD5E1" : "#1E293B"} />
+          </TouchableOpacity>
         </View>
       </ScrollView>
 
       <CreateProjectModal 
-        isOpen={isCreateModalOpen}
-        onClose={() => setIsCreateModalOpen(false)}
-        onSuccess={() => {
-          console.log("Refresh list");
-          fetchData();
-        }}
+        isOpen={isCreateModalOpen} 
+        onClose={() => setIsCreateModalOpen(false)} 
+        onSuccess={() => { onRefresh(); }}
       />
     </View>
   );
 }
 
-const styles = StyleSheet.create({
+const s = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#F8FAFC',
@@ -283,7 +360,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: 8,
   },
-  iconButton: {
+  iconBtn: {
     width: 40,
     height: 40,
     borderRadius: 10,
@@ -293,18 +370,10 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     backgroundColor: 'white',
   },
-  addButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 10,
-    backgroundColor: '#2563EB',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
   scrollContent: {
     paddingBottom: 40,
   },
-  statsScroll: {
+  statsContainer: {
     padding: 20,
     paddingBottom: 10,
   },
@@ -312,24 +381,25 @@ const styles = StyleSheet.create({
     backgroundColor: 'white',
     padding: 16,
     borderRadius: 16,
-    marginRight: 12,
-    minWidth: 140,
     borderWidth: 1,
     borderColor: '#E2E8F0',
+    minWidth: 150,
   },
   statHeader: {
     marginBottom: 12,
   },
-  statIconContainer: {
-    padding: 8,
-    borderRadius: 10,
-    alignSelf: 'flex-start',
+  statIcon: {
+    width: 44,
+    height: 44,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   statValue: {
     fontSize: 20,
     fontWeight: 'bold',
     color: '#0F172A',
-    marginBottom: 4,
+    marginBottom: 2,
   },
   statLabel: {
     fontSize: 12,
@@ -346,9 +416,9 @@ const styles = StyleSheet.create({
     backgroundColor: 'white',
     borderWidth: 1,
     borderColor: '#E2E8F0',
-    borderRadius: 10,
+    borderRadius: 12,
     paddingHorizontal: 12,
-    height: 44,
+    height: 48,
     marginBottom: 12,
   },
   searchInput: {
@@ -388,22 +458,30 @@ const styles = StyleSheet.create({
     backgroundColor: 'white',
     borderRadius: 16,
     padding: 16,
-    marginBottom: 12,
     borderWidth: 1,
     borderColor: '#E2E8F0',
+    marginBottom: 12,
   },
   cardHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
-    marginBottom: 12,
+    marginBottom: 16,
   },
   cardTitle: {
     fontSize: 16,
     fontWeight: 'bold',
     color: '#0F172A',
-    flex: 1,
-    marginRight: 8,
+    marginBottom: 4,
+  },
+  dateRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  dateText: {
+    fontSize: 12,
+    color: '#94A3B8',
   },
   statusBadge: {
     paddingHorizontal: 8,
@@ -416,8 +494,11 @@ const styles = StyleSheet.create({
   },
   cardBody: {
     gap: 12,
+    paddingBottom: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F1F5F9',
   },
-  metaRow: {
+  metaContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
   },
@@ -425,12 +506,13 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
+    maxWidth: '48%',
   },
   metaText: {
     fontSize: 12,
     color: '#475569',
   },
-  budgetRow: {
+  budgetContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
@@ -451,7 +533,7 @@ const styles = StyleSheet.create({
   progressContainer: {
     gap: 6,
   },
-  progressHeader: {
+  progressLabelRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
   },
@@ -459,7 +541,7 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#64748B',
   },
-  progressPercent: {
+  progressValue: {
     fontSize: 12,
     fontWeight: '600',
     color: '#2563EB',
@@ -475,35 +557,50 @@ const styles = StyleSheet.create({
     backgroundColor: '#2563EB',
     borderRadius: 3,
   },
-  dateRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    marginTop: 4,
-  },
-  dateText: {
-    fontSize: 12,
-    color: '#94A3B8',
-  },
   cardFooter: {
-    marginTop: 16,
+    marginTop: 12,
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
   },
-  detailButton: {
+  detailBtn: {
     backgroundColor: '#EFF6FF',
-    paddingVertical: 10,
-    borderRadius: 10,
-    alignItems: 'center',
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderRadius: 8,
   },
-  detailButtonText: {
+  detailBtnText: {
     color: '#2563EB',
-    fontWeight: '600',
-    fontSize: 14,
+    fontSize: 12,
+    fontWeight: 'bold',
   },
   emptyState: {
     alignItems: 'center',
-    padding: 20,
+    padding: 40,
   },
   emptyText: {
     color: '#64748B',
-  }
+  },
+  pagination: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: 16,
+    padding: 20,
+  },
+  pageBtn: {
+    padding: 8,
+    borderRadius: 8,
+    backgroundColor: 'white',
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+  },
+  pageBtnDisabled: {
+    backgroundColor: '#F1F5F9',
+    borderColor: '#E2E8F0',
+  },
+  pageText: {
+    fontSize: 12,
+    color: '#475569',
+    fontWeight: '500',
+  },
 });
