@@ -48,6 +48,20 @@ export default function LoginScreen() {
       if (response.data.code === 200) {
         const { token, user } = response.data;
         await signIn(token, user);
+
+        switch (user.role) {
+          case 'ADMIN':
+            router.replace('/(dashboard)/admin');
+            break;
+          case 'CLIENT':
+            router.replace('/(dashboard)/client');
+            break;
+          case 'FREELANCER':
+            router.replace('/(dashboard)/freelancer');
+            break;
+          default:
+            Alert.alert('Role tidak dikenali');
+        }
       } else {
         Alert.alert('Gagal', 'Login Gagal');
       }

@@ -22,29 +22,41 @@ function MainLayout() {
   useEffect(() => {
     if (isLoading) return;
 
-    const inAuthGroup = segments[0] === '(auth)';
-    const inDashboardGroup = segments[0] === '(dashboard)';
+    const group = segments[0];
+    const subGroup = segments[1];
 
-    if (!user && !inAuthGroup) {
-      router.replace('/(auth)/login');
-    } else if (user) {
-      if (inAuthGroup) {
-        if (user.role === 'CLIENT') {
-          router.replace('/(dashboard)/client');
-        } else if (user.role === 'FREELANCER') {
-          router.replace('/(dashboard)/freelancer');
-        }
+    if (!user) {
+      if (group !== '(auth)') {
+        router.replace('/(auth)/login');
       }
-      else if (inDashboardGroup) {
-        const specificGroup = segments[1];
-        if (specificGroup === 'client' && user.role !== 'CLIENT') {
-          router.replace('/(dashboard)/freelancer');
-        } else if (specificGroup === 'freelancer' && user.role !== 'FREELANCER') {
-          router.replace('/(dashboard)/client');
-        }
+      return;
+    }
+
+    if (group === '(auth)') {
+      if (user.role === 'CLIENT') {
+        router.replace('/(dashboard)/client');
+      } else if (user.role === 'FREELANCER') {
+        router.replace('/(dashboard)/freelancer');
+      } else if (user.role === 'ADMIN') {
+        router.replace('/(dashboard)/admin');
+      }
+      return;
+    }
+
+    if (group === '(dashboard)') {
+      if (user.role === 'CLIENT' && subGroup !== 'client') {
+        router.replace('/(dashboard)/client');
+      }
+
+      if (user.role === 'FREELANCER' && subGroup !== 'freelancer') {
+        router.replace('/(dashboard)/freelancer');
+      }
+
+      if (user.role === 'ADMIN' && subGroup !== 'admin') {
+        router.replace('/(dashboard)/admin');
       }
     }
-  }, [user, segments, isLoading]);
+  }, [user, isLoading]);
 
   if (isLoading) {
     return (
