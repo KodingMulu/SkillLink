@@ -50,7 +50,7 @@ export default function TalentsPage() {
       if (priceRange !== 'all') params.append('price', priceRange);
       if (ratingFilter !== 'all') params.append('rating', ratingFilter);
 
-      const response = await axios.get(`${apiUrl}/user/client/?${params.toString()}`, {
+      const response = await axios.get(`${apiUrl}/user/client/talents?${params.toString()}`, {
         withCredentials: true
       });
       
@@ -58,7 +58,7 @@ export default function TalentsPage() {
         setTalents(response.data.data);
       }
     } catch (error) {
-      console.error("Error fetching talents:", error);
+      console.error(error);
     } finally {
       setIsLoading(false);
     }

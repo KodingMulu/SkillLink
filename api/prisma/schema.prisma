@@ -134,6 +134,9 @@ model Proposal {
   job          Job            @relation(fields: [jobId], references: [id])
   freelancerId String
   freelancer   User           @relation(fields: [freelancerId], references: [id])
+
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
 }
 
 model Project {

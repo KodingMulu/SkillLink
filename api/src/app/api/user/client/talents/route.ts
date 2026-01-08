@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
-import { Prisma } from "@/generated/prisma"; // Pastikan path ini sesuai setup generate kamu
+import { Prisma } from "@prisma/client";
 
 export interface TalentResponse {
   id: string; 
@@ -23,7 +23,6 @@ export async function GET(req: NextRequest) {
     const search = searchParams.get("search") || "";
     const category = searchParams.get("category") || "all";
     
-    // 1. Setup Filter
     const whereClause: Prisma.UserWhereInput = {
       role: "FREELANCER",
       status: "ACTIVE",   
@@ -42,29 +41,24 @@ export async function GET(req: NextRequest) {
         whereClause.title = { contains: cleanCategory, mode: "insensitive" };
     }
 
-    // 2. Query Database (PERBAIKAN DISINI)
     const users = await prisma.user.findMany({
       where: whereClause,
       include: {
-        // GANTI 'projects' JADI 'freelancerProjects'
         freelancerProjects: {
-          where: { status: "COMPLETED" }, // Ambil yang statusnya selesai
+          where: { status: "COMPLETED" },
           select: { id: true }
         },
         _count: {
-          // GANTI 'projects' JADI 'freelancerProjects'
           select: { freelancerProjects: true } 
         }
       },
       take: 20,
     });
 
-    // 3. Transform Data
     const formattedTalents: TalentResponse[] = users.map((user) => {
       const calculatedRating = 4.5 + (Math.random() * 0.5); 
       const mockHourly = Math.floor(Math.random() * (300 - 50) + 50) * 1000; 
       
-      // Hitung project yang selesai dari array yang di-include
       const completedCount = user.freelancerProjects.length;
 
       return {
@@ -77,10 +71,7 @@ export async function GET(req: NextRequest) {
         location: user.location || "Indonesia",
         hourlyRate: `Rp ${new Intl.NumberFormat('id-ID').format(mockHourly)}`,
         skills: user.skills || [],
-        
-        // Update cara hitungnya
         completedProjects: completedCount, 
-        
         description: user.bio || "No description provided.",
         availability: 'available'
       };
@@ -93,7 +84,6 @@ export async function GET(req: NextRequest) {
     });
 
   } catch (error) {
-    console.error("API Talents Error:", error);
     return NextResponse.json({ message: "Internal Server Error" }, { status: 500 });
   }
 }
