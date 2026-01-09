@@ -5,7 +5,7 @@ import { NextRequest, NextResponse } from "next/server";
 export async function GET(req: NextRequest) {
   try {
     const user = await getAuthUser(req);
-    
+
     if (!user) {
       return NextResponse.json(
         { message: "Unauthorized", code: 401 },
@@ -24,9 +24,9 @@ export async function GET(req: NextRequest) {
       activeProjectsLastMonth,
       completedProjectsCount,
       completedProjectsLastMonth,
-      ratingData,
       activeProjectsList,
-      recommendedJobs
+      recommendedJobs,
+      rawRatings
     ] = await Promise.all([
       prisma.wallet.findUnique({
         where: { userId: userId },
@@ -68,24 +68,19 @@ export async function GET(req: NextRequest) {
         },
       }),
 
-      prisma.review.aggregate({
-        _avg: { rating: true },
-        where: { project: { freelancerId: userId } },
-      }),
-
       prisma.project.findMany({
         where: {
           freelancerId: userId,
           status: "IN_PROGRESS",
         },
-        take: 5, 
+        take: 5,
         orderBy: { updatedAt: "desc" },
         include: {
           job: {
             select: {
               title: true,
-              deadline: true, 
-              client: {       
+              deadline: true,
+              client: {
                 select: {
                   username: true,
                   email: true
@@ -101,11 +96,11 @@ export async function GET(req: NextRequest) {
           status: "OPEN",
           proposals: {
             none: {
-              freelancerId: userId 
+              freelancerId: userId
             }
           }
         },
-        take: 3, 
+        take: 3,
         orderBy: { createdAt: "desc" },
         select: {
           id: true,
@@ -114,12 +109,18 @@ export async function GET(req: NextRequest) {
           budget: true,
           tags: true,
         }
-      })
+      }),
+      prisma.$queryRaw`SELECT rating FROM "Project" WHERE "freelancerId" = ${userId} AND rating IS NOT NULL`
     ]);
 
-    const totalRevenue = totalRevenueData._sum.amount || 0;
-    const avgRating = ratingData._avg.rating
-      ? Number(ratingData._avg.rating.toFixed(1))
+    const totalRevenue = totalRevenueData._sum.amount ? Number(totalRevenueData._sum.amount) : 0;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const ratingList = rawRatings as any[];
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const totalRatingScore = ratingList.reduce((acc: number, curr: any) => acc + (curr.rating || 0), 0);
+
+    const avgRating = ratingList.length > 0
+      ? Number((totalRatingScore / ratingList.length).toFixed(1))
       : 0;
 
     const calculateGrowth = (current: number, previous: number) => {
@@ -132,7 +133,7 @@ export async function GET(req: NextRequest) {
       const deadlineDate = new Date(date);
       const diffTime = deadlineDate.getTime() - now.getTime();
       const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-      
+
       if (diffDays < 0) return "Terlewat";
       if (diffDays === 0) return "Hari ini";
       return `${diffDays} Hari lagi`;
@@ -161,7 +162,7 @@ export async function GET(req: NextRequest) {
       title: job.title,
       description: job.description,
       budget: formatBudgetShort(job.budget),
-      tags: job.tags.length > 0 ? job.tags : ["Remote", "Project"] 
+      tags: job.tags.length > 0 ? job.tags : ["Remote", "Project"]
     }));
 
     return NextResponse.json({
@@ -171,7 +172,7 @@ export async function GET(req: NextRequest) {
         stats: {
           revenue: {
             value: totalRevenue,
-            growth: 12.5, 
+            growth: 12.5,
             label: "Total Pendapatan"
           },
           activeProjects: {
@@ -192,7 +193,7 @@ export async function GET(req: NextRequest) {
         },
         activeProjects: formattedActiveProjects,
         recommendedJobs: formattedRecommendations,
-        walletBalance: walletData?.balance || 0,
+        walletBalance: walletData?.balance ? Number(walletData.balance) : 0,
         recentTransactions: walletData?.transactions || [],
       },
     });
