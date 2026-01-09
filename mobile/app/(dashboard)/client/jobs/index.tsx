@@ -1,24 +1,24 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { 
-  View, Text, StyleSheet, ScrollView, TouchableOpacity, 
-  Modal, TextInput, ActivityIndicator, Alert, RefreshControl, 
-  KeyboardAvoidingView, Platform 
+import {
+  View, Text, StyleSheet, ScrollView, TouchableOpacity,
+  Modal, TextInput, ActivityIndicator, Alert, RefreshControl,
+  KeyboardAvoidingView, Platform
 } from 'react-native';
-import { 
-  MapPin, Calendar, Clock, Edit, Trash2, Users, X, Plus 
+import { useRouter } from 'expo-router';
+import {
+  MapPin, Calendar, Clock, Edit, Trash2, Users, X, Plus,
+  Briefcase, DollarSign
 } from 'lucide-react-native';
 import axios from 'axios';
-import { useRouter } from 'expo-router';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 
 interface Job {
   id: string;
   title: string;
   category: string;
-  budget: string;      
-  budgetRaw: number;   
-  deadline: string;    
-  deadlineRaw: string; 
+  budget: string;
+  budgetRaw: number;
+  deadline: string;
+  deadlineRaw: string;
   location: string;
   duration: string;
   description: string;
@@ -34,7 +34,7 @@ interface ApiJob {
   title: string;
   category: string;
   description: string;
-  budget: number;      
+  budget: number;
   deadline: string | null;
   location: string | null;
   duration: string | null;
@@ -45,7 +45,9 @@ interface ApiJob {
   _count?: { proposals: number };
 }
 
-export default function JobsPage() {
+const API_URL = process.env.EXPO_PUBLIC_API_URL;
+
+export default function JobsScreen() {
   const router = useRouter();
   const [showPostJobModal, setShowPostJobModal] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -53,7 +55,7 @@ export default function JobsPage() {
   const [refreshing, setRefreshing] = useState(false);
   const [jobs, setJobs] = useState<Job[]>([]);
   const [editingId, setEditingId] = useState<string | null>(null);
-  
+
   const [formData, setFormData] = useState({
     title: '', category: '', description: '', budget: '', deadline: '',
     location: '', skills: '', duration: '', experienceLevel: 'intermediate'
@@ -61,16 +63,8 @@ export default function JobsPage() {
 
   const fetchJobs = async () => {
     try {
-      const apiUrl = process.env.EXPO_PUBLIC_API_URL;
-      const token = await AsyncStorage.getItem('token');
-      
-      const response = await axios.get(`${apiUrl}/user/client/jobs`, {
-        headers: {
-          'Authorization': token ? `Bearer ${token}` : '',
-          'Content-Type': 'application/json'
-        }
-      });
-      
+      const response = await axios.get(`${API_URL}/user/client/jobs`, { withCredentials: true });
+
       if (response.data.code === 200 && response.data.data) {
         const mappedJobs: Job[] = response.data.data.map((item: ApiJob) => {
           const isValidDate = (d: string | null) => d && !isNaN(new Date(d).getTime());
@@ -85,11 +79,11 @@ export default function JobsPage() {
             skills: item.tags || [],
             applicants: item._count?.proposals || 0,
             status: (item.status === 'OPEN' || item.status === 'active') ? 'active' : 'closed',
-            postedDate: isValidDate(item.createdAt) 
-              ? new Date(item.createdAt).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' }) 
+            postedDate: isValidDate(item.createdAt)
+              ? new Date(item.createdAt).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })
               : '-',
             budget: `Rp ${item.budget.toLocaleString('id-ID')}`,
-            budgetRaw: item.budget, 
+            budgetRaw: item.budget,
             deadline: isValidDate(item.deadline)
               ? new Date(item.deadline!).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })
               : '-',
@@ -117,14 +111,18 @@ export default function JobsPage() {
     fetchJobs();
   }, []);
 
+  const handleInputChange = (name: string, value: string) => {
+    setFormData(prev => ({ ...prev, [name]: value }));
+  };
+
   const openEditModal = (job: Job) => {
     setEditingId(job.id);
     setFormData({
       title: job.title,
       category: job.category,
       description: job.description,
-      budget: job.budgetRaw.toString(), 
-      deadline: job.deadlineRaw,        
+      budget: job.budgetRaw.toString(),
+      deadline: job.deadlineRaw,
       location: job.location,
       skills: job.skills.join(', '),
       duration: job.duration,
@@ -143,60 +141,38 @@ export default function JobsPage() {
   };
 
   const handleSubmit = async () => {
-    if (!formData.title || !formData.budget || !formData.description) {
-      Alert.alert('Error', 'Mohon lengkapi data wajib.');
-      return;
-    }
-
     setIsLoading(true);
     try {
-      const apiUrl = process.env.EXPO_PUBLIC_API_URL;
-      const token = await AsyncStorage.getItem('token');
-      
-      const endpoint = editingId 
-        ? `${apiUrl}/user/client/jobs/${editingId}`
-        : `${apiUrl}/user/client/jobs`;
+      const endpoint = editingId
+        ? `${API_URL}/user/client/jobs/${editingId}`
+        : `${API_URL}/user/client/jobs`;
 
       const method = editingId ? 'put' : 'post';
 
-      await axios[method](endpoint, formData, {
-        headers: {
-          'Authorization': token ? `Bearer ${token}` : '',
-          'Content-Type': 'application/json'
-        }
-      });
+      await axios[method](endpoint, formData, { withCredentials: true });
 
-      Alert.alert('Sukses', `Pekerjaan berhasil ${editingId ? 'diperbarui' : 'diposting'}!`);
+      Alert.alert("Sukses", `Pekerjaan berhasil ${editingId ? 'diperbarui' : 'diposting'}!`);
       closeModal();
       fetchJobs();
     } catch (error: any) {
-      const msg = error.response?.data?.message || "Terjadi kesalahan pada server.";
-      Alert.alert('Gagal', msg);
+      Alert.alert("Error", error.response?.data?.message || "Terjadi kesalahan sistem.");
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleDelete = (id: string) => {
+  const handleDelete = async (id: string) => {
     Alert.alert(
-      "Konfirmasi Hapus",
-      "Apakah Anda yakin ingin menghapus pekerjaan ini?",
+      "Konfirmasi",
+      "Yakin hapus pekerjaan ini?",
       [
         { text: "Batal", style: "cancel" },
-        { 
-          text: "Hapus", 
+        {
+          text: "Hapus",
           style: "destructive",
           onPress: async () => {
             try {
-              const apiUrl = process.env.EXPO_PUBLIC_API_URL;
-              const token = await AsyncStorage.getItem('token');
-              
-              await axios.delete(`${apiUrl}/user/client/jobs/${id}`, {
-                headers: {
-                  'Authorization': token ? `Bearer ${token}` : '',
-                  'Content-Type': 'application/json'
-                }
-              });
+              await axios.delete(`${API_URL}/user/client/jobs/${id}`, { withCredentials: true });
               fetchJobs();
             } catch (error) {
               Alert.alert("Gagal", "Gagal menghapus pekerjaan");
@@ -207,82 +183,95 @@ export default function JobsPage() {
     );
   };
 
-  const getStatusColor = (s: string) => s === 'active' ? { bg: '#ECFDF5', text: '#047857' } : { bg: '#F1F5F9', text: '#334155' };
+  const getStatusStyle = (status: string) => {
+    return status === 'active'
+      ? { bg: '#D1FAE5', text: '#047857' }
+      : { bg: '#F1F5F9', text: '#475569' };
+  };
 
   return (
-    <View style={styles.container}>
+    <View style={s.container}>
+      <View style={s.header}>
+        <View style={{ flex: 1 }}>
+          <Text style={s.headerTitle}>Posting Proyek</Text>
+          <Text style={s.headerSubtitle}>Kelola lowongan pekerjaan</Text>
+        </View>
+        <TouchableOpacity
+          style={s.addButton}
+          onPress={() => setShowPostJobModal(true)}
+        >
+          <Plus size={20} color="white" />
+          <Text style={s.addButtonText}>Baru</Text>
+        </TouchableOpacity>
+      </View>
+
       <ScrollView
-        contentContainerStyle={styles.scrollContent}
+        contentContainerStyle={s.content}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={['#2563EB']} />}
       >
-        <View style={styles.header}>
-          <View>
-            <Text style={styles.title}>Posting Proyek</Text>
-            <Text style={styles.subtitle}>Kelola semua lowongan Anda</Text>
-          </View>
-          <TouchableOpacity onPress={() => setShowPostJobModal(true)} style={styles.addBtn}>
-            <Plus size={20} color="white" />
-          </TouchableOpacity>
+        <View style={s.listHeader}>
+          <Text style={s.listTitle}>Daftar Lowongan</Text>
         </View>
 
-        {isFetching && !refreshing ? (
+        {isFetching ? (
           <ActivityIndicator size="large" color="#2563EB" style={{ marginTop: 20 }} />
         ) : jobs.length === 0 ? (
-          <View style={styles.emptyState}>
-            <Text style={styles.emptyText}>Belum ada pekerjaan yang diposting.</Text>
+          <View style={s.emptyState}>
+            <Text style={s.emptyText}>Belum ada pekerjaan yang diposting.</Text>
           </View>
         ) : (
           jobs.map((job) => {
-            const statusStyle = getStatusColor(job.status);
+            const statusStyle = getStatusStyle(job.status);
             return (
-              <View key={job.id} style={styles.jobCard}>
-                <View style={styles.jobHeader}>
+              <View key={job.id} style={s.card}>
+                <View style={s.cardHeader}>
                   <View style={{ flex: 1 }}>
-                    <View style={styles.titleRow}>
-                      <Text style={styles.jobTitle}>{job.title}</Text>
-                      <View style={[styles.statusBadge, { backgroundColor: statusStyle.bg }]}>
-                        <Text style={[styles.statusText, { color: statusStyle.text }]}>
+                    <View style={s.titleRow}>
+                      <Text style={s.jobTitle} numberOfLines={1}>{job.title}</Text>
+                      <View style={[s.statusBadge, { backgroundColor: statusStyle.bg }]}>
+                        <Text style={[s.statusText, { color: statusStyle.text }]}>
                           {job.status === 'active' ? 'Aktif' : 'Tutup'}
                         </Text>
                       </View>
                     </View>
-                    <Text style={styles.metaText}>{job.category} • {job.postedDate}</Text>
+                    <Text style={s.jobMeta}>{job.category} • {job.postedDate}</Text>
                   </View>
-                  <View style={styles.actionButtons}>
-                    <TouchableOpacity onPress={() => openEditModal(job)} style={[styles.iconBtn, { backgroundColor: '#ECFDF5' }]}>
-                      <Edit size={16} color="#059669" />
+
+                  <View style={s.actions}>
+                    <TouchableOpacity onPress={() => openEditModal(job)} style={s.iconBtn}>
+                      <Edit size={18} color="#059669" />
                     </TouchableOpacity>
-                    <TouchableOpacity onPress={() => handleDelete(job.id)} style={[styles.iconBtn, { backgroundColor: '#FEF2F2' }]}>
-                      <Trash2 size={16} color="#DC2626" />
+                    <TouchableOpacity onPress={() => handleDelete(job.id)} style={s.iconBtn}>
+                      <Trash2 size={18} color="#DC2626" />
                     </TouchableOpacity>
                   </View>
                 </View>
 
-                <View style={styles.detailsGrid}>
-                  <View style={styles.detailItem}>
-                    <Text style={styles.budgetAmount}>{job.budget}</Text>
+                <View style={s.detailsGrid}>
+                  <View style={s.detailItem}>
+                    <Text style={s.detailValue}>{job.budget}</Text>
                   </View>
-                  <View style={styles.detailItem}>
+                  <View style={s.detailItem}>
                     <Calendar size={14} color="#94A3B8" />
-                    <Text style={styles.detailText}>{job.deadline}</Text>
+                    <Text style={s.detailText}>{job.deadline}</Text>
                   </View>
-                  <View style={styles.detailItem}>
+                  <View style={s.detailItem}>
                     <MapPin size={14} color="#94A3B8" />
-                    <Text style={styles.detailText}>{job.location}</Text>
+                    <Text style={s.detailText}>{job.location}</Text>
                   </View>
-                  <View style={styles.detailItem}>
+                  <View style={s.detailItem}>
                     <Clock size={14} color="#94A3B8" />
-                    <Text style={styles.detailText}>{job.duration}</Text>
+                    <Text style={s.detailText}>{job.duration}</Text>
                   </View>
                 </View>
 
-                <View style={styles.cardFooter}>
-                  <View style={styles.applicantsInfo}>
-                    <Users size={14} color="#64748B" />
-                    <Text style={styles.applicantsText}>{job.applicants} Pelamar</Text>
+                <View style={s.cardFooter}>
+                  <View style={s.applicants}>
+                    <Users size={16} color="#64748B" />
+                    <Text style={s.applicantsText}>{job.applicants} Pelamar</Text>
                   </View>
-                  <TouchableOpacity onPress={() => router.push(`/(dashboard)/client/jobs/${job.id}/applicants` as any)}>
-                    <Text style={styles.viewApplicantsBtn}>Lihat Pelamar</Text>
+                  <TouchableOpacity onPress={() => router.push(`/client/jobs/${job.id}/applicants`)}>
+                    <Text style={s.linkText}>Lihat Pelamar</Text>
                   </TouchableOpacity>
                 </View>
               </View>
@@ -293,146 +282,137 @@ export default function JobsPage() {
 
       <Modal
         visible={showPostJobModal}
-        animationType="slide"
         transparent={true}
+        animationType="slide"
         onRequestClose={closeModal}
       >
-        <KeyboardAvoidingView 
+        <KeyboardAvoidingView
           behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-          style={styles.modalContainer}
+          style={s.modalOverlay}
         >
-          <View style={styles.modalContent}>
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>{editingId ? 'Edit Pekerjaan' : 'Posting Baru'}</Text>
+          <View style={s.modalContainer}>
+            <View style={s.modalHeader}>
+              <Text style={s.modalTitle}>{editingId ? 'Edit Pekerjaan' : 'Posting Baru'}</Text>
               <TouchableOpacity onPress={closeModal}>
                 <X size={24} color="#64748B" />
               </TouchableOpacity>
             </View>
 
-            <ScrollView style={styles.modalForm}>
-              <View style={styles.formGroup}>
-                <Text style={styles.label}>Judul Pekerjaan</Text>
-                <TextInput 
-                  style={styles.input} 
-                  placeholder="Contoh: UI/UX Designer" 
+            <ScrollView style={s.formScroll} showsVerticalScrollIndicator={false}>
+              <View style={s.formGroup}>
+                <Text style={s.label}>Judul Pekerjaan</Text>
+                <TextInput
+                  style={s.input}
                   value={formData.title}
-                  onChangeText={(t) => setFormData({...formData, title: t})}
+                  onChangeText={(text) => handleInputChange('title', text)}
+                  placeholder="Contoh: Frontend Developer"
                 />
               </View>
 
-              <View style={styles.formGroup}>
-                <Text style={styles.label}>Kategori</Text>
-                <TextInput 
-                  style={styles.input} 
-                  placeholder="Web Development / Design / Writing" 
+              <View style={s.formGroup}>
+                <Text style={s.label}>Kategori</Text>
+                <TextInput
+                  style={s.input}
                   value={formData.category}
-                  onChangeText={(t) => setFormData({...formData, category: t})}
+                  onChangeText={(text) => handleInputChange('category', text)}
+                  placeholder="Web / Mobile / Design"
                 />
               </View>
 
-              <View style={styles.formGroup}>
-                <Text style={styles.label}>Deskripsi</Text>
-                <TextInput 
-                  style={[styles.input, styles.textArea]} 
-                  placeholder="Deskripsikan pekerjaan..." 
-                  multiline
-                  textAlignVertical="top"
+              <View style={s.formGroup}>
+                <Text style={s.label}>Deskripsi</Text>
+                <TextInput
+                  style={[s.input, s.textArea]}
                   value={formData.description}
-                  onChangeText={(t) => setFormData({...formData, description: t})}
+                  onChangeText={(text) => handleInputChange('description', text)}
+                  placeholder="Deskripsi pekerjaan..."
+                  multiline
+                  numberOfLines={4}
+                  textAlignVertical="top"
                 />
               </View>
 
-              <View style={styles.row}>
-                <View style={[styles.formGroup, { flex: 1, marginRight: 8 }]}>
-                  <Text style={styles.label}>Budget (Rp)</Text>
-                  <TextInput 
-                    style={styles.input} 
-                    placeholder="5000000" 
-                    keyboardType="numeric"
+              <View style={s.row}>
+                <View style={[s.formGroup, { flex: 1 }]}>
+                  <Text style={s.label}>Budget</Text>
+                  <TextInput
+                    style={s.input}
                     value={formData.budget}
-                    onChangeText={(t) => setFormData({...formData, budget: t})}
+                    onChangeText={(text) => handleInputChange('budget', text)}
+                    placeholder="5000000"
+                    keyboardType="numeric"
                   />
                 </View>
-                <View style={[styles.formGroup, { flex: 1, marginLeft: 8 }]}>
-                  <Text style={styles.label}>Deadline</Text>
-                  <TextInput 
-                    style={styles.input} 
-                    placeholder="YYYY-MM-DD" 
+                <View style={[s.formGroup, { flex: 1 }]}>
+                  <Text style={s.label}>Deadline</Text>
+                  <TextInput
+                    style={s.input}
                     value={formData.deadline}
-                    onChangeText={(t) => setFormData({...formData, deadline: t})}
+                    onChangeText={(text) => handleInputChange('deadline', text)}
+                    placeholder="YYYY-MM-DD"
                   />
                 </View>
               </View>
 
-              <View style={styles.row}>
-                <View style={[styles.formGroup, { flex: 1, marginRight: 8 }]}>
-                  <Text style={styles.label}>Lokasi</Text>
-                  <TextInput 
-                    style={styles.input} 
-                    placeholder="Remote / Kota" 
+              <View style={s.row}>
+                <View style={[s.formGroup, { flex: 1 }]}>
+                  <Text style={s.label}>Lokasi</Text>
+                  <TextInput
+                    style={s.input}
                     value={formData.location}
-                    onChangeText={(t) => setFormData({...formData, location: t})}
+                    onChangeText={(text) => handleInputChange('location', text)}
+                    placeholder="Remote / Jakarta"
                   />
                 </View>
-                <View style={[styles.formGroup, { flex: 1, marginLeft: 8 }]}>
-                  <Text style={styles.label}>Durasi</Text>
-                  <TextInput 
-                    style={styles.input} 
-                    placeholder="3 Bulan" 
+                <View style={[s.formGroup, { flex: 1 }]}>
+                  <Text style={s.label}>Durasi</Text>
+                  <TextInput
+                    style={s.input}
                     value={formData.duration}
-                    onChangeText={(t) => setFormData({...formData, duration: t})}
+                    onChangeText={(text) => handleInputChange('duration', text)}
+                    placeholder="3 Bulan"
                   />
                 </View>
               </View>
 
-              <View style={styles.formGroup}>
-                <Text style={styles.label}>Skills (Pisahkan koma)</Text>
-                <TextInput 
-                  style={styles.input} 
-                  placeholder="React, Node.js, etc" 
+              <View style={s.formGroup}>
+                <Text style={s.label}>Skills (Pisahkan koma)</Text>
+                <TextInput
+                  style={s.input}
                   value={formData.skills}
-                  onChangeText={(t) => setFormData({...formData, skills: t})}
+                  onChangeText={(text) => handleInputChange('skills', text)}
+                  placeholder="React, Typescript..."
                 />
               </View>
 
-              <View style={styles.formGroup}>
-                <Text style={styles.label}>Level Pengalaman</Text>
-                <View style={styles.radioGroup}>
+              <View style={s.formGroup}>
+                <Text style={s.label}>Level Pengalaman</Text>
+                <View style={s.radioGroup}>
                   {['beginner', 'intermediate', 'expert'].map((level) => (
-                    <TouchableOpacity 
+                    <TouchableOpacity
                       key={level}
                       style={[
-                        styles.radioBtn, 
-                        formData.experienceLevel === level && styles.radioBtnActive
+                        s.radioBtn,
+                        formData.experienceLevel === level && s.radioBtnActive
                       ]}
-                      onPress={() => setFormData({...formData, experienceLevel: level})}
+                      onPress={() => handleInputChange('experienceLevel', level)}
                     >
                       <Text style={[
-                        styles.radioText,
-                        formData.experienceLevel === level && styles.radioTextActive
-                      ]}>
-                        {level.charAt(0).toUpperCase() + level.slice(1)}
-                      </Text>
+                        s.radioText,
+                        formData.experienceLevel === level && s.radioTextActive
+                      ]}>{level}</Text>
                     </TouchableOpacity>
                   ))}
                 </View>
               </View>
             </ScrollView>
 
-            <View style={styles.modalFooter}>
-              <TouchableOpacity style={styles.cancelBtn} onPress={closeModal}>
-                <Text style={styles.cancelBtnText}>Batal</Text>
+            <View style={s.modalFooter}>
+              <TouchableOpacity onPress={closeModal} style={s.cancelBtn}>
+                <Text style={s.cancelText}>Batal</Text>
               </TouchableOpacity>
-              <TouchableOpacity 
-                style={styles.submitBtn} 
-                onPress={handleSubmit}
-                disabled={isLoading}
-              >
-                {isLoading ? (
-                  <ActivityIndicator color="white" size="small" />
-                ) : (
-                  <Text style={styles.submitBtnText}>{editingId ? 'Simpan' : 'Posting'}</Text>
-                )}
+              <TouchableOpacity onPress={handleSubmit} style={s.submitBtn} disabled={isLoading}>
+                {isLoading ? <ActivityIndicator color="white" /> : <Text style={s.submitText}>Simpan</Text>}
               </TouchableOpacity>
             </View>
           </View>
@@ -442,48 +422,65 @@ export default function JobsPage() {
   );
 }
 
-const styles = StyleSheet.create({
+const s = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#F8FAFC',
   },
-  scrollContent: {
-    padding: 20,
-    paddingBottom: 40,
-  },
   header: {
+    padding: 20,
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 20,
+    backgroundColor: 'white',
+    borderBottomWidth: 1,
+    borderBottomColor: '#E2E8F0',
   },
-  title: {
-    fontSize: 24,
+  headerTitle: {
+    fontSize: 20,
     fontWeight: 'bold',
     color: '#0F172A',
   },
-  subtitle: {
-    fontSize: 14,
+  headerSubtitle: {
+    fontSize: 12,
     color: '#64748B',
   },
-  addBtn: {
+  addButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
     backgroundColor: '#2563EB',
-    width: 44,
-    height: 44,
+    paddingVertical: 10,
+    paddingHorizontal: 16,
     borderRadius: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
-    elevation: 2,
+    gap: 6,
   },
-  emptyState: {
-    alignItems: 'center',
-    padding: 40,
-  },
-  emptyText: {
-    color: '#94A3B8',
+  addButtonText: {
+    color: 'white',
+    fontWeight: 'bold',
     fontSize: 14,
   },
-  jobCard: {
+  content: {
+    padding: 20,
+    paddingBottom: 40,
+  },
+  listHeader: {
+    paddingBottom: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#E2E8F0',
+    marginBottom: 16,
+  },
+  listTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#0F172A',
+  },
+  emptyState: {
+    padding: 40,
+    alignItems: 'center',
+  },
+  emptyText: {
+    color: '#64748B',
+  },
+  card: {
     backgroundColor: 'white',
     borderRadius: 16,
     padding: 16,
@@ -491,10 +488,9 @@ const styles = StyleSheet.create({
     borderColor: '#E2E8F0',
     marginBottom: 16,
   },
-  jobHeader: {
+  cardHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'flex-start',
     marginBottom: 12,
   },
   titleRow: {
@@ -519,17 +515,18 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     textTransform: 'uppercase',
   },
-  metaText: {
+  jobMeta: {
     fontSize: 12,
     color: '#64748B',
   },
-  actionButtons: {
+  actions: {
     flexDirection: 'row',
     gap: 8,
   },
   iconBtn: {
     padding: 8,
     borderRadius: 8,
+    backgroundColor: '#F8FAFC',
   },
   detailsGrid: {
     flexDirection: 'row',
@@ -542,25 +539,25 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 4,
   },
-  detailText: {
-    fontSize: 12,
-    color: '#475569',
-  },
-  budgetAmount: {
+  detailValue: {
     fontSize: 14,
     fontWeight: 'bold',
     color: '#0F172A',
+  },
+  detailText: {
+    fontSize: 12,
+    color: '#64748B',
   },
   cardFooter: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    borderTopWidth: 1,
-    borderTopColor: '#F1F5F9',
     marginTop: 16,
     paddingTop: 16,
+    borderTopWidth: 1,
+    borderTopColor: '#F1F5F9',
   },
-  applicantsInfo: {
+  applicants: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
@@ -570,39 +567,46 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#334155',
   },
-  viewApplicantsBtn: {
+  linkText: {
     fontSize: 12,
+    fontWeight: 'bold',
     color: '#2563EB',
-    fontWeight: '600',
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'flex-end',
   },
   modalContainer: {
-    flex: 1,
-    justifyContent: 'flex-end',
-    backgroundColor: 'rgba(0,0,0,0.5)',
-  },
-  modalContent: {
     backgroundColor: 'white',
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
-    padding: 20,
-    maxHeight: '90%',
+    height: '90%',
+    padding: 24,
   },
   modalHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: 20,
+    paddingBottom: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F1F5F9',
   },
   modalTitle: {
-    fontSize: 20,
+    fontSize: 18,
     fontWeight: 'bold',
     color: '#0F172A',
   },
-  modalForm: {
-    marginBottom: 20,
+  formScroll: {
+    flex: 1,
   },
   formGroup: {
     marginBottom: 16,
+  },
+  row: {
+    flexDirection: 'row',
+    gap: 12,
   },
   label: {
     fontSize: 14,
@@ -611,39 +615,37 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   input: {
-    backgroundColor: '#F8FAFC',
     borderWidth: 1,
-    borderColor: '#CBD5E1',
+    borderColor: '#E2E8F0',
     borderRadius: 12,
     padding: 12,
     fontSize: 14,
     color: '#0F172A',
+    backgroundColor: '#F8FAFC',
   },
   textArea: {
     height: 100,
-  },
-  row: {
-    flexDirection: 'row',
   },
   radioGroup: {
     flexDirection: 'row',
     gap: 8,
   },
   radioBtn: {
-    paddingHorizontal: 12,
     paddingVertical: 8,
+    paddingHorizontal: 12,
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: '#CBD5E1',
+    borderColor: '#E2E8F0',
     backgroundColor: 'white',
   },
   radioBtnActive: {
-    backgroundColor: '#EFF6FF',
     borderColor: '#2563EB',
+    backgroundColor: '#EFF6FF',
   },
   radioText: {
     fontSize: 12,
     color: '#64748B',
+    textTransform: 'capitalize',
   },
   radioTextActive: {
     color: '#2563EB',
@@ -652,17 +654,22 @@ const styles = StyleSheet.create({
   modalFooter: {
     flexDirection: 'row',
     gap: 12,
+    paddingTop: 16,
+    borderTopWidth: 1,
+    borderTopColor: '#F1F5F9',
   },
   cancelBtn: {
     flex: 1,
     padding: 14,
     borderRadius: 12,
-    backgroundColor: '#F1F5F9',
+    backgroundColor: 'white',
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
     alignItems: 'center',
   },
-  cancelBtnText: {
-    color: '#64748B',
+  cancelText: {
     fontWeight: 'bold',
+    color: '#64748B',
   },
   submitBtn: {
     flex: 1,
@@ -671,7 +678,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#2563EB',
     alignItems: 'center',
   },
-  submitBtnText: {
+  submitText: {
     color: 'white',
     fontWeight: 'bold',
   },
