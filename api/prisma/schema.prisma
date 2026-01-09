@@ -47,22 +47,22 @@ enum TransactionType {
 }
 
 model User {
-  id                 String         @id @default(cuid())
-  email              String         @unique
-  username           String?
-  password           String
-  role               Role           @default(FREELANCER)
-  status             UserStatus     @default(ACTIVE)
-  title              String?
-  bio                String?        @db.Text
-  phone              String?
-  location           String?
-  skills             String[]
-  verificationCode   String?
+  id                  String     @id @default(cuid())
+  email               String     @unique
+  username            String?
+  password            String
+  role                Role       @default(FREELANCER)
+  status              UserStatus @default(ACTIVE)
+  title               String?
+  bio                 String?    @db.Text
+  phone               String?
+  location            String?
+  skills              String[]
+  verificationCode    String?
   verificationExpires DateTime?
-  isVerified         Boolean        @default(false)
-  createdAt          DateTime       @default(now())
-  updatedAt          DateTime       @updatedAt
+  isVerified          Boolean    @default(false)
+  createdAt           DateTime   @default(now())
+  updatedAt           DateTime   @updatedAt
 
   proposals          Proposal[]
   clientJobs         Job[]          @relation("ClientJobs")
@@ -135,8 +135,8 @@ model Proposal {
   freelancerId String
   freelancer   User           @relation(fields: [freelancerId], references: [id])
 
-  createdAt    DateTime       @default(now())
-  updatedAt    DateTime       @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model Project {
