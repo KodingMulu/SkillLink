@@ -8,6 +8,7 @@ import {
     ArrowLeft, User, MapPin, Briefcase, DollarSign,
     CheckCircle, XCircle, FileText, MessageSquare
 } from "lucide-react";
+import Link from 'next/link';
 
 interface Applicant {
     id: string;
@@ -112,28 +113,19 @@ export default function JobApplicantsPage() {
 
                                 {/* Profile Section */}
                                 <div className="lg:w-1/4 space-y-3">
-                                    <div className="flex items-center gap-3">
-                                        <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 font-bold text-lg uppercase">
-                                            {applicant.freelancer.username?.[0] || 'U'}
-                                        </div>
-                                        <div>
-                                            <h3 className="font-bold text-slate-900">{applicant.freelancer.username}</h3>
-                                            <p className="text-xs text-slate-500">{applicant.freelancer.title || 'Freelancer'}</p>
-                                        </div>
-                                    </div>
-
-                                    <div className="text-sm text-slate-600 space-y-2">
-                                        {applicant.freelancer.location && (
-                                            <div className="flex items-center gap-2">
-                                                <MapPin size={14} className="text-slate-400" /> {applicant.freelancer.location}
+                                    <Link href={`/dashboard/client/applicants/${applicant.freelancer.id}`} className="group block cursor-pointer">
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 font-bold text-lg uppercase group-hover:bg-blue-600 group-hover:text-white transition-colors">
+                                                {applicant.freelancer.username?.[0] || 'U'}
                                             </div>
-                                        )}
-                                        <div className="flex flex-wrap gap-1 mt-2">
-                                            {applicant.freelancer.skills.map((skill, idx) => (
-                                                <span key={idx} className="text-[10px] bg-slate-100 px-2 py-1 rounded-md text-slate-600">{skill}</span>
-                                            ))}
+                                            <div>
+                                                <h3 className="font-bold text-slate-900 group-hover:text-blue-600 transition-colors underline-offset-4 group-hover:underline">
+                                                    {applicant.freelancer.username}
+                                                </h3>
+                                                <p className="text-xs text-slate-500">{applicant.freelancer.title || 'Freelancer'}</p>
+                                            </div>
                                         </div>
-                                    </div>
+                                    </Link>
                                 </div>
 
                                 {/* Proposal Content */}
