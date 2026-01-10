@@ -61,7 +61,9 @@ export default function ClientLayout() {
       />
       <Tabs.Screen name="settings/index" options={{ href: null }} />
       <Tabs.Screen name="contracts/[id]/index" options={{ href: null }} />
-      <Tabs.Screen name="applicants/[id]/index" options={{ href: null }} />
+      <Tabs.Screen name="applicants/[freelancerId]/index" options={{ href: null }} />
+      <Tabs.Screen name="jobs/[jobId]/applicants/index" options={{ href: null }} />
+      <Tabs.Screen name="profile/index" options={{ href: null }} />
     </Tabs>
   );
 }

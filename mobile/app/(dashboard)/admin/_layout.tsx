@@ -60,6 +60,7 @@ export default function ClientLayout() {
       />
       <Tabs.Screen name="reports/components/ModerationPolicyModal" options={{ href: null }} />
       <Tabs.Screen name="projects/components/CreateProjectModal" options={{ href: null }} />
+      <Tabs.Screen name="profile/index" options={{ href: null }} />
     </Tabs>
   );
 }

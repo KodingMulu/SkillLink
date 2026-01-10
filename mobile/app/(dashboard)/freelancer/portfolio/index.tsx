@@ -27,7 +27,7 @@ export default function PortfolioScreen() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [activeFilter, setActiveFilter] = useState('Semua');
-  
+
   const categories = ['Semua', 'Web Development', 'UI/UX Design', 'Graphic Design'];
 
   const [formData, setFormData] = useState({
@@ -40,7 +40,7 @@ export default function PortfolioScreen() {
   const fetchProjects = async () => {
     setIsLoading(true);
     try {
-      const res = await axios.get(`${API_URL}/api/portfolio`, { withCredentials: true });
+      const res = await axios.get(`${API_URL}/user/freelancer/portfolio`, { withCredentials: true });
       setProjects(res.data.data);
     } catch (error) {
       console.error(error);
@@ -65,7 +65,7 @@ export default function PortfolioScreen() {
 
     setIsSubmitting(true);
     try {
-      await axios.post(`${API_URL}/user/freelancer/portfolio`, formData, { withCredentials: true });
+      await axios.post(`${API_URL}/api/portfolio`, formData, { withCredentials: true });
       await fetchProjects();
       setIsModalOpen(false);
       setFormData({ title: '', category: 'Web Development', image: '', description: '' });
@@ -148,9 +148,9 @@ export default function PortfolioScreen() {
                     <Text style={s.categoryBadgeText}>{project.category}</Text>
                   </View>
                   <Text style={s.cardTitle} numberOfLines={1}>{project.title}</Text>
-                  
+
                   <View style={s.cardDivider} />
-                  
+
                   <TouchableOpacity style={s.detailBtn}>
                     <ExternalLink size={14} color="#64748B" />
                     <Text style={s.detailBtnText}>Lihat Detail</Text>
@@ -159,7 +159,7 @@ export default function PortfolioScreen() {
               </View>
             ))}
 
-            <TouchableOpacity 
+            <TouchableOpacity
               style={s.addNewCard}
               onPress={() => setIsModalOpen(true)}
             >
@@ -179,7 +179,7 @@ export default function PortfolioScreen() {
         animationType="fade"
         onRequestClose={() => setIsModalOpen(false)}
       >
-        <KeyboardAvoidingView 
+        <KeyboardAvoidingView
           behavior={Platform.OS === "ios" ? "padding" : "height"}
           style={s.modalOverlay}
         >
@@ -251,14 +251,14 @@ export default function PortfolioScreen() {
             </ScrollView>
 
             <View style={s.modalFooter}>
-              <TouchableOpacity 
+              <TouchableOpacity
                 style={s.cancelButton}
                 onPress={() => setIsModalOpen(false)}
                 disabled={isSubmitting}
               >
                 <Text style={s.cancelButtonText}>Batal</Text>
               </TouchableOpacity>
-              <TouchableOpacity 
+              <TouchableOpacity
                 style={s.submitButton}
                 onPress={handleSubmit}
                 disabled={isSubmitting}
@@ -375,7 +375,7 @@ const s = StyleSheet.create({
     justifyContent: 'space-between',
   },
   card: {
-    width: (width - 48 - 12) / 2, 
+    width: (width - 48 - 12) / 2,
     backgroundColor: 'white',
     borderRadius: 20,
     borderWidth: 1,
@@ -460,7 +460,7 @@ const s = StyleSheet.create({
   },
   addNewCard: {
     width: (width - 48 - 12) / 2,
-    height: 240, 
+    height: 240,
     borderWidth: 2,
     borderColor: '#E2E8F0',
     borderStyle: 'dashed',
@@ -614,7 +614,7 @@ const s = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     borderRadius: 16,
-    backgroundColor: '#2563EB',
+    backgroundColor: '2563EB',
     shadowColor: '#2563EB',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.2,
