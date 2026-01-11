@@ -1,5 +1,5 @@
 import prisma from "@/lib/prisma";
-import { Prisma, TransactionStatus } from "@prisma/client";
+import { Prisma, TransactionStatus } from "@/generated/prisma";
 import { NextResponse } from "next/server";
 
 export async function GET(request: Request) {
@@ -58,7 +58,7 @@ export async function GET(request: Request) {
             else if (tx.status === 'FAILED') displayStatus = 'failed';
 
             let description = "Transaksi Umum";
-            switch(tx.type) {
+            switch (tx.type) {
                 case 'DEPOSIT': description = "Top Up Saldo"; break;
                 case 'WITHDRAWAL': description = "Penarikan Dana"; break;
                 case 'PAYMENT_OUT': description = "Pembayaran Proyek"; break;
@@ -69,13 +69,13 @@ export async function GET(request: Request) {
             return {
                 id: tx.id,
                 user: tx.wallet.user.username || tx.wallet.user.email,
-                project: description, 
+                project: description,
                 amount: new Intl.NumberFormat("id-ID", {
                     style: "currency",
                     currency: "IDR",
                     maximumFractionDigits: 0
                 }).format(Number(tx.amount)),
-                method: tx.wallet.bankName || "Wallet", 
+                method: tx.wallet.bankName || "Wallet",
                 status: displayStatus,
                 date: new Date(tx.createdAt).toLocaleDateString("id-ID", {
                     day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit'

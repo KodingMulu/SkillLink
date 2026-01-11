@@ -1,5 +1,5 @@
 import prisma from "@/lib/prisma";
-import { Prisma, JobStatus } from "@prisma/client";
+import { Prisma, JobStatus } from "@/generated/prisma";
 import { NextResponse } from "next/server";
 
 export async function GET(request: Request) {
@@ -76,7 +76,7 @@ export async function GET(request: Request) {
                     currency: "IDR",
                     maximumFractionDigits: 0
                 }).format(project.job.budget),
-                deadline: project.job.deadline 
+                deadline: project.job.deadline
                     ? new Date(project.job.deadline).toLocaleDateString("id-ID")
                     : "-",
                 status: displayStatus,

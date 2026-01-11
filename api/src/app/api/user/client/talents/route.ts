@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
-import { Prisma } from "@prisma/client";
+import { Prisma } from "@/generated/prisma";
 
 export interface TalentResponse {
-  id: string; 
+  id: string;
   name: string;
   title: string;
   avatar: string;
@@ -22,23 +22,23 @@ export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url);
     const search = searchParams.get("search") || "";
     const category = searchParams.get("category") || "all";
-    
+
     const whereClause: Prisma.UserWhereInput = {
       role: "FREELANCER",
-      status: "ACTIVE",   
+      status: "ACTIVE",
     };
 
     if (search) {
       whereClause.OR = [
         { username: { contains: search, mode: "insensitive" } },
         { title: { contains: search, mode: "insensitive" } },
-        { skills: { has: search } } 
+        { skills: { has: search } }
       ];
     }
 
     if (category !== "all") {
-        const cleanCategory = category.replace(/-/g, ' ');
-        whereClause.title = { contains: cleanCategory, mode: "insensitive" };
+      const cleanCategory = category.replace(/-/g, ' ');
+      whereClause.title = { contains: cleanCategory, mode: "insensitive" };
     }
 
     const users = await prisma.user.findMany({
@@ -49,16 +49,16 @@ export async function GET(req: NextRequest) {
           select: { id: true }
         },
         _count: {
-          select: { freelancerProjects: true } 
+          select: { freelancerProjects: true }
         }
       },
       take: 20,
     });
 
     const formattedTalents: TalentResponse[] = users.map((user) => {
-      const calculatedRating = 4.5 + (Math.random() * 0.5); 
-      const mockHourly = Math.floor(Math.random() * (300 - 50) + 50) * 1000; 
-      
+      const calculatedRating = 4.5 + (Math.random() * 0.5);
+      const mockHourly = Math.floor(Math.random() * (300 - 50) + 50) * 1000;
+
       const completedCount = user.freelancerProjects.length;
 
       return {
@@ -67,11 +67,11 @@ export async function GET(req: NextRequest) {
         title: user.title || "Freelancer",
         avatar: user.username ? user.username.charAt(0).toUpperCase() : "U",
         rating: Number(calculatedRating.toFixed(1)),
-        reviews: Math.floor(Math.random() * 100), 
+        reviews: Math.floor(Math.random() * 100),
         location: user.location || "Indonesia",
         hourlyRate: `Rp ${new Intl.NumberFormat('id-ID').format(mockHourly)}`,
         skills: user.skills || [],
-        completedProjects: completedCount, 
+        completedProjects: completedCount,
         description: user.bio || "No description provided.",
         availability: 'available'
       };
