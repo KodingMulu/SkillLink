@@ -1,9 +1,7 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  experimental: {
-    reactCompiler: true,
-  } as unknown as NextConfig["experimental"],
+  reactCompiler: true,
   async headers() {
     return [
       {
