@@ -2,8 +2,10 @@ import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { getAuthUser } from "@/lib/server-auth";
 
-export async function PATCH(req: NextRequest, { params }: { params: { proposalId: string } }) {
+export async function PATCH(req: NextRequest,
+    props: { params: Promise<{ proposalId: string }> }) {
     try {
+        const params = await props.params;
         const user = await getAuthUser(req);
         if (!user || user.role !== "CLIENT") {
             return NextResponse.json({ message: "Forbidden" }, { status: 403 });
