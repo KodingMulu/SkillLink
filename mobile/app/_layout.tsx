@@ -1,20 +1,9 @@
-import { Slot, useRouter, useSegments } from 'expo-router';
 import { useEffect } from 'react';
-import { View, ActivityIndicator } from 'react-native';
+import { Slot, useRouter, useSegments } from 'expo-router';
 import { AuthProvider, useAuth } from '../context/AuthContext';
-import { PaperProvider } from 'react-native-paper';
+import { View, ActivityIndicator } from 'react-native';
 
-export default function RootLayout() {
-  return (
-    <AuthProvider>
-      <PaperProvider>
-        <MainLayout />
-      </PaperProvider>
-    </AuthProvider>
-  );
-}
-
-function MainLayout() {
+function RootLayoutNav() {
   const { user, isLoading } = useAuth();
   const segments = useSegments();
   const router = useRouter();
@@ -22,41 +11,21 @@ function MainLayout() {
   useEffect(() => {
     if (isLoading) return;
 
-    const group = segments[0];
-    const subGroup = segments[1];
+    const inAuthGroup = segments[0] === '(auth)';
 
-    if (!user) {
-      if (group !== '(auth)') {
-        router.replace('/(auth)/login');
-      }
-      return;
-    }
+    if (!user && !inAuthGroup) {
+      router.replace('/(auth)/login');
 
-    if (group === '(auth)') {
+    } else if (user && inAuthGroup) {
       if (user.role === 'CLIENT') {
         router.replace('/(dashboard)/client');
       } else if (user.role === 'FREELANCER') {
         router.replace('/(dashboard)/freelancer');
-      } else if (user.role === 'ADMIN') {
-        router.replace('/(dashboard)/admin');
-      }
-      return;
-    }
-
-    if (group === '(dashboard)') {
-      if (user.role === 'CLIENT' && subGroup !== 'client') {
-        router.replace('/(dashboard)/client');
-      }
-
-      if (user.role === 'FREELANCER' && subGroup !== 'freelancer') {
-        router.replace('/(dashboard)/freelancer');
-      }
-
-      if (user.role === 'ADMIN' && subGroup !== 'admin') {
+      } else {
         router.replace('/(dashboard)/admin');
       }
     }
-  }, [user, isLoading]);
+  }, [user, isLoading, segments]);
 
   if (isLoading) {
     return (
@@ -67,4 +36,12 @@ function MainLayout() {
   }
 
   return <Slot />;
+}
+
+export default function RootLayout() {
+  return (
+    <AuthProvider>
+      <RootLayoutNav />
+    </AuthProvider>
+  );
 }
