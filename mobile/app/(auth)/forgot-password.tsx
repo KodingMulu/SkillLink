@@ -1,23 +1,14 @@
 import React, { useState, useRef } from 'react';
-import { 
-  View, 
-  Text, 
-  TextInput, 
-  TouchableOpacity, 
-  StyleSheet, 
-  KeyboardAvoidingView, 
-  Platform, 
-  ScrollView, 
-  Alert,
-  ActivityIndicator,
-  NativeSyntheticEvent,
-  TextInputKeyPressEventData
+import {
+  View, Text, StyleSheet, TextInput, TouchableOpacity,
+  ActivityIndicator, KeyboardAvoidingView, Platform, ScrollView, Alert, Dimensions
 } from 'react-native';
-import { Mail, ArrowLeft, KeyRound, CheckCircle2, ArrowRight, Lock, Check } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
+import { Mail, ArrowLeft, KeyRound, CheckCircle2, Lock, Eye, EyeOff } from 'lucide-react-native';
 import axios from 'axios';
 
-const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://10.0.2.2:3000/api';
+const { width } = Dimensions.get('window');
+const API_URL = process.env.EXPO_PUBLIC_API_URL;
 
 export default function ForgotPasswordScreen() {
   const router = useRouter();
@@ -25,15 +16,14 @@ export default function ForgotPasswordScreen() {
   const [isLoading, setIsLoading] = useState(false);
   const [email, setEmail] = useState('');
   const [otp, setOtp] = useState(['', '', '', '']);
-  const otpInputRefs = useRef<Array<TextInput | null>>([]);
   const [passwords, setPasswords] = useState({ new: '', confirm: '' });
   const [showPassword, setShowPassword] = useState(false);
-  const [focusedInput, setFocusedInput] = useState<string | null>(null);
+
+  const inputRefs = useRef<(TextInput | null)[]>([]);
 
   const handleSendEmail = async () => {
-    if (!email) { Alert.alert('Error', 'Email wajib diisi'); return; }
+    if (!email) return Alert.alert('Error', 'Email wajib diisi');
     setIsLoading(true);
-
     try {
       const response = await axios.post(`${API_URL}/auth/forgot-password`, { email });
       if (response.data.code === 200) {
@@ -42,11 +32,8 @@ export default function ForgotPasswordScreen() {
         Alert.alert('Gagal', response.data.message);
       }
     } catch (error: any) {
-      if (axios.isAxiosError(error)) {
-        Alert.alert('Gagal', error.response?.data?.message || 'Email tidak ditemukan');
-      } else {
-        Alert.alert('Error', 'Terjadi kesalahan server');
-      }
+      const msg = error.response?.data?.message || 'Email tidak ditemukan';
+      Alert.alert('Error', msg);
     } finally {
       setIsLoading(false);
     }
@@ -54,10 +41,7 @@ export default function ForgotPasswordScreen() {
 
   const handleVerifyCode = async () => {
     const codeValue = otp.join('');
-    if (codeValue.length < 4) {
-      Alert.alert('Peringatan', 'Masukkan 4 digit kode');
-      return;
-    }
+    if (codeValue.length < 4) return Alert.alert('Error', 'Masukkan 4 digit kode');
 
     setIsLoading(true);
     try {
@@ -65,46 +49,21 @@ export default function ForgotPasswordScreen() {
         email,
         code: codeValue
       });
-
       if (response.data.code === 200) {
         setStep(3);
       } else {
         Alert.alert('Gagal', response.data.message);
       }
     } catch (error) {
-      Alert.alert('Gagal', 'Kode salah atau kadaluwarsa');
+      Alert.alert('Error', 'Kode salah atau kadaluwarsa');
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleOtpChange = (text: string, index: number) => {
-    if (!/^\d*$/.test(text)) return;
-
-    const newOtp = [...otp];
-    newOtp[index] = text;
-    setOtp(newOtp);
-
-    if (text && index < 3) {
-      otpInputRefs.current[index + 1]?.focus();
-    }
-  };
-
-  const handleOtpKeyPress = (e: NativeSyntheticEvent<TextInputKeyPressEventData>, index: number) => {
-    if (e.nativeEvent.key === 'Backspace' && !otp[index] && index > 0) {
-      otpInputRefs.current[index - 1]?.focus();
-    }
-  };
-
   const handleResetPassword = async () => {
-    if (passwords.new !== passwords.confirm) {
-      Alert.alert('Error', 'Password tidak cocok');
-      return;
-    }
-    if (passwords.new.length < 8) {
-        Alert.alert('Error', 'Password minimal 8 karakter');
-        return;
-    }
+    if (passwords.new !== passwords.confirm) return Alert.alert('Error', 'Password tidak cocok');
+    if (passwords.new.length < 8) return Alert.alert('Error', 'Password minimal 8 karakter');
 
     setIsLoading(true);
     try {
@@ -112,10 +71,9 @@ export default function ForgotPasswordScreen() {
         email,
         password: passwords.new
       });
-
       if (response.data.code === 200) {
         Alert.alert('Sukses', 'Password berhasil diubah! Silakan login.', [
-            { text: 'Login Sekarang', onPress: () => router.replace('/auth/login') }
+          { text: 'OK', onPress: () => router.push('/login') }
         ]);
       } else {
         Alert.alert('Gagal', response.data.message);
@@ -127,185 +85,173 @@ export default function ForgotPasswordScreen() {
     }
   };
 
+  const handleOtpChange = (index: number, value: string) => {
+    if (value && !/^\d$/.test(value)) return;
+    const newOtp = [...otp];
+    newOtp[index] = value;
+    setOtp(newOtp);
+    if (value && index < 3) {
+      inputRefs.current[index + 1]?.focus();
+    }
+  };
+
+  const handleOtpKeyPress = (index: number, e: any) => {
+    if (e.nativeEvent.key === 'Backspace' && !otp[index] && index > 0) {
+      inputRefs.current[index - 1]?.focus();
+    }
+  };
+
   return (
-    <View style={styles.container}>
-      <View style={[styles.blob, styles.blobBlue]} />
-      <View style={[styles.blob, styles.blobPurple]} />
+    <KeyboardAvoidingView
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      style={s.container}
+    >
+      <ScrollView contentContainerStyle={s.scrollContent} showsVerticalScrollIndicator={false}>
+        {/* Decorator Blobs */}
+        <View style={[s.blob, s.blobTop]} />
+        <View style={[s.blob, s.blobBottom]} />
 
-      <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        style={{ flex: 1 }}
-      >
-        <ScrollView 
-          contentContainerStyle={styles.scrollContent}
-          showsVerticalScrollIndicator={false}
-        >
-          <View style={styles.card}>
-            <View style={styles.header}>
-              <View style={styles.iconContainer}>
-                {step === 1 && <KeyRound size={24} color="white" />}
-                {step === 2 && <Mail size={24} color="white" />}
-                {step === 3 && <CheckCircle2 size={24} color="white" />}
-              </View>
-
-              <Text style={styles.title}>
-                {step === 1 && 'Lupa Password?'}
-                {step === 2 && 'Cek Email Anda'}
-                {step === 3 && 'Password Baru'}
-              </Text>
-
-              <Text style={styles.subtitle}>
-                {step === 1 && 'Masukkan email Anda untuk menerima kode reset.'}
-                {step === 2 && `Kami telah mengirim kode 4 digit ke ${email}`}
-                {step === 3 && 'Buat password baru yang aman untuk akun Anda.'}
-              </Text>
+        <View style={s.card}>
+          <View style={s.header}>
+            <View style={s.iconWrapper}>
+              {step === 1 && <KeyRound size={28} color="white" />}
+              {step === 2 && <Mail size={28} color="white" />}
+              {step === 3 && <CheckCircle2 size={28} color="white" />}
             </View>
+            <Text style={s.title}>
+              {step === 1 && 'Lupa Password?'}
+              {step === 2 && 'Cek Email Anda'}
+              {step === 3 && 'Password Baru'}
+            </Text>
+            <Text style={s.subtitle}>
+              {step === 1 && 'Masukkan email Anda untuk menerima kode reset.'}
+              {step === 2 && `Kami telah mengirim kode 4 digit ke ${email}`}
+              {step === 3 && 'Buat password baru yang aman untuk akun Anda.'}
+            </Text>
+          </View>
 
+          <View style={s.form}>
             {step === 1 && (
-              <View style={styles.formSpace}>
-                <View style={styles.inputGroup}>
-                  <Text style={styles.label}>Email</Text>
-                  <View style={[styles.inputContainer, focusedInput === 'email' && styles.inputFocused]}>
-                    <Mail size={20} color={focusedInput === 'email' ? '#2563EB' : '#94A3B8'} style={styles.inputIcon} />
+              <>
+                <View style={s.inputGroup}>
+                  <Text style={s.label}>Email</Text>
+                  <View style={s.inputContainer}>
+                    <Mail size={20} color="#94A3B8" style={s.inputIcon} />
                     <TextInput
+                      style={s.input}
+                      placeholder="nama@email.com"
                       value={email}
                       onChangeText={setEmail}
-                      style={styles.input}
-                      placeholder="nama@email.com"
-                      placeholderTextColor="#94A3B8"
                       keyboardType="email-address"
                       autoCapitalize="none"
-                      onFocus={() => setFocusedInput('email')}
-                      onBlur={() => setFocusedInput(null)}
                     />
                   </View>
                 </View>
-
-                <TouchableOpacity
-                  onPress={handleSendEmail}
-                  disabled={isLoading}
-                  style={[styles.button, isLoading && styles.buttonDisabled]}
-                >
+                <TouchableOpacity style={s.submitBtn} onPress={handleSendEmail} disabled={isLoading}>
                   {isLoading ? (
-                    <Text style={styles.buttonText}>Mengirim...</Text>
+                    <ActivityIndicator color="white" />
                   ) : (
-                    <Text style={styles.buttonText}>Kirim Kode</Text>
+                    <Text style={s.submitBtnText}>Kirim Kode</Text>
                   )}
                 </TouchableOpacity>
-              </View>
+              </>
             )}
 
             {step === 2 && (
-              <View style={styles.formSpace}>
-                <View style={styles.otpContainer}>
+              <>
+                <View style={s.otpContainer}>
                   {otp.map((digit, index) => (
                     <TextInput
                       key={index}
-                      ref={(ref) => otpInputRefs.current[index] = ref}
+                      ref={(ref) => { inputRefs.current[index] = ref }}
+                      style={[s.otpInput, digit ? s.otpFilled : null]}
                       value={digit}
-                      onChangeText={(text) => handleOtpChange(text, index)}
-                      onKeyPress={(e) => handleOtpKeyPress(e, index)}
-                      style={[
-                        styles.otpInput,
-                        digit ? styles.otpFilled : null,
-                        focusedInput === `otp-${index}` ? styles.inputFocused : null
-                      ]}
+                      onChangeText={(val) => handleOtpChange(index, val)}
+                      onKeyPress={(e) => handleOtpKeyPress(index, e)}
                       keyboardType="number-pad"
                       maxLength={1}
-                      onFocus={() => setFocusedInput(`otp-${index}`)}
-                      onBlur={() => setFocusedInput(null)}
+                      textAlign="center"
                     />
                   ))}
                 </View>
-
-                <TouchableOpacity
-                  onPress={handleVerifyCode}
-                  disabled={isLoading}
-                  style={[styles.button, isLoading && styles.buttonDisabled]}
-                >
-                  {isLoading ? <Text style={styles.buttonText}>Memverifikasi...</Text> : <Text style={styles.buttonText}>Lanjut</Text>}
+                <TouchableOpacity style={s.submitBtn} onPress={handleVerifyCode} disabled={isLoading}>
+                  {isLoading ? (
+                    <ActivityIndicator color="white" />
+                  ) : (
+                    <Text style={s.submitBtnText}>Lanjut</Text>
+                  )}
                 </TouchableOpacity>
-
-                <TouchableOpacity onPress={() => setStep(1)} style={styles.textBtn}>
-                   <Text style={styles.textBtnText}>Salah email? Kembali</Text>
+                <TouchableOpacity onPress={() => setStep(1)} style={s.textLinkBtn}>
+                  <Text style={s.textLink}>Salah email? Kembali</Text>
                 </TouchableOpacity>
-              </View>
+              </>
             )}
 
             {step === 3 && (
-              <View style={styles.formSpace}>
-                <View style={styles.inputGroup}>
-                  <Text style={styles.label}>Password Baru</Text>
-                  <View style={[styles.inputContainer, focusedInput === 'new' && styles.inputFocused]}>
-                    <Lock size={20} color={focusedInput === 'new' ? '#2563EB' : '#94A3B8'} style={styles.inputIcon} />
+              <>
+                <View style={s.inputGroup}>
+                  <Text style={s.label}>Password Baru</Text>
+                  <View style={s.inputContainer}>
+                    <Lock size={20} color="#94A3B8" style={s.inputIcon} />
                     <TextInput
-                      value={passwords.new}
-                      onChangeText={(val) => setPasswords({...passwords, new: val})}
-                      style={styles.input}
+                      style={s.input}
                       placeholder="Minimal 8 karakter"
+                      value={passwords.new}
+                      onChangeText={(t) => setPasswords(p => ({ ...p, new: t }))}
                       secureTextEntry={!showPassword}
-                      onFocus={() => setFocusedInput('new')}
-                      onBlur={() => setFocusedInput(null)}
                     />
                   </View>
                 </View>
-
-                <View style={styles.inputGroup}>
-                  <Text style={styles.label}>Konfirmasi Password</Text>
-                  <View style={[styles.inputContainer, focusedInput === 'confirm' && styles.inputFocused]}>
-                    <Lock size={20} color={focusedInput === 'confirm' ? '#2563EB' : '#94A3B8'} style={styles.inputIcon} />
+                <View style={s.inputGroup}>
+                  <Text style={s.label}>Konfirmasi Password</Text>
+                  <View style={s.inputContainer}>
+                    <Lock size={20} color="#94A3B8" style={s.inputIcon} />
                     <TextInput
-                      value={passwords.confirm}
-                      onChangeText={(val) => setPasswords({...passwords, confirm: val})}
-                      style={styles.input}
+                      style={s.input}
                       placeholder="Ulangi password"
+                      value={passwords.confirm}
+                      onChangeText={(t) => setPasswords(p => ({ ...p, confirm: t }))}
                       secureTextEntry={!showPassword}
-                      onFocus={() => setFocusedInput('confirm')}
-                      onBlur={() => setFocusedInput(null)}
                     />
                   </View>
                 </View>
-
-                <View style={styles.checkboxRow}>
-                    <TouchableOpacity 
-                    style={[styles.checkbox, showPassword && styles.checkboxChecked]} 
-                    onPress={() => setShowPassword(!showPassword)}
-                    >
-                    {showPassword && <Check size={12} color="white" />}
-                    </TouchableOpacity>
-                    <Text style={styles.checkboxLabel} onPress={() => setShowPassword(!showPassword)}>
-                        Tampilkan password
-                    </Text>
-                </View>
-
-                <TouchableOpacity
-                  onPress={handleResetPassword}
-                  disabled={isLoading}
-                  style={[styles.button, isLoading && styles.buttonDisabled]}
-                >
-                  {isLoading ? <Text style={styles.buttonText}>Menyimpan...</Text> : <Text style={styles.buttonText}>Reset Password</Text>}
+                <TouchableOpacity style={s.showPassToggle} onPress={() => setShowPassword(!showPassword)}>
+                  {showPassword ? <EyeOff size={18} color="#2563EB" /> : <Eye size={18} color="#94A3B8" />}
+                  <Text style={s.showPassText}>{showPassword ? 'Sembunyikan' : 'Tampilkan'} Password</Text>
                 </TouchableOpacity>
-              </View>
+
+                <TouchableOpacity style={s.submitBtn} onPress={handleResetPassword} disabled={isLoading}>
+                  {isLoading ? (
+                    <ActivityIndicator color="white" />
+                  ) : (
+                    <Text style={s.submitBtnText}>Reset Password</Text>
+                  )}
+                </TouchableOpacity>
+              </>
             )}
-
-            <View style={styles.footer}>
-                <TouchableOpacity onPress={() => router.replace('/auth/login')} style={styles.backLink}>
-                    <ArrowLeft size={16} color="#475569" />
-                    <Text style={styles.backLinkText}>Kembali ke Login</Text>
-                </TouchableOpacity>
-            </View>
-
           </View>
-        </ScrollView>
-      </KeyboardAvoidingView>
-    </View>
+
+          <View style={s.footer}>
+            <TouchableOpacity onPress={() => router.push('/login')} style={s.backBtn}>
+              <ArrowLeft size={16} color="#64748B" />
+              <Text style={s.backText}>Kembali ke Login</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </ScrollView>
+    </KeyboardAvoidingView>
   );
 }
 
-const styles = StyleSheet.create({
+const s = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#F8FAFC',
+  },
+  scrollContent: {
+    flexGrow: 1,
+    justifyContent: 'center',
+    padding: 24,
   },
   blob: {
     position: 'absolute',
@@ -314,42 +260,37 @@ const styles = StyleSheet.create({
     borderRadius: 150,
     opacity: 0.2,
   },
-  blobBlue: {
+  blobTop: {
     backgroundColor: '#60A5FA',
-    top: -50,
-    left: -50,
+    top: -100,
+    left: -100,
   },
-  blobPurple: {
-    backgroundColor: '#C084FC',
-    bottom: -50,
-    right: -50,
-  },
-  scrollContent: {
-    flexGrow: 1,
-    justifyContent: 'center',
-    padding: 20,
+  blobBottom: {
+    backgroundColor: '#A78BFA',
+    bottom: -100,
+    right: -100,
   },
   card: {
-    backgroundColor: 'rgba(255, 255, 255, 0.9)',
-    borderRadius: 16,
+    backgroundColor: 'rgba(255,255,255,0.95)',
+    borderRadius: 24,
     padding: 24,
     borderWidth: 1,
     borderColor: '#E2E8F0',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
+    shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.05,
-    shadowRadius: 15,
-    elevation: 3,
+    shadowRadius: 12,
+    elevation: 5,
   },
   header: {
     alignItems: 'center',
     marginBottom: 32,
   },
-  iconContainer: {
-    width: 48,
-    height: 48,
+  iconWrapper: {
+    width: 56,
+    height: 56,
     backgroundColor: '#2563EB',
-    borderRadius: 12,
+    borderRadius: 16,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 16,
@@ -357,11 +298,11 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 8,
-    elevation: 5,
+    elevation: 4,
   },
   title: {
     fontSize: 22,
-    fontWeight: '700',
+    fontWeight: 'bold',
     color: '#0F172A',
     marginBottom: 8,
     textAlign: 'center',
@@ -370,9 +311,10 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#64748B',
     textAlign: 'center',
-    paddingHorizontal: 8,
+    paddingHorizontal: 10,
+    lineHeight: 20,
   },
-  formSpace: {
+  form: {
     gap: 20,
   },
   inputGroup: {
@@ -380,119 +322,98 @@ const styles = StyleSheet.create({
   },
   label: {
     fontSize: 14,
-    fontWeight: '500',
+    fontWeight: '600',
     color: '#334155',
   },
   inputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#FFFFFF',
+    backgroundColor: 'white',
     borderWidth: 1,
     borderColor: '#CBD5E1',
-    borderRadius: 10,
-    height: 48,
+    borderRadius: 12,
     paddingHorizontal: 12,
-  },
-  inputFocused: {
-    borderColor: '#2563EB',
-    borderWidth: 1.5,
-    backgroundColor: '#EFF6FF',
+    height: 48,
   },
   inputIcon: {
     marginRight: 10,
   },
   input: {
     flex: 1,
-    color: '#0F172A',
-    fontSize: 14,
     height: '100%',
+    fontSize: 14,
+    color: '#0F172A',
   },
-  button: {
+  submitBtn: {
     backgroundColor: '#2563EB',
+    borderRadius: 12,
     height: 48,
-    borderRadius: 10,
     alignItems: 'center',
     justifyContent: 'center',
     shadowColor: '#2563EB',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.2,
     shadowRadius: 8,
-    elevation: 3,
+    elevation: 4,
   },
-  buttonDisabled: {
-    opacity: 0.7,
-  },
-  buttonText: {
+  submitBtnText: {
     color: 'white',
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: 'bold',
   },
   otpContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    paddingHorizontal: 10,
+    marginBottom: 8,
   },
   otpInput: {
-    width: 56,
-    height: 56,
+    width: 60,
+    height: 60,
+    borderRadius: 12,
     borderWidth: 1,
     borderColor: '#CBD5E1',
-    borderRadius: 12,
+    backgroundColor: 'white',
     fontSize: 24,
     fontWeight: 'bold',
-    textAlign: 'center',
     color: '#0F172A',
-    backgroundColor: '#FFFFFF',
   },
   otpFilled: {
     borderColor: '#2563EB',
-    backgroundColor: '#F8FAFC',
+    backgroundColor: '#EFF6FF',
   },
-  textBtn: {
+  textLinkBtn: {
     alignItems: 'center',
+    paddingVertical: 4,
   },
-  textBtnText: {
+  textLink: {
     color: '#64748B',
     fontSize: 14,
   },
-  checkboxRow: {
+  showPassToggle: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: -4,
+    gap: 6,
+    marginBottom: 8,
   },
-  checkbox: {
-    width: 18,
-    height: 18,
-    borderWidth: 1.5,
-    borderColor: '#CBD5E1',
-    borderRadius: 4,
-    marginRight: 8,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  checkboxChecked: {
-    backgroundColor: '#2563EB',
-    borderColor: '#2563EB',
-  },
-  checkboxLabel: {
-    color: '#475569',
-    fontSize: 14,
+  showPassText: {
+    color: '#64748B',
+    fontSize: 13,
   },
   footer: {
-    marginTop: 32,
+    marginTop: 24,
     paddingTop: 24,
     borderTopWidth: 1,
     borderTopColor: '#F1F5F9',
     alignItems: 'center',
   },
-  backLink: {
+  backBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
   },
-  backLinkText: {
+  backText: {
+    color: '#64748B',
+    fontWeight: '600',
     fontSize: 14,
-    color: '#475569',
-    fontWeight: '500',
   },
 });

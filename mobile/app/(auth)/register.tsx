@@ -1,224 +1,214 @@
 import React, { useState } from 'react';
-import { 
-  View, 
-  Text, 
-  TextInput, 
-  TouchableOpacity, 
-  StyleSheet, 
-  KeyboardAvoidingView, 
-  Platform, 
-  ScrollView, 
-  Alert,
-  ActivityIndicator,
-  Dimensions
+import {
+  View, Text, StyleSheet, TextInput, TouchableOpacity,
+  ActivityIndicator, KeyboardAvoidingView, Platform, ScrollView, Alert, Dimensions
 } from 'react-native';
-import { Eye, EyeOff, Mail, User, ArrowRight, Lock, Check } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
+import {
+  Eye, EyeOff, Mail, User, ArrowRight, Lock,
+  Briefcase, UserCircle, Check
+} from 'lucide-react-native';
 import axios from 'axios';
 
-const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://10.0.2.2:3000/api'; 
+const { width } = Dimensions.get('window');
+const API_URL = process.env.EXPO_PUBLIC_API_URL;
 
 export default function RegisterScreen() {
   const router = useRouter();
   const [formData, setFormData] = useState({
     fullName: '',
     email: '',
-    password: ''
+    password: '',
+    role: 'FREELANCER'
   });
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [acceptTerms, setAcceptTerms] = useState(false);
-  const [focusedInput, setFocusedInput] = useState<string | null>(null);
 
-  const handleChange = (field: string, value: string) => {
-    setFormData({ ...formData, [field]: value });
+  const updateFormData = (key: string, value: string) => {
+    setFormData(prev => ({ ...prev, [key]: value }));
   };
 
-  const handleSubmit = async () => {
-    if (!acceptTerms) { 
-      Alert.alert('Peringatan', 'Anda harus menyetujui syarat dan ketentuan'); 
-      return; 
+  const setRole = (role: string) => {
+    setFormData(prev => ({ ...prev, role }));
+  };
+
+  const handleRegister = async () => {
+    if (!acceptTerms) {
+      Alert.alert('Peringatan', 'Anda harus menyetujui syarat dan ketentuan');
+      return;
     }
-    
+    if (!formData.fullName || !formData.email || !formData.password) {
+      Alert.alert('Peringatan', 'Semua kolom harus diisi');
+      return;
+    }
+
     setIsLoading(true);
-    
     try {
-      const payload = { 
-        email: formData.email, 
-        username: formData.fullName, 
-        password: formData.password 
+      const payload = {
+        email: formData.email,
+        username: formData.fullName,
+        password: formData.password,
+        role: formData.role
       };
 
       const response = await axios.post(`${API_URL}/auth/register`, payload);
 
-      if (response.data.code === 200) {
-        Alert.alert('Sukses', 'Registrasi Berhasil! Cek email Anda.', [
-          { 
-            text: 'OK', 
-            onPress: () => router.push({
-              pathname: '/auth/verify',
-              params: { email: formData.email }
-            }) 
-          }
-        ]);
-      } else {
-        Alert.alert('Gagal', 'Gagal Mendaftar');
+      if (response.status === 201) {
+        Alert.alert('Sukses', 'Registrasi Berhasil! Cek email Anda.');
+        router.push(`/verify?email=${encodeURIComponent(formData.email)}`);
       }
     } catch (error: any) {
-      if (axios.isAxiosError(error)) {
-        Alert.alert('Error', error.response?.data?.message || 'Terjadi kesalahan pada server');
-      } else {
-        Alert.alert('Error', 'Terjadi kesalahan tak terduga');
-      }
+      const message = error.response?.data?.message || 'Terjadi kesalahan pada server';
+      Alert.alert('Gagal', message);
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <View style={styles.container}>
-      <View style={[styles.blob, styles.blobBlue]} />
-      <View style={[styles.blob, styles.blobPurple]} />
-      <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        style={{ flex: 1 }}
-      >
-        <ScrollView 
-          contentContainerStyle={styles.scrollContent}
-          showsVerticalScrollIndicator={false}
-        >
-          <View style={styles.card}>
-            <View style={styles.header}>
-              <View style={styles.iconContainer}>
-                <User size={24} color="white" />
-              </View>
-              <Text style={styles.title}>Buat Akun</Text>
-              <Text style={styles.subtitle}>Mulai perjalanan Anda bersama kami</Text>
+    <KeyboardAvoidingView
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      style={s.container}
+    >
+      <ScrollView contentContainerStyle={s.scrollContent} showsVerticalScrollIndicator={false}>
+        {/* Background Decorations */}
+        <View style={[s.blob, s.blobTop]} />
+        <View style={[s.blob, s.blobBottom]} />
+
+        <View style={s.card}>
+          <View style={s.header}>
+            <View style={s.iconWrapper}>
+              <User size={24} color="white" />
             </View>
+            <Text style={s.title}>Buat Akun</Text>
+            <Text style={s.subtitle}>Mulai perjalanan Anda bersama kami</Text>
+          </View>
 
-            <View style={styles.formSpace}>
-              <View style={styles.inputGroup}>
-                <Text style={styles.label}>Username</Text>
-                <View style={[
-                  styles.inputContainer,
-                  focusedInput === 'fullName' && styles.inputFocused
-                ]}>
-                  <User size={20} color={focusedInput === 'fullName' ? '#2563EB' : '#94A3B8'} style={styles.inputIcon} />
-                  <TextInput
-                    value={formData.fullName}
-                    onChangeText={(val) => handleChange('fullName', val)}
-                    style={styles.input}
-                    placeholder="cth. jhon_doe"
-                    placeholderTextColor="#94A3B8"
-                    onFocus={() => setFocusedInput('fullName')}
-                    onBlur={() => setFocusedInput(null)}
-                    autoCapitalize="none"
-                  />
-                </View>
-              </View>
-
-              <View style={styles.inputGroup}>
-                <Text style={styles.label}>Email</Text>
-                <View style={[
-                  styles.inputContainer,
-                  focusedInput === 'email' && styles.inputFocused
-                ]}>
-                  <Mail size={20} color={focusedInput === 'email' ? '#2563EB' : '#94A3B8'} style={styles.inputIcon} />
-                  <TextInput
-                    value={formData.email}
-                    onChangeText={(val) => handleChange('email', val)}
-                    style={styles.input}
-                    placeholder="nama@perusahaan.com"
-                    placeholderTextColor="#94A3B8"
-                    keyboardType="email-address"
-                    autoCapitalize="none"
-                    onFocus={() => setFocusedInput('email')}
-                    onBlur={() => setFocusedInput(null)}
-                  />
-                </View>
-              </View>
-
-              <View style={styles.inputGroup}>
-                <Text style={styles.label}>Password</Text>
-                <View style={[
-                  styles.inputContainer,
-                  focusedInput === 'password' && styles.inputFocused
-                ]}>
-                  <Lock size={20} color={focusedInput === 'password' ? '#2563EB' : '#94A3B8'} style={styles.inputIcon} />
-                  <TextInput
-                    value={formData.password}
-                    onChangeText={(val) => handleChange('password', val)}
-                    style={styles.input}
-                    placeholder="Minimal 8 karakter"
-                    placeholderTextColor="#94A3B8"
-                    secureTextEntry={!showPassword}
-                    onFocus={() => setFocusedInput('password')}
-                    onBlur={() => setFocusedInput(null)}
-                  />
-                  <TouchableOpacity onPress={() => setShowPassword(!showPassword)} style={styles.eyeIcon}>
-                    {showPassword ? (
-                      <EyeOff size={20} color="#94A3B8" />
-                    ) : (
-                      <Eye size={20} color="#94A3B8" />
-                    )}
-                  </TouchableOpacity>
-                </View>
-              </View>
-
-              <View style={styles.checkboxRow}>
-                <TouchableOpacity 
-                  style={[styles.checkbox, acceptTerms && styles.checkboxChecked]} 
-                  onPress={() => setAcceptTerms(!acceptTerms)}
-                >
-                  {acceptTerms && <Check size={12} color="white" />}
-                </TouchableOpacity>
-                <Text style={styles.termsText}>
-                  Saya menyetujui <Text style={styles.linkText}>Syarat & Ketentuan</Text>.
-                </Text>
-              </View>
-
+          <View style={s.form}>
+            {/* Role Switcher */}
+            <View style={s.roleContainer}>
               <TouchableOpacity
-                onPress={handleSubmit}
-                disabled={isLoading}
-                activeOpacity={0.8}
-                style={[styles.button, isLoading && styles.buttonDisabled]}
+                style={[s.roleBtn, formData.role === 'FREELANCER' && s.roleBtnActive]}
+                onPress={() => setRole('FREELANCER')}
               >
-                {isLoading ? (
-                  <View style={styles.loadingContent}>
-                    <ActivityIndicator color="white" size="small" />
-                    <Text style={styles.buttonText}>Memproses...</Text>
-                  </View>
-                ) : (
-                  <View style={styles.buttonContent}>
-                    <Text style={styles.buttonText}>Daftar Sekarang</Text>
-                    <ArrowRight size={18} color="white" />
-                  </View>
-                )}
+                <Briefcase size={16} color={formData.role === 'FREELANCER' ? '#2563EB' : '#64748B'} />
+                <Text style={[s.roleText, formData.role === 'FREELANCER' && s.roleTextActive]}>Freelancer</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[s.roleBtn, formData.role === 'CLIENT' && s.roleBtnActive]}
+                onPress={() => setRole('CLIENT')}
+              >
+                <UserCircle size={16} color={formData.role === 'CLIENT' ? '#2563EB' : '#64748B'} />
+                <Text style={[s.roleText, formData.role === 'CLIENT' && s.roleTextActive]}>Client</Text>
               </TouchableOpacity>
             </View>
 
-            <View style={styles.footer}>
-              <Text style={styles.footerText}>
-                Sudah punya akun?{' '}
-                <Text 
-                  onPress={() => router.push('/auth/login')}
-                  style={styles.linkText}
-                >
-                  Masuk disini
-                </Text>
-              </Text>
+            {/* Username Input */}
+            <View style={s.inputGroup}>
+              <Text style={s.label}>Username</Text>
+              <View style={s.inputContainer}>
+                <User size={20} color="#94A3B8" style={s.inputIcon} />
+                <TextInput
+                  style={s.input}
+                  placeholder="cth. jhon_doe"
+                  value={formData.fullName}
+                  onChangeText={(t) => updateFormData('fullName', t)}
+                  autoCapitalize="none"
+                />
+              </View>
             </View>
+
+            {/* Email Input */}
+            <View style={s.inputGroup}>
+              <Text style={s.label}>Email</Text>
+              <View style={s.inputContainer}>
+                <Mail size={20} color="#94A3B8" style={s.inputIcon} />
+                <TextInput
+                  style={s.input}
+                  placeholder="nama@perusahaan.com"
+                  value={formData.email}
+                  onChangeText={(t) => updateFormData('email', t)}
+                  keyboardType="email-address"
+                  autoCapitalize="none"
+                />
+              </View>
+            </View>
+
+            {/* Password Input */}
+            <View style={s.inputGroup}>
+              <Text style={s.label}>Password</Text>
+              <View style={s.inputContainer}>
+                <Lock size={20} color="#94A3B8" style={s.inputIcon} />
+                <TextInput
+                  style={s.input}
+                  placeholder="Minimal 8 karakter"
+                  value={formData.password}
+                  onChangeText={(t) => updateFormData('password', t)}
+                  secureTextEntry={!showPassword}
+                />
+                <TouchableOpacity onPress={() => setShowPassword(!showPassword)} style={s.eyeIcon}>
+                  {showPassword ? (
+                    <EyeOff size={20} color="#94A3B8" />
+                  ) : (
+                    <Eye size={20} color="#94A3B8" />
+                  )}
+                </TouchableOpacity>
+              </View>
+            </View>
+
+            {/* Terms Checkbox */}
+            <TouchableOpacity
+              style={s.termsContainer}
+              onPress={() => setAcceptTerms(!acceptTerms)}
+              activeOpacity={0.8}
+            >
+              <View style={[s.checkbox, acceptTerms && s.checkboxChecked]}>
+                {acceptTerms && <Check size={12} color="white" />}
+              </View>
+              <Text style={s.termsText}>
+                Saya menyetujui <Text style={s.linkText}>Syarat & Ketentuan</Text>.
+              </Text>
+            </TouchableOpacity>
+
+            {/* Submit Button */}
+            <TouchableOpacity
+              style={s.submitBtn}
+              onPress={handleRegister}
+              disabled={isLoading}
+            >
+              {isLoading ? (
+                <ActivityIndicator color="white" />
+              ) : (
+                <View style={s.btnContent}>
+                  <Text style={s.submitBtnText}>Daftar Sekarang</Text>
+                  <ArrowRight size={20} color="white" />
+                </View>
+              )}
+            </TouchableOpacity>
           </View>
-        </ScrollView>
-      </KeyboardAvoidingView>
-    </View>
+
+          <View style={s.footer}>
+            <Text style={s.footerText}>Sudah punya akun? </Text>
+            <TouchableOpacity onPress={() => router.push('/login')}>
+              <Text style={s.linkText}>Masuk disini</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </ScrollView>
+    </KeyboardAvoidingView>
   );
 }
 
-const styles = StyleSheet.create({
+const s = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F8FAFC', 
+    backgroundColor: '#F8FAFC',
+  },
+  scrollContent: {
+    flexGrow: 1,
+    justifyContent: 'center',
+    padding: 24,
   },
   blob: {
     position: 'absolute',
@@ -227,38 +217,33 @@ const styles = StyleSheet.create({
     borderRadius: 150,
     opacity: 0.2,
   },
-  blobBlue: {
+  blobTop: {
     backgroundColor: '#60A5FA',
-    top: -50,
-    left: -50,
+    top: -100,
+    left: -100,
   },
-  blobPurple: {
-    backgroundColor: '#C084FC',
-    bottom: -50,
-    right: -50,
-  },
-  scrollContent: {
-    flexGrow: 1,
-    justifyContent: 'center',
-    padding: 20,
+  blobBottom: {
+    backgroundColor: '#A78BFA',
+    bottom: -100,
+    right: -100,
   },
   card: {
     backgroundColor: 'rgba(255, 255, 255, 0.9)',
-    borderRadius: 16,
+    borderRadius: 24,
     padding: 24,
     borderWidth: 1,
     borderColor: '#E2E8F0',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
+    shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.05,
-    shadowRadius: 15,
-    elevation: 3,
+    shadowRadius: 12,
+    elevation: 5,
   },
   header: {
     alignItems: 'center',
     marginBottom: 32,
   },
-  iconContainer: {
+  iconWrapper: {
     width: 48,
     height: 48,
     backgroundColor: '#2563EB',
@@ -270,11 +255,11 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 8,
-    elevation: 5,
+    elevation: 4,
   },
   title: {
     fontSize: 24,
-    fontWeight: '700',
+    fontWeight: 'bold',
     color: '#0F172A',
     marginBottom: 8,
   },
@@ -282,56 +267,84 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#64748B',
   },
-  formSpace: {
-    gap: 20,
+  form: {
+    gap: 16,
+  },
+  roleContainer: {
+    flexDirection: 'row',
+    backgroundColor: '#F1F5F9',
+    padding: 4,
+    borderRadius: 12,
+    marginBottom: 8,
+  },
+  roleBtn: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 10,
+    borderRadius: 8,
+    gap: 8,
+  },
+  roleBtnActive: {
+    backgroundColor: 'white',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 2,
+  },
+  roleText: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: '#64748B',
+  },
+  roleTextActive: {
+    color: '#2563EB',
+    fontWeight: 'bold',
   },
   inputGroup: {
     gap: 6,
   },
   label: {
     fontSize: 14,
-    fontWeight: '500',
+    fontWeight: '600',
     color: '#334155',
   },
   inputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#FFFFFF',
+    backgroundColor: 'white',
     borderWidth: 1,
     borderColor: '#CBD5E1',
-    borderRadius: 10,
-    height: 48,
+    borderRadius: 12,
     paddingHorizontal: 12,
-  },
-  inputFocused: {
-    borderColor: '#2563EB',
-    borderWidth: 1.5,
-    backgroundColor: '#EFF6FF',
+    height: 48,
   },
   inputIcon: {
     marginRight: 10,
   },
   input: {
     flex: 1,
-    color: '#0F172A',
-    fontSize: 14,
     height: '100%',
+    fontSize: 14,
+    color: '#0F172A',
   },
   eyeIcon: {
     padding: 4,
   },
-  checkboxRow: {
+  termsContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: 4,
+    marginTop: 8,
   },
   checkbox: {
-    width: 18,
-    height: 18,
-    borderWidth: 1.5,
-    borderColor: '#CBD5E1',
+    width: 20,
+    height: 20,
     borderRadius: 4,
-    marginRight: 8,
+    borderWidth: 2,
+    borderColor: '#CBD5E1',
+    marginRight: 10,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -342,15 +355,12 @@ const styles = StyleSheet.create({
   termsText: {
     fontSize: 13,
     color: '#475569',
+    flex: 1,
   },
-  linkText: {
-    color: '#2563EB',
-    fontWeight: '600',
-  },
-  button: {
+  submitBtn: {
     backgroundColor: '#2563EB',
+    borderRadius: 12,
     height: 48,
-    borderRadius: 10,
     alignItems: 'center',
     justifyContent: 'center',
     marginTop: 8,
@@ -358,35 +368,33 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.2,
     shadowRadius: 8,
-    elevation: 3,
+    elevation: 4,
   },
-  buttonDisabled: {
-    opacity: 0.7,
-  },
-  buttonContent: {
+  btnContent: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
   },
-  loadingContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  buttonText: {
+  submitBtnText: {
     color: 'white',
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: 'bold',
   },
   footer: {
-    marginTop: 32,
+    flexDirection: 'row',
+    justifyContent: 'center',
+    marginTop: 24,
     paddingTop: 24,
     borderTopWidth: 1,
     borderTopColor: '#F1F5F9',
-    alignItems: 'center',
   },
   footerText: {
     fontSize: 14,
-    color: '#475569',
+    color: '#64748B',
+  },
+  linkText: {
+    fontSize: 14,
+    color: '#2563EB',
+    fontWeight: 'bold',
   },
 });
