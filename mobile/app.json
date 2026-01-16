@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "SkillLink",
-    "slug": "skilllink",
+    "slug": "SkillLink",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
@@ -45,10 +45,13 @@
       "typedRoutes": true,
       "reactCompiler": true
     },
+    "env": {
+      "EXPO_PUBLIC_API_URL": "https://backend-skilllink.vercel.app/api"
+    },
     "extra": {
       "router": {},
       "eas": {
-        "projectId": "44c7cf46-585b-4737-8e0d-4c1413a051e2"
+        "projectId": "869dbe1e-cc12-4e90-b372-53d43798cf05"
       }
     }
   }
