@@ -20,7 +20,15 @@ export async function GET(req: NextRequest) {
       );
     }
 
-    const [wallet, openJobsCount, newApplicantsCount, completedContractsCount] = await Promise.all([
+    const [
+      wallet,
+      openJobsCount,
+      newApplicantsCount,
+      completedContractsCount,
+      totalSpentAggregate,
+      recentApplicants,
+      activeContracts
+    ] = await Promise.all([
       prisma.wallet.findUnique({
         where: { userId: user.id },
       }),
@@ -42,64 +50,61 @@ export async function GET(req: NextRequest) {
           status: "COMPLETED",
         },
       }),
-    ]);
-
-    const totalSpentAggregate = await prisma.transaction.aggregate({
+      prisma.transaction.aggregate({
         where: {
-            wallet: { userId: user.id },
-            type: "PAYMENT_OUT"
+          wallet: { userId: user.id },
+          type: "PAYMENT_OUT"
         },
         _sum: { amount: true }
-    });
-
-    const recentApplicants = await prisma.proposal.findMany({
+      }),
+      prisma.proposal.findMany({
         where: {
-            job: { clientId: user.id }
+          job: { clientId: user.id }
         },
         orderBy: { id: 'desc' },
         take: 3,
         include: {
-            freelancer: {
-                select: { username: true, title: true }
-            },
-            job: {
-                select: { title: true }
-            }
+          freelancer: {
+            select: { username: true, title: true }
+          },
+          job: {
+            select: { title: true }
+          }
         }
-    });
-
-    const activeContracts = await prisma.project.findMany({
+      }),
+      prisma.project.findMany({
         where: {
-            job: { clientId: user.id },
-            status: "IN_PROGRESS"
+          job: { clientId: user.id },
+          status: "IN_PROGRESS"
         },
         include: {
-            freelancer: {
-                select: { username: true }
-            },
-            job: {
-                select: { title: true, budget: true, deadline: true }
-            }
+          freelancer: {
+            select: { username: true }
+          },
+          job: {
+            select: { title: true, budget: true, deadline: true }
+          }
         },
         take: 3
-    });
+      })
+    ]);
 
     const formattedApplicants = recentApplicants.map(app => ({
-        id: app.id,
-        name: app.freelancer.username || "Unknown",
-        role: app.freelancer.title || "Freelancer",
-        appliedFor: app.job.title,
-        date: "Baru saja", 
-        match: 0 
+      id: app.id,
+      name: app.freelancer.username || "Unknown",
+      role: app.freelancer.title || "Freelancer",
+      appliedFor: app.job.title,
+      date: "Baru saja", 
+      match: 0 
     }));
 
     const formattedContracts = activeContracts.map(contract => ({
-        id: contract.id,
-        freelancerName: contract.freelancer.username || "Unknown",
-        projectTitle: contract.job.title,
-        progress: contract.progress,
-        deadline: contract.job.deadline ? new Date(contract.job.deadline).toLocaleDateString("id-ID") : "-",
-        budget: Number(contract.job.budget)
+      id: contract.id,
+      freelancerName: contract.freelancer.username || "Unknown",
+      projectTitle: contract.job.title,
+      progress: contract.progress,
+      deadline: contract.job.deadline ? new Date(contract.job.deadline).toLocaleDateString("id-ID") : "-",
+      budget: Number(contract.job.budget)
     }));
 
     return NextResponse.json(
@@ -108,10 +113,10 @@ export async function GET(req: NextRequest) {
         code: 200,
         data: {
           stats: {
-              totalSpent: Number(totalSpentAggregate._sum.amount) || 0,
-              openJobs: openJobsCount,
-              newApplicants: newApplicantsCount,
-              completedContracts: completedContractsCount
+            totalSpent: Number(totalSpentAggregate._sum.amount) || 0,
+            openJobs: openJobsCount,
+            newApplicants: newApplicantsCount,
+            completedContracts: completedContractsCount
           },
           recentApplicants: formattedApplicants,
           activeContracts: formattedContracts
@@ -121,7 +126,6 @@ export async function GET(req: NextRequest) {
     );
 
   } catch (error) {
-    console.error("CLIENT_DASHBOARD_ERROR:", error);
     return NextResponse.json(
       { message: "Internal Server Error", code: 500 },
       { status: 500 }

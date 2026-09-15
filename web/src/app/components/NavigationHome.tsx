@@ -1,9 +1,10 @@
 'use client';
 
-import { Briefcase, Menu, X, LayoutDashboard, User as UserIcon, LogOut } from "lucide-react";
+import { Briefcase, Menu, X, LayoutDashboard, User as UserIcon, ArrowRight } from "lucide-react";
 import Link from "next/link";
 import { useState, useEffect } from "react";
 import axios from "axios";
+import { getApiUrl } from "@/lib/api";
 
 interface User {
      id: string;
@@ -25,11 +26,8 @@ export default function NavigationHome() {
 
           const checkAuth = async () => {
                try {
-                    const url = `${process.env.NEXT_PUBLIC_API_URL}/user/me`;
-
-                    const response = await axios.get(url, {
-                         withCredentials: true
-                    });
+                    const url = getApiUrl('/user/me');
+                    const response = await axios.get(url, { withCredentials: true });
 
                     if (response.status === 200 && response.data.user) {
                          setUser(response.data.user);
@@ -49,116 +47,145 @@ export default function NavigationHome() {
 
      const dashboardLink = user?.role === 'ADMIN' ? '/dashboard/admin' : user?.role === 'CLIENT' ? '/dashboard/client' : '/dashboard/freelancer';
 
+     const scrollToSection = (id: string) => {
+          setMobileMenuOpen(false);
+          const element = document.getElementById(id);
+          if (element) {
+               element.scrollIntoView({ behavior: 'smooth' });
+          }
+     };
+
      return (
-          <>
-               <nav
-                    className={`fixed z-50 transition-all duration-300 ease-in-out border-slate-200/50
-                         ${isScrolled
-                              ? "top-0 left-0 right-0 w-full rounded-none border-b bg-white/90 backdrop-blur-md py-3 shadow-sm"
-                              : "top-6 left-0 right-0 mx-auto w-[95%] max-w-7xl rounded-full border bg-white/70 backdrop-blur-md py-3 shadow-lg shadow-slate-200/20"
-                         }
-                    `}
-               >
-                    <div className="max-w-7xl mx-auto px-6">
-                         <div className="flex items-center justify-between">
-                              <Link href="/" className="flex items-center group">
-                                   <div className="w-10 h-10 bg-gradient-to-br from-emerald-500 to-blue-600 rounded-xl flex items-center justify-center shadow-lg shadow-blue-500/20 group-hover:scale-105 transition-transform">
-                                        <Briefcase className="w-5 h-5 text-white" />
-                                   </div>
-                                   <span className="ml-3 text-lg font-bold text-slate-800 tracking-tight">SkillLink</span>
-                              </Link>
-
-                              <div className="hidden md:flex items-center space-x-8">
-                                   {['Cari Pekerjaan', 'Cari Freelancer', 'Cara Kerja', 'Blog'].map((item) => (
-                                        <button
-                                             key={item}
-                                             className="text-sm font-medium text-slate-600 hover:text-blue-600 transition-colors"
-                                        >
-                                             {item}
-                                        </button>
-                                   ))}
+          <header className={`fixed top-0 left-0 right-0 z-50 transition-all duration-200 ${
+               isScrolled 
+                    ? "bg-white/95 backdrop-blur-md border-b border-slate-200 py-3.5 shadow-sm" 
+                    : "bg-white/80 backdrop-blur-sm border-b border-slate-200/60 py-4"
+          }`}>
+               <div className="max-w-7xl mx-auto px-4 sm:px-6">
+                    <div className="flex items-center justify-between">
+                         
+                         {/* Brand Logo */}
+                         <Link href="/" className="flex items-center gap-2.5 group">
+                              <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center text-white font-black text-lg shadow-sm group-hover:bg-blue-700 transition-colors">
+                                   S
                               </div>
+                              <span className="text-xl font-extrabold text-slate-900 tracking-tight">SkillLink</span>
+                         </Link>
 
-                              <div className="hidden md:flex items-center space-x-3">
-                                   {loading ? (
-                                        <div className="h-10 w-32 bg-slate-200 rounded-full animate-pulse" />
-                                   ) : user ? (
-                                        <Link
-                                             href={dashboardLink}
-                                             className="flex items-center gap-3 bg-slate-900 text-white pl-1.5 pr-5 py-1.5 rounded-full hover:bg-slate-800 transition-all shadow-md shadow-slate-900/20 hover:shadow-lg hover:-translate-y-0.5 group border border-slate-800"
-                                        >
-                                             <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-blue-500 to-emerald-500 flex items-center justify-center text-xs font-bold ring-2 ring-white">
-                                                  {user.username ? user.username.charAt(0).toUpperCase() : <UserIcon className="w-4 h-4" />}
-                                             </div>
-                                             <div className="flex flex-col items-start leading-none gap-0.5">
-                                                  <span className="text-[10px] text-slate-400 font-medium uppercase tracking-wider">
-                                                       {user.role || 'Member'}
-                                                  </span>
-                                                  <span className="text-sm font-bold flex items-center gap-1">
-                                                       Dashboard
-                                                       <LayoutDashboard className="w-3.5 h-3.5 opacity-50 group-hover:opacity-100 transition-opacity" />
-                                                  </span>
-                                             </div>
-                                        </Link>
-                                   ) : (
-                                        <>
-                                             <Link
-                                                  href={'/auth/login'}
-                                                  className="text-sm font-medium text-slate-600 hover:text-slate-900 px-4 py-2 transition-colors"
-                                             >
-                                                  Masuk
-                                             </Link>
-                                             <Link
-                                                  href={'/auth/register'}
-                                                  className="bg-slate-900 text-white text-sm font-medium px-5 py-2.5 rounded-full hover:bg-slate-800 transition-all shadow-md shadow-slate-900/20 hover:shadow-lg hover:-translate-y-0.5"
-                                             >
-                                                  Daftar
-                                             </Link>
-                                        </>
-                                   )}
-                              </div>
-
-                              <button
-                                   onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                                   className="md:hidden p-2 text-slate-600 hover:bg-slate-100 rounded-lg transition"
+                         {/* Desktop Nav Links */}
+                         <nav className="hidden md:flex items-center gap-8">
+                              <button 
+                                   onClick={() => scrollToSection('kategori')}
+                                   className="text-sm font-semibold text-slate-600 hover:text-blue-600 transition-colors cursor-pointer"
                               >
-                                   {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+                                   Kategori Talenta
                               </button>
+                              <button 
+                                   onClick={() => scrollToSection('fitur')}
+                                   className="text-sm font-semibold text-slate-600 hover:text-blue-600 transition-colors cursor-pointer"
+                              >
+                                   Keunggulan
+                              </button>
+                              <button 
+                                   onClick={() => scrollToSection('cara-kerja')}
+                                   className="text-sm font-semibold text-slate-600 hover:text-blue-600 transition-colors cursor-pointer"
+                              >
+                                   Cara Kerja
+                              </button>
+                         </nav>
+
+                         {/* Auth CTA */}
+                         <div className="hidden md:flex items-center gap-3">
+                              {loading ? (
+                                   <div className="h-9 w-28 bg-slate-100 rounded-xl animate-pulse" />
+                              ) : user ? (
+                                   <Link
+                                        href={dashboardLink}
+                                        className="flex items-center gap-2 bg-slate-900 hover:bg-slate-800 text-white px-4 py-2 rounded-xl text-xs font-bold transition shadow-sm"
+                                   >
+                                        <LayoutDashboard className="w-4 h-4 text-blue-400" />
+                                        <span>Dashboard ({user.username || 'User'})</span>
+                                   </Link>
+                              ) : (
+                                   <>
+                                        <Link
+                                             href="/auth/login"
+                                             className="text-xs font-bold text-slate-700 hover:text-blue-600 px-4 py-2 transition-colors"
+                                        >
+                                             Masuk
+                                        </Link>
+                                        <Link
+                                             href="/auth/register"
+                                             className="bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold px-4 py-2.5 rounded-xl transition shadow-sm flex items-center gap-1.5"
+                                        >
+                                             <span>Daftar Gratis</span>
+                                             <ArrowRight className="w-3.5 h-3.5" />
+                                        </Link>
+                                   </>
+                              )}
+                         </div>
+
+                         {/* Mobile Hamburger */}
+                         <button
+                              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                              className="md:hidden p-2 text-slate-600 hover:bg-slate-100 rounded-lg transition"
+                              aria-label="Toggle Menu"
+                         >
+                              {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+                         </button>
+                    </div>
+               </div>
+
+               {/* Mobile Menu Dropdown */}
+               {mobileMenuOpen && (
+                    <div className="md:hidden bg-white border-b border-slate-200 px-4 py-4 space-y-3 shadow-lg animate-in slide-in-from-top-2">
+                         <button
+                              onClick={() => scrollToSection('kategori')}
+                              className="block w-full text-left px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 rounded-lg"
+                         >
+                              Kategori Talenta
+                         </button>
+                         <button
+                              onClick={() => scrollToSection('fitur')}
+                              className="block w-full text-left px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 rounded-lg"
+                         >
+                              Keunggulan Escrow
+                         </button>
+                         <button
+                              onClick={() => scrollToSection('cara-kerja')}
+                              className="block w-full text-left px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 rounded-lg"
+                         >
+                              Cara Kerja
+                         </button>
+                         
+                         <div className="pt-2 border-t border-slate-100 flex flex-col gap-2">
+                              {user ? (
+                                   <Link
+                                        href={dashboardLink}
+                                        className="flex items-center justify-center gap-2 bg-slate-900 text-white py-2.5 rounded-xl text-xs font-bold"
+                                   >
+                                        <LayoutDashboard className="w-4 h-4 text-blue-400" />
+                                        <span>Ke Dashboard</span>
+                                   </Link>
+                              ) : (
+                                   <>
+                                        <Link
+                                             href="/auth/login"
+                                             className="block w-full text-center py-2 text-xs font-bold text-slate-700 bg-slate-50 rounded-xl"
+                                        >
+                                             Masuk
+                                        </Link>
+                                        <Link
+                                             href="/auth/register"
+                                             className="block w-full text-center py-2.5 text-xs font-bold text-white bg-blue-600 rounded-xl"
+                                        >
+                                             Daftar Gratis
+                                        </Link>
+                                   </>
+                              )}
                          </div>
                     </div>
-
-                    {mobileMenuOpen && (
-                         <div className="absolute top-full left-0 right-0 mt-2 px-4 md:hidden">
-                              <div className="bg-white rounded-2xl shadow-xl border border-slate-100 p-4 space-y-2 overflow-hidden animate-in slide-in-from-top-2 fade-in duration-200">
-                                   {['Cari Pekerjaan', 'Cari Freelancer', 'Cara Kerja', 'Blog'].map((item) => (
-                                        <button key={item} className="block w-full text-left px-4 py-3 text-sm font-medium text-slate-600 hover:bg-slate-50 hover:text-blue-600 rounded-xl transition-colors">
-                                             {item}
-                                        </button>
-                                   ))}
-                                   <div className="h-px bg-slate-100 my-2" />
-
-                                   {loading ? (
-                                        <div className="w-full h-12 bg-slate-100 rounded-xl animate-pulse" />
-                                   ) : user ? (
-                                        // Mobile Dashboard Button
-                                        <Link href={dashboardLink} className="flex items-center justify-center gap-2 w-full text-center px-4 py-3 text-sm font-bold text-white bg-slate-900 hover:bg-slate-800 rounded-xl transition-colors shadow-lg shadow-slate-900/20">
-                                             <LayoutDashboard className="w-4 h-4" />
-                                             Ke Dashboard ({user.username})
-                                        </Link>
-                                   ) : (
-                                        <>
-                                             <Link href="/auth/login" className="block w-full text-center px-4 py-3 text-sm font-medium text-slate-600 hover:bg-slate-50 rounded-xl transition-colors">
-                                                  Masuk
-                                             </Link>
-                                             <Link href="/auth/register" className="block w-full text-center px-4 py-3 text-sm font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-xl transition-colors shadow-lg shadow-blue-600/20">
-                                                  Daftar Sekarang
-                                             </Link>
-                                        </>
-                                   )}
-                              </div>
-                         </div>
-                    )}
-               </nav>
-          </>
-     )
+               )}
+          </header>
+     );
 }

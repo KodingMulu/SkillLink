@@ -40,11 +40,9 @@ export default function DashboardLayout({
   const [isNotificationOpen, setIsNotificationOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
 
-  // Search state
   const [searchQuery, setSearchQuery] = useState('');
   const [isSearchOpen, setIsSearchOpen] = useState(false);
 
-  // Notification state
   const [notifications, setNotifications] = useState<NotificationItem[]>([
     {
       id: '1',
@@ -170,13 +168,11 @@ export default function DashboardLayout({
   return (
     <div className="h-screen w-full bg-slate-50 flex font-sans overflow-hidden">
       
-      {/* Sidebar Desktop & Mobile */}
       <aside className={`
         fixed inset-y-0 left-0 z-50 w-64 bg-slate-900 text-white transform transition-transform duration-300 ease-in-out
         ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'} md:relative md:translate-x-0
         flex flex-col h-full border-r border-slate-800
       `}>
-        {/* Brand Header */}
         <div className="h-20 flex-shrink-0 flex items-center justify-between px-6 border-b border-slate-800">
           <Link href={`/dashboard/${activeRole}`} className="flex items-center gap-3">
             <div className="w-10 h-10 bg-blue-600 rounded-2xl flex items-center justify-center text-white">
@@ -196,7 +192,6 @@ export default function DashboardLayout({
           </button>
         </div>
 
-        {/* Navigation Items */}
         <nav className="flex-1 px-4 py-6 space-y-1.5 overflow-y-auto">
           <p className="px-3 text-[10px] font-black uppercase tracking-widest text-slate-500 mb-3">Navigasi Utama</p>
           {menuItems.map((item) => {
@@ -226,7 +221,6 @@ export default function DashboardLayout({
           })}
         </nav>
 
-        {/* User Card Sidebar Footer */}
         <div className="p-4 border-t border-slate-800 bg-slate-950/50">
           <div className="flex items-center justify-between p-2 rounded-2xl bg-slate-800/50 border border-slate-700/50">
             <div className="flex items-center gap-3 overflow-hidden">
@@ -252,7 +246,6 @@ export default function DashboardLayout({
         </div>
       </aside>
 
-      {/* Overlay Backdrop Mobile */}
       {isSidebarOpen && (
         <div
           onClick={() => setIsSidebarOpen(false)}
@@ -260,10 +253,8 @@ export default function DashboardLayout({
         ></div>
       )}
 
-      {/* Main Body */}
       <div className="flex-1 flex flex-col h-full min-w-0">
         
-        {/* Global Header */}
         <header className="h-20 flex-shrink-0 bg-white border-b border-slate-200 flex items-center justify-between px-4 lg:px-10 z-30">
           
           <div className="flex items-center gap-4">
@@ -274,7 +265,6 @@ export default function DashboardLayout({
               <Menu className="w-6 h-6" />
             </button>
 
-            {/* Global Search Input */}
             <div className="relative" ref={searchRef}>
               <form 
                 onSubmit={handleSearchSubmit}
@@ -303,7 +293,6 @@ export default function DashboardLayout({
                 )}
               </form>
 
-              {/* Live Search Quick Results Dropdown */}
               {isSearchOpen && searchQuery.trim() && (
                 <div className="absolute left-0 mt-2 w-80 lg:w-96 bg-white border border-slate-200 rounded-2xl shadow-lg py-3 z-50">
                   <div className="px-4 pb-2 border-b border-slate-100 flex items-center justify-between">
@@ -327,10 +316,8 @@ export default function DashboardLayout({
             </div>
           </div>
 
-          {/* Header Action Controls */}
           <div className="flex items-center gap-3">
             
-            {/* Notification Dropdown */}
             <div className="relative" ref={notificationRef}>
               <button
                 onClick={() => setIsNotificationOpen(!isNotificationOpen)}
@@ -385,7 +372,6 @@ export default function DashboardLayout({
               )}
             </div>
 
-            {/* Profile Dropdown */}
             <div className="relative" ref={profileRef}>
               <button
                 onClick={() => setIsProfileOpen(!isProfileOpen)}
@@ -439,7 +425,6 @@ export default function DashboardLayout({
           </div>
         </header>
 
-        {/* Content View Container */}
         <main className="flex-1 overflow-y-auto p-6 lg:p-10">
           <div className="max-w-7xl mx-auto">
             {children}

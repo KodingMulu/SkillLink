@@ -25,7 +25,7 @@ export async function PATCH(
         }
 
         const body = await req.json();
-        const { status } = body; // status: 'ACCEPTED' | 'REJECTED'
+        const { status } = body;
         const { proposalId } = params;
 
         if (!proposalId) {

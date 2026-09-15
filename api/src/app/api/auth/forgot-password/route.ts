@@ -26,7 +26,6 @@ export async function POST(req: Request) {
     });
 
     if (!user) {
-      // Return generic response to prevent email enumeration attacks
       return genericSuccessResponse;
     }
 
@@ -47,13 +46,11 @@ export async function POST(req: Request) {
         `Kode reset password Anda adalah: ${code}`
       );
     } catch (mailErr) {
-      console.error("Failed to send reset password email:", mailErr);
     }
 
     return genericSuccessResponse;
 
   } catch (error) {
-    console.error("FORGOT_PASS_ERROR:", error);
     return NextResponse.json(
       { message: "Terjadi kesalahan pada server", code: 500 },
       { status: 500 }
