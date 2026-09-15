@@ -1,14 +1,18 @@
-// app/api/wallet/route.ts
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { getAuthUser } from "@/lib/server-auth";
 import { snap } from "@/lib/midtrans";
-import { TransactionType } from "@/generated/prisma"; 
+import { TransactionType } from "@/generated/prisma";
 
 export async function GET(req: NextRequest) {
   try {
     const user = await getAuthUser(req);
-    if (!user) return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+    if (!user) {
+      return NextResponse.json(
+        { message: "Unauthorized: Token missing or invalid", code: 401 },
+        { status: 401 }
+      );
+    }
 
     let wallet = await prisma.wallet.findUnique({
       where: { userId: user.id },
@@ -24,29 +28,47 @@ export async function GET(req: NextRequest) {
       });
     }
 
-    return NextResponse.json({ message: "Success", code: 200, data: wallet });
+    return NextResponse.json(
+      { message: "Success", code: 200, data: wallet },
+      { status: 200 }
+    );
   } catch (error) {
-    return NextResponse.json({ message: "Internal Server Error" }, { status: 500 });
+    console.error("GET_WALLET_ERROR:", error);
+    return NextResponse.json(
+      { message: "Internal Server Error", code: 500 },
+      { status: 500 }
+    );
   }
 }
 
 export async function POST(req: NextRequest) {
   try {
-    console.log("DEBUG SERVER KEY:", process.env.MIDTRANS_SERVER_KEY);
-    
     const auth = await getAuthUser(req);
-    if (!auth) return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+    if (!auth) {
+      return NextResponse.json(
+        { message: "Unauthorized: Token missing or invalid", code: 401 },
+        { status: 401 }
+      );
+    }
 
     const user = await prisma.user.findUnique({
-        where: { id: auth.id }
+      where: { id: auth.id }
     });
-    if (!user) return NextResponse.json({ message: "User not found" }, { status: 404 });
+    if (!user) {
+      return NextResponse.json(
+        { message: "User not found", code: 404 },
+        { status: 404 }
+      );
+    }
 
     const body = await req.json();
     const { amount } = body;
 
     if (!amount || amount < 10000) {
-      return NextResponse.json({ message: "Minimal top up Rp 10.000" }, { status: 400 });
+      return NextResponse.json(
+        { message: "Minimal top up Rp 10.000", code: 400 },
+        { status: 400 }
+      );
     }
 
     let wallet = await prisma.wallet.findUnique({ where: { userId: user.id } });
@@ -59,13 +81,13 @@ export async function POST(req: NextRequest) {
         walletId: wallet.id,
         amount: parseFloat(amount),
         type: TransactionType.DEPOSIT,
-        status: "PENDING" 
+        status: "PENDING"
       }
     });
 
     const parameter = {
       transaction_details: {
-        order_id: transaction.id, 
+        order_id: transaction.id,
         gross_amount: parseFloat(amount),
       },
       customer_details: {
@@ -76,17 +98,23 @@ export async function POST(req: NextRequest) {
 
     const midtransResponse = await snap.createTransaction(parameter);
 
-    return NextResponse.json({
-      message: "Token generated",
-      code: 201,
-      data: {
-        token: midtransResponse.token,
-        redirect_url: midtransResponse.redirect_url
-      }
-    });
+    return NextResponse.json(
+      {
+        message: "Token generated",
+        code: 201,
+        data: {
+          token: midtransResponse.token,
+          redirect_url: midtransResponse.redirect_url
+        }
+      },
+      { status: 201 }
+    );
 
   } catch (error) {
-    console.error("Midtrans Error:", error);
-    return NextResponse.json({ message: "Gagal memproses pembayaran" }, { status: 500 });
+    console.error("MIDTRANS_TOPUP_ERROR:", error);
+    return NextResponse.json(
+      { message: "Gagal memproses pembayaran", code: 500 },
+      { status: 500 }
+    );
   }
 }

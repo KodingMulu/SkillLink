@@ -6,8 +6,18 @@ export async function GET(req: NextRequest) {
   try {
     const user = await getAuthUser(req);
     
-    if (!user || user.role !== "CLIENT") {
-      return NextResponse.json({ message: "Forbidden" }, { status: 403 });
+    if (!user) {
+      return NextResponse.json(
+        { message: "Unauthorized: Token missing or invalid", code: 401 },
+        { status: 401 }
+      );
+    }
+
+    if (user.role !== "CLIENT") {
+      return NextResponse.json(
+        { message: "Forbidden: Client access only", code: 403 },
+        { status: 403 }
+      );
     }
 
     const [wallet, openJobsCount, newApplicantsCount, completedContractsCount] = await Promise.all([
@@ -92,20 +102,29 @@ export async function GET(req: NextRequest) {
         budget: Number(contract.job.budget)
     }));
 
-    return NextResponse.json({
-      data: {
-        stats: {
-            totalSpent: Number(totalSpentAggregate._sum.amount) || 0,
-            openJobs: openJobsCount,
-            newApplicants: newApplicantsCount,
-            completedContracts: completedContractsCount
+    return NextResponse.json(
+      {
+        message: "Success",
+        code: 200,
+        data: {
+          stats: {
+              totalSpent: Number(totalSpentAggregate._sum.amount) || 0,
+              openJobs: openJobsCount,
+              newApplicants: newApplicantsCount,
+              completedContracts: completedContractsCount
+          },
+          recentApplicants: formattedApplicants,
+          activeContracts: formattedContracts
         },
-        recentApplicants: formattedApplicants,
-        activeContracts: formattedContracts
       },
-    });
+      { status: 200 }
+    );
 
   } catch (error) {
-    return NextResponse.json({ message: "Internal Server Error" }, { status: 500 });
+    console.error("CLIENT_DASHBOARD_ERROR:", error);
+    return NextResponse.json(
+      { message: "Internal Server Error", code: 500 },
+      { status: 500 }
+    );
   }
 }

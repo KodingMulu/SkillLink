@@ -6,7 +6,16 @@ export async function GET(req: NextRequest) {
     try {
         const userAuth = await getAuthUser(req);
         if (!userAuth) {
-            return NextResponse.json({ message: "Unauthorized", code: 401 }, { status: 401 });
+            return NextResponse.json(
+                { message: "Unauthorized: Token missing or invalid", code: 401 },
+                { status: 401 }
+            );
+        }
+        if (userAuth.role !== "CLIENT") {
+            return NextResponse.json(
+                { message: "Forbidden: Client access only", code: 403 },
+                { status: 403 }
+            );
         }
 
         const user = await prisma.user.findUnique({
@@ -23,7 +32,12 @@ export async function GET(req: NextRequest) {
             }
         });
 
-        if (!user) return NextResponse.json({ message: "User not found", code: 404 });
+        if (!user) {
+            return NextResponse.json(
+                { message: "User not found", code: 404 },
+                { status: 404 }
+            );
+        }
 
         const totalSpent = user.clientProjects.reduce((acc, curr) => acc + curr.job.budget, 0);
 
@@ -49,9 +63,16 @@ export async function GET(req: NextRequest) {
             }))
         };
 
-        return NextResponse.json({ message: "Success", code: 200, data: profileData });
+        return NextResponse.json(
+            { message: "Success", code: 200, data: profileData },
+            { status: 200 }
+        );
 
     } catch (error) {
-        return NextResponse.json({ message: "Internal Server Error", code: 500 }, { status: 500 });
+        console.error("CLIENT_PROFILE_ERROR:", error);
+        return NextResponse.json(
+            { message: "Internal Server Error", code: 500 },
+            { status: 500 }
+        );
     }
 }

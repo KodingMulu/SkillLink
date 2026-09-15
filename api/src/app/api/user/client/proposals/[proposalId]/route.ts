@@ -2,17 +2,45 @@ import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { getAuthUser } from "@/lib/server-auth";
 
-export async function PATCH(req: NextRequest,
-    props: { params: Promise<{ proposalId: string }> }) {
+export async function PATCH(
+    req: NextRequest,
+    props: { params: Promise<{ proposalId: string }> }
+) {
     try {
         const params = await props.params;
         const user = await getAuthUser(req);
-        if (!user || user.role !== "CLIENT") {
-            return NextResponse.json({ message: "Forbidden" }, { status: 403 });
+        
+        if (!user) {
+            return NextResponse.json(
+                { message: "Unauthorized: Token missing or invalid", code: 401 },
+                { status: 401 }
+            );
         }
 
-        const { status } = await req.json(); // status: 'ACCEPTED' | 'REJECTED'
+        if (user.role !== "CLIENT") {
+            return NextResponse.json(
+                { message: "Forbidden: Client access only", code: 403 },
+                { status: 403 }
+            );
+        }
+
+        const body = await req.json();
+        const { status } = body; // status: 'ACCEPTED' | 'REJECTED'
         const { proposalId } = params;
+
+        if (!proposalId) {
+            return NextResponse.json(
+                { message: "Proposal ID is required", code: 400 },
+                { status: 400 }
+            );
+        }
+
+        if (!status || (status !== "ACCEPTED" && status !== "REJECTED")) {
+            return NextResponse.json(
+                { message: "Status harus bertipe ACCEPTED atau REJECTED", code: 400 },
+                { status: 400 }
+            );
+        }
 
         const proposal = await prisma.proposal.findUnique({
             where: { id: proposalId },
@@ -20,7 +48,10 @@ export async function PATCH(req: NextRequest,
         });
 
         if (!proposal || proposal.job.clientId !== user.id) {
-            return NextResponse.json({ message: "Proposal not found or unauthorized" }, { status: 404 });
+            return NextResponse.json(
+                { message: "Proposal tidak ditemukan atau tidak memiliki akses", code: 404 },
+                { status: 404 }
+            );
         }
 
         const updatedProposal = await prisma.proposal.update({
@@ -51,14 +82,20 @@ export async function PATCH(req: NextRequest,
             }
         }
 
-        return NextResponse.json({
-            code: 200,
-            message: `Proposal ${status.toLowerCase()}`,
-            data: updatedProposal
-        });
+        return NextResponse.json(
+            {
+                message: `Proposal ${status.toLowerCase()}`,
+                code: 200,
+                data: updatedProposal
+            },
+            { status: 200 }
+        );
 
     } catch (error) {
-        console.error("Update Proposal Error:", error);
-        return NextResponse.json({ message: "Internal Server Error" }, { status: 500 });
+        console.error("UPDATE_PROPOSAL_ERROR:", error);
+        return NextResponse.json(
+            { message: "Internal Server Error", code: 500 },
+            { status: 500 }
+        );
     }
 }
