@@ -11,7 +11,10 @@ export async function GET(
         const user = await getAuthUser(req);
 
         if (!user) {
-            return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+            return NextResponse.json(
+                { message: "Unauthorized: Token missing or invalid", code: 401 },
+                { status: 401 }
+            );
         }
 
         const freelancer = await prisma.user.findUnique({
@@ -34,8 +37,6 @@ export async function GET(
                 },
                 freelancerProjects: {
                     where: {
-                        // Kita gunakan string literal "COMPLETED"
-                        // Prisma akan otomatis mencocokkan dengan Enum JobStatus
                         status: "COMPLETED"
                     },
                     include: {
@@ -48,14 +49,16 @@ export async function GET(
         });
 
         if (!freelancer) {
-            return NextResponse.json({ message: "Freelancer not found" }, { status: 404 });
+            return NextResponse.json(
+                { message: "Freelancer not found", code: 404 },
+                { status: 404 }
+            );
         }
 
         const completedProjects = freelancer.freelancerProjects;
         const totalProjects = completedProjects.length;
 
         const totalRating = completedProjects.reduce((acc, curr) => {
-            // PERBAIKAN: Bypass Error TypeScript & ESLint disini
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const rating = (curr as any).rating || 0;
             return acc + rating;
@@ -73,21 +76,28 @@ export async function GET(
             rating: (proj as any).rating
         }));
 
-        return NextResponse.json({
-            code: 200,
-            data: {
-                ...freelancer,
-                stats: {
-                    rating: Number(averageRating),
-                    reviews: totalProjects,
-                    successRate: successRate
-                },
-                experiences: experienceHistory
-            }
-        });
+        return NextResponse.json(
+            {
+                message: "Success",
+                code: 200,
+                data: {
+                    ...freelancer,
+                    stats: {
+                        rating: Number(averageRating),
+                        reviews: totalProjects,
+                        successRate: successRate
+                    },
+                    experiences: experienceHistory
+                }
+            },
+            { status: 200 }
+        );
 
     } catch (error) {
-        console.error("API Error:", error);
-        return NextResponse.json({ message: "Internal Server Error" }, { status: 500 });
+        console.error("GET_FREELANCER_DETAIL_ERROR:", error);
+        return NextResponse.json(
+            { message: "Internal Server Error", code: 500 },
+            { status: 500 }
+        );
     }
 }

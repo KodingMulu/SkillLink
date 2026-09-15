@@ -8,8 +8,15 @@ export async function GET(req: NextRequest) {
 
     if (!user) {
       return NextResponse.json(
-        { message: "Unauthorized", code: 401 },
+        { message: "Unauthorized: Token missing or invalid", code: 401 },
         { status: 401 }
+      );
+    }
+
+    if (user.role !== "FREELANCER") {
+      return NextResponse.json(
+        { message: "Forbidden: Freelancer access only", code: 403 },
+        { status: 403 }
       );
     }
 
@@ -165,38 +172,41 @@ export async function GET(req: NextRequest) {
       tags: job.tags.length > 0 ? job.tags : ["Remote", "Project"]
     }));
 
-    return NextResponse.json({
-      message: "Success fetching dashboard data",
-      code: 200,
-      data: {
-        stats: {
-          revenue: {
-            value: totalRevenue,
-            growth: 12.5,
-            label: "Total Pendapatan"
+    return NextResponse.json(
+      {
+        message: "Success fetching dashboard data",
+        code: 200,
+        data: {
+          stats: {
+            revenue: {
+              value: totalRevenue,
+              growth: 12.5,
+              label: "Total Pendapatan"
+            },
+            activeProjects: {
+              value: activeProjectsCount,
+              growth: calculateGrowth(activeProjectsCount, activeProjectsLastMonth),
+              label: "Proyek Aktif"
+            },
+            completedProjects: {
+              value: completedProjectsCount,
+              growth: calculateGrowth(completedProjectsCount, completedProjectsLastMonth),
+              label: "Selesai"
+            },
+            rating: {
+              value: avgRating,
+              growth: 0,
+              label: "Rating"
+            }
           },
-          activeProjects: {
-            value: activeProjectsCount,
-            growth: calculateGrowth(activeProjectsCount, activeProjectsLastMonth),
-            label: "Proyek Aktif"
-          },
-          completedProjects: {
-            value: completedProjectsCount,
-            growth: calculateGrowth(completedProjectsCount, completedProjectsLastMonth),
-            label: "Selesai"
-          },
-          rating: {
-            value: avgRating,
-            growth: 0,
-            label: "Rating"
-          }
+          activeProjects: formattedActiveProjects,
+          recommendedJobs: formattedRecommendations,
+          walletBalance: walletData?.balance ? Number(walletData.balance) : 0,
+          recentTransactions: walletData?.transactions || [],
         },
-        activeProjects: formattedActiveProjects,
-        recommendedJobs: formattedRecommendations,
-        walletBalance: walletData?.balance ? Number(walletData.balance) : 0,
-        recentTransactions: walletData?.transactions || [],
       },
-    });
+      { status: 200 }
+    );
 
   } catch (error) {
     console.error("Dashboard API Error:", error);

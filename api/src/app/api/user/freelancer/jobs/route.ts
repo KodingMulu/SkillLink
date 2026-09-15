@@ -7,7 +7,17 @@ export async function GET(req: NextRequest) {
   try {
     const userAuth = await getAuthUser(req);
     if (!userAuth) {
-      return NextResponse.json({ message: "Unauthorized", code: 401 }, { status: 401 });
+      return NextResponse.json(
+        { message: "Unauthorized: Token missing or invalid", code: 401 },
+        { status: 401 }
+      );
+    }
+
+    if (userAuth.role !== "FREELANCER") {
+      return NextResponse.json(
+        { message: "Forbidden: Freelancer access only", code: 403 },
+        { status: 403 }
+      );
     }
 
     const searchParams = req.nextUrl.searchParams;
@@ -43,16 +53,16 @@ export async function GET(req: NextRequest) {
     const [jobs, totalApplied, pendingResponse] = await Promise.all([
       prisma.job.findMany({
         where: whereClause,
-        orderBy: { createdAt: "desc" }, 
+        orderBy: { createdAt: "desc" },
         take: 20,
         include: {
           client: {
             select: {
-              username: true, 
+              username: true,
             }
           },
-          _count: { 
-            select: { proposals: true } 
+          _count: {
+            select: { proposals: true }
           }
         }
       }),
@@ -62,7 +72,7 @@ export async function GET(req: NextRequest) {
       }),
 
       prisma.proposal.count({
-        where: { 
+        where: {
           freelancerId: userAuth.id,
           status: "PENDING"
         }
@@ -77,7 +87,7 @@ export async function GET(req: NextRequest) {
         id: job.id,
         title: job.title,
         description: job.description,
-        budget: job.budget, 
+        budget: job.budget,
         tags: job.tags,
         companyName: job.client.username || "Klien Terverifikasi",
         applicantCount: job._count.proposals,
@@ -89,19 +99,25 @@ export async function GET(req: NextRequest) {
 
     formattedJobs.sort((a, b) => b.matchScore - a.matchScore);
 
-    return NextResponse.json({
-      message: "Success fetching job feed",
-      code: 200,
-      data: {
-        jobs: formattedJobs,
-        stats: {
-          applied: totalApplied, 
-          pending: pendingResponse
-        }
+    return NextResponse.json(
+      {
+        message: "Success fetching job feed",
+        code: 200,
+        data: {
+          jobs: formattedJobs,
+          stats: {
+            applied: totalApplied,
+            pending: pendingResponse
+          }
+        },
       },
-    });
+      { status: 200 }
+    );
   } catch (error) {
-    console.error(error);
-    return NextResponse.json({ message: "Internal Server Error", code: 500 }, { status: 500 });
+    console.error("GET_FREELANCER_JOBS_ERROR:", error);
+    return NextResponse.json(
+      { message: "Internal Server Error", code: 500 },
+      { status: 500 }
+    );
   }
 }

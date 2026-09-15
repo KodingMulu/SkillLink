@@ -4,9 +4,19 @@ import { getAuthUser } from "@/lib/server-auth";
 
 export async function GET(req: NextRequest) {
   try {
-    const user = getAuthUser(req);
+    const user = await getAuthUser(req);
     if (!user) {
-      return NextResponse.json({ message: "Unauthorized", code: 401 }, { status: 401 });
+      return NextResponse.json(
+        { message: "Unauthorized: Token missing or invalid", code: 401 },
+        { status: 401 }
+      );
+    }
+
+    if (user.role !== "FREELANCER") {
+      return NextResponse.json(
+        { message: "Forbidden: Freelancer access only", code: 403 },
+        { status: 403 }
+      );
     }
 
     const projects = await prisma.project.findMany({
@@ -29,12 +39,19 @@ export async function GET(req: NextRequest) {
       },
     });
 
-    return NextResponse.json({
-      message: "Success fetching projects",
-      code: 200,
-      data: projects,
-    });
+    return NextResponse.json(
+      {
+        message: "Success fetching projects",
+        code: 200,
+        data: projects,
+      },
+      { status: 200 }
+    );
   } catch (error) {
-    return NextResponse.json({ message: "Internal Server Error", code: 500 }, { status: 500 });
+    console.error("GET_FREELANCER_PROJECTS_ERROR:", error);
+    return NextResponse.json(
+      { message: "Internal Server Error", code: 500 },
+      { status: 500 }
+    );
   }
 }

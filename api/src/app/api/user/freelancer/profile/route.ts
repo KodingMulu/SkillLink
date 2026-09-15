@@ -6,7 +6,16 @@ export async function GET(req: NextRequest) {
   try {
     const userAuth = await getAuthUser(req);
     if (!userAuth) {
-      return NextResponse.json({ message: "Unauthorized", code: 401 }, { status: 401 });
+      return NextResponse.json(
+        { message: "Unauthorized: Token missing or invalid", code: 401 },
+        { status: 401 }
+      );
+    }
+    if (userAuth.role !== "FREELANCER") {
+      return NextResponse.json(
+        { message: "Forbidden: Freelancer access only", code: 403 },
+        { status: 403 }
+      );
     }
 
     const userId = userAuth.id;
@@ -20,7 +29,12 @@ export async function GET(req: NextRequest) {
       }
     });
 
-    if (!user) return NextResponse.json({ message: "User not found", code: 404 });
+    if (!user) {
+      return NextResponse.json(
+        { message: "User not found", code: 404 },
+        { status: 404 }
+      );
+    }
 
     const completedProjectsRaw = await prisma.project.findMany({
       where: {
@@ -78,17 +92,35 @@ export async function GET(req: NextRequest) {
       }))
     };
 
-    return NextResponse.json({ message: "Success", code: 200, data: profileData });
+    return NextResponse.json(
+      { message: "Success", code: 200, data: profileData },
+      { status: 200 }
+    );
 
   } catch (error) {
-    return NextResponse.json({ message: "Internal Server Error", code: 500 }, { status: 500 });
+    console.error("GET_FREELANCER_PROFILE_ERROR:", error);
+    return NextResponse.json(
+      { message: "Internal Server Error", code: 500 },
+      { status: 500 }
+    );
   }
 }
 
 export async function PUT(req: NextRequest) {
   try {
     const userAuth = await getAuthUser(req);
-    if (!userAuth) return NextResponse.json({ message: "Unauthorized", code: 401 }, { status: 401 });
+    if (!userAuth) {
+      return NextResponse.json(
+        { message: "Unauthorized: Token missing or invalid", code: 401 },
+        { status: 401 }
+      );
+    }
+    if (userAuth.role !== "FREELANCER") {
+      return NextResponse.json(
+        { message: "Forbidden: Freelancer access only", code: 403 },
+        { status: 403 }
+      );
+    }
 
     const body = await req.json();
     const { name, title, bio, location, phone, skills } = body;
@@ -105,8 +137,15 @@ export async function PUT(req: NextRequest) {
       }
     });
 
-    return NextResponse.json({ message: "Profile updated", code: 200 });
+    return NextResponse.json(
+      { message: "Profile updated successfully", code: 200 },
+      { status: 200 }
+    );
   } catch (error) {
-    return NextResponse.json({ message: "Internal Server Error", code: 500 }, { status: 500 });
+    console.error("UPDATE_FREELANCER_PROFILE_ERROR:", error);
+    return NextResponse.json(
+      { message: "Internal Server Error", code: 500 },
+      { status: 500 }
+    );
   }
 }

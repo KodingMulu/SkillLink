@@ -7,10 +7,17 @@ const ADMIN_FEE = 5000;
 export async function GET(req: NextRequest) {
   try {
     const user = await getAuthUser(req);
-    if (!user || user.role !== "FREELANCER") {
+    if (!user) {
       return NextResponse.json(
-        { message: "Unauthorized" },
+        { message: "Unauthorized: Token missing or invalid", code: 401 },
         { status: 401 }
+      );
+    }
+
+    if (user.role !== "FREELANCER") {
+      return NextResponse.json(
+        { message: "Forbidden: Freelancer access only", code: 403 },
+        { status: 403 }
       );
     }
 
@@ -35,21 +42,25 @@ export async function GET(req: NextRequest) {
       });
     }
 
-    return NextResponse.json({
-      code: 200,
-      data: {
-        ...wallet,
-        balance: Number(wallet.balance),
-        transactions: wallet.transactions.map((t) => ({
-          ...t,
-          amount: Number(t.amount),
-        })),
+    return NextResponse.json(
+      {
+        message: "Success",
+        code: 200,
+        data: {
+          ...wallet,
+          balance: Number(wallet.balance),
+          transactions: wallet.transactions.map((t) => ({
+            ...t,
+            amount: Number(t.amount),
+          })),
+        },
       },
-    });
+      { status: 200 }
+    );
   } catch (error) {
     console.error("GET WALLET ERROR:", error);
     return NextResponse.json(
-      { message: "Internal Server Error" },
+      { message: "Internal Server Error", code: 500 },
       { status: 500 }
     );
   }
@@ -58,10 +69,17 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   try {
     const user = await getAuthUser(req);
-    if (!user || user.role !== "FREELANCER") {
+    if (!user) {
       return NextResponse.json(
-        { message: "Unauthorized" },
+        { message: "Unauthorized: Token missing or invalid", code: 401 },
         { status: 401 }
+      );
+    }
+
+    if (user.role !== "FREELANCER") {
+      return NextResponse.json(
+        { message: "Forbidden: Freelancer access only", code: 403 },
+        { status: 403 }
       );
     }
 
@@ -70,7 +88,7 @@ export async function POST(req: NextRequest) {
 
     if (!withdrawAmount || withdrawAmount <= 0) {
       return NextResponse.json(
-        { message: "Invalid withdraw amount" },
+        { message: "Invalid withdraw amount", code: 400 },
         { status: 400 }
       );
     }
@@ -81,7 +99,7 @@ export async function POST(req: NextRequest) {
 
     if (!wallet) {
       return NextResponse.json(
-        { message: "Wallet not found" },
+        { message: "Wallet not found", code: 404 },
         { status: 404 }
       );
     }
@@ -91,7 +109,7 @@ export async function POST(req: NextRequest) {
 
     if (currentBalance < totalDeduction) {
       return NextResponse.json(
-        { message: "Saldo tidak mencukupi + biaya admin" },
+        { message: "Saldo tidak mencukupi + biaya admin", code: 400 },
         { status: 400 }
       );
     }
@@ -115,18 +133,21 @@ export async function POST(req: NextRequest) {
       }),
     ]);
 
-    return NextResponse.json({
-      code: 200,
-      message: "Withdrawal successful",
-      data: {
-        newBalance: Number(updatedWallet.balance),
-        adminFee: ADMIN_FEE,
+    return NextResponse.json(
+      {
+        message: "Withdrawal successful",
+        code: 200,
+        data: {
+          newBalance: Number(updatedWallet.balance),
+          adminFee: ADMIN_FEE,
+        },
       },
-    });
+      { status: 200 }
+    );
   } catch (error) {
     console.error("WITHDRAW ERROR:", error);
     return NextResponse.json(
-      { message: "Internal Server Error" },
+      { message: "Internal Server Error", code: 500 },
       { status: 500 }
     );
   }
