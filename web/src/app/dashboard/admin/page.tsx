@@ -17,6 +17,7 @@ import DashboardLayout from '../DashboardLayout';
 import ExportModal from './components/ExportModal';
 import AddUserModal from './components/AddUserModal';
 import axios from 'axios';
+import { getApiUrl } from '@/lib/api';
 
 interface Stat {
   label: string;
@@ -114,11 +115,8 @@ export default function AdminDashboard({ backgroundImage, backgroundColor }: Adm
   useEffect(() => {
     const fetchStats = async () => {
       try {
-        const apiUrl = process.env.NEXT_PUBLIC_API_URL 
-          ? `${process.env.NEXT_PUBLIC_API_URL}/user/admin/stats` 
-          : '/api/user/admin/stats';
-
-        const res = await axios.get<AdminStatsResponse>(apiUrl, {
+        const apiUrl = getApiUrl();
+        const res = await axios.get<AdminStatsResponse>(`${apiUrl}/user/admin/stats`, {
           withCredentials: true 
         });
 

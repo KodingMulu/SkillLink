@@ -5,6 +5,7 @@ import { Eye, EyeOff, Mail, User, ArrowRight, Lock, Briefcase, UserCircle } from
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import axios from 'axios';
+import { getApiUrl } from '@/lib/api';
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -12,7 +13,7 @@ export default function RegisterPage() {
     fullName: '',
     email: '',
     password: '',
-    role: 'FREELANCER'
+    role: 'CLIENT'
   });
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -31,7 +32,7 @@ export default function RegisterPage() {
     if (!acceptTerms) { alert('Anda harus menyetujui syarat dan ketentuan'); return; }
     setIsLoading(true);
     try {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || '/api';
+      const apiUrl = getApiUrl();
       const payload = { 
         email: formData.email, 
         username: formData.fullName, 

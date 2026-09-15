@@ -12,7 +12,8 @@ export async function middleware(request: NextRequest) {
   }
 
   try {
-    const secret = new TextEncoder().encode(process.env.JWT_SECRET || 'rahasia_default'); 
+    const secretKey = process.env.JWT_SECRET || 'skilllink_super_secret_jwt_key_2026_change_me_in_production';
+    const secret = new TextEncoder().encode(secretKey); 
     const { payload } = await jwtVerify(token, secret);
 
     const role = payload.role as string; 

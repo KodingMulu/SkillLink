@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import DashboardLayout from "../../DashboardLayout";
 import axios from 'axios';
+import { getApiUrl } from '@/lib/api';
 import {
   User, Bell, CreditCard, Eye, EyeOff, Save, Shield,
   Check, X, ExternalLink, Wallet, MapPin, Phone
@@ -50,7 +51,7 @@ export default function SettingsPage() {
   useEffect(() => {
     const fetchSettings = async () => {
       try {
-        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+        const apiUrl = getApiUrl();
         const response = await axios.get(`${apiUrl}/user/freelancer/settings`, { withCredentials: true });
 
         if (response.data.code === 200) {
@@ -98,7 +99,7 @@ export default function SettingsPage() {
   const handleProfileUpdate = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+      const apiUrl = getApiUrl();
       await axios.put(`${apiUrl}/user/freelancer/settings`, {
         name: profileData.name,
         title: profileData.title,
@@ -123,14 +124,20 @@ export default function SettingsPage() {
     }
 
     try {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
-      const response = await axios.patch(`${apiUrl}/user/freelancer/settings`, {
+      const apiUrl = getApiUrl();
+      const response = await axios.put(`${apiUrl}/user/freelancer/settings`, {
+        name: profileData.name,
+        title: profileData.title,
+        bio: profileData.bio,
+        phone: profileData.phone,
+        location: profileData.location,
+        skills: skills,
         currentPassword: passwordData.currentPassword,
         newPassword: passwordData.newPassword
       }, { withCredentials: true });
 
       if (response.data.code === 200) {
-        alert('Password berhasil diubah!');
+        alert('Pengaturan berhasil diperbarui!');
         setPasswordData({ currentPassword: '', newPassword: '', confirmPassword: '' });
       } else {
         alert(response.data.message);

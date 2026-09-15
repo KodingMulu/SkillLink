@@ -4,6 +4,8 @@ import { useEffect, useState } from 'react';
 import axios from 'axios';
 import { useRouter } from 'next/navigation';
 
+import { getApiUrl } from '@/lib/api';
+
 interface User {
   id: string;
   email: string;
@@ -19,7 +21,7 @@ export function useAuth() {
   useEffect(() => {
     const fetchMe = async () => {
       try {
-        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
+        const apiUrl = getApiUrl();
 
         const res = await axios.get(`${apiUrl}/user/me`, {
           withCredentials: true,

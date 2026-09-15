@@ -1,17 +1,18 @@
 'use client';
 
-import React, { useState, useRef, useEffect } from 'react';
-import { Mail, ArrowLeft, KeyRound, CheckCircle2, ArrowRight, Lock } from 'lucide-react';
+import React, { useState, useRef } from 'react';
+import { Mail, ArrowLeft, KeyRound, CheckCircle2, Lock } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import axios from 'axios';
 import Link from 'next/link';
+import { getApiUrl } from '@/lib/api';
 
 export default function ForgotPasswordPage() {
   const router = useRouter();
   const [step, setStep] = useState<1 | 2 | 3>(1);
   const [isLoading, setIsLoading] = useState(false);
   const [email, setEmail] = useState('');
-  const [otp, setOtp] = useState(['', '', '', '']);
+  const [otp, setOtp] = useState(['', '', '', '', '', '']);
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
   const [passwords, setPasswords] = useState({ new: '', confirm: '' });
   const [showPassword, setShowPassword] = useState(false);
@@ -21,7 +22,7 @@ export default function ForgotPasswordPage() {
     setIsLoading(true);
 
     try {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || '/api';
+      const apiUrl = getApiUrl();
       const response = await axios.post(`${apiUrl}/auth/forgot-password`, { email });
 
       if (response.data.code === 200) {
@@ -43,30 +44,11 @@ export default function ForgotPasswordPage() {
   const handleVerifyCode = async (e: React.FormEvent) => {
     e.preventDefault();
     const codeValue = otp.join('');
-    if (codeValue.length < 4) {
-      alert('Masukkan 4 digit kode');
+    if (codeValue.length < 6) {
+      alert('Masukkan 6 digit kode verifikasi');
       return;
     }
-
-    setIsLoading(true);
-    try {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || '/api';
-      const response = await axios.post(`${apiUrl}/auth/verify-reset-code`, {
-        email,
-        code: codeValue
-      });
-
-      if (response.data.code === 200) {
-        setStep(3);
-      } else {
-        alert(response.data.message);
-      }
-
-    } catch (error) {
-      alert('Kode salah atau kadaluwarsa');
-    } finally {
-      setIsLoading(false);
-    }
+    setStep(3);
   };
 
   const handleResetPassword = async (e: React.FormEvent) => {
@@ -76,11 +58,19 @@ export default function ForgotPasswordPage() {
       return;
     }
 
+    const codeValue = otp.join('');
+    if (codeValue.length < 6) {
+      alert('Kode verifikasi 6 digit harus diisi');
+      setStep(2);
+      return;
+    }
+
     setIsLoading(true);
     try {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || '/api';
+      const apiUrl = getApiUrl();
       const response = await axios.post(`${apiUrl}/auth/change-password`, {
         email,
+        code: codeValue,
         password: passwords.new
       });
 
@@ -88,11 +78,15 @@ export default function ForgotPasswordPage() {
         alert('Password berhasil diubah! Silakan login.');
         router.push('/auth/login');
       } else {
-        alert(response.data.message);
+        alert(response.data.message || 'Gagal mengubah password');
       }
 
     } catch (error) {
-      alert('Gagal mengubah password');
+      if (axios.isAxiosError(error)) {
+        alert(error.response?.data?.message || 'Gagal mengubah password');
+      } else {
+        alert('Gagal mengubah password');
+      }
     } finally {
       setIsLoading(false);
     }
@@ -103,7 +97,7 @@ export default function ForgotPasswordPage() {
     const newOtp = [...otp];
     newOtp[index] = value;
     setOtp(newOtp);
-    if (value && index < 3) inputRefs.current[index + 1]?.focus();
+    if (value && index < 5) inputRefs.current[index + 1]?.focus();
   };
 
   const handleOtpKeyDown = (index: number, e: React.KeyboardEvent) => {
@@ -114,7 +108,7 @@ export default function ForgotPasswordPage() {
     <main className="relative min-h-screen bg-slate-50 flex items-center justify-center p-4 lg:p-8 overflow-hidden">
       <div aria-hidden="true" className="absolute top-[-10%] left-[-10%] w-96 h-96 bg-blue-400/20 rounded-full blur-[100px] pointer-events-none" />
       <div aria-hidden="true" className="absolute bottom-[-10%] right-[-10%] w-96 h-96 bg-purple-400/20 rounded-full blur-[100px] pointer-events-none" />
-      <section className="relative z-10 w-full max-w-[400px] bg-white/80 backdrop-blur-xl rounded-xl shadow-sm border border-slate-200 p-8 transition-all duration-300">
+      <section className="relative z-10 w-full max-w-[440px] bg-white/80 backdrop-blur-xl rounded-xl shadow-sm border border-slate-200 p-8 transition-all duration-300">
         <header className="mb-8 text-center">
           <div className="mx-auto w-12 h-12 bg-blue-600 rounded-lg flex items-center justify-center mb-4 shadow-lg shadow-blue-600/20">
             {step === 1 && <KeyRound className="w-6 h-6 text-white" />}
@@ -130,7 +124,7 @@ export default function ForgotPasswordPage() {
 
           <p className="text-slate-500 text-sm mt-2 px-2">
             {step === 1 && 'Masukkan email Anda untuk menerima kode reset.'}
-            {step === 2 && `Kami telah mengirim kode 4 digit ke ${email}`}
+            {step === 2 && `Kami telah mengirim kode 6 digit ke ${email}`}
             {step === 3 && 'Buat password baru yang aman untuk akun Anda.'}
           </p>
         </header>
@@ -165,7 +159,7 @@ export default function ForgotPasswordPage() {
 
         {step === 2 && (
           <form onSubmit={handleVerifyCode} className="space-y-6">
-            <div className="flex justify-between gap-2 px-2">
+            <div className="flex justify-between gap-1.5 sm:gap-2 px-1">
               {otp.map((digit, index) => (
                 <input
                   key={index}
@@ -176,7 +170,7 @@ export default function ForgotPasswordPage() {
                   value={digit}
                   onChange={(e) => handleOtpChange(index, e.target.value)}
                   onKeyDown={(e) => handleOtpKeyDown(index, e)}
-                  className="w-14 h-14 sm:w-16 sm:h-16 text-center text-2xl font-bold bg-white border border-slate-300 rounded-xl text-slate-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-600/20 focus:border-blue-600 focus:-translate-y-1 transition-all duration-200"
+                  className="w-11 h-13 sm:w-13 sm:h-14 text-center text-xl font-bold bg-white border border-slate-300 rounded-xl text-slate-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-600/20 focus:border-blue-600 focus:-translate-y-1 transition-all duration-200"
                 />
               ))}
             </div>

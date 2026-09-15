@@ -14,6 +14,8 @@ import { usePathname, useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 import axios from 'axios';
 
+import { getApiUrl } from '@/lib/api';
+
 interface DashboardLayoutProps {
   children: React.ReactNode;
   role?: string;
@@ -50,9 +52,7 @@ export default function DashboardLayout({
 
   const handleLogout = async () => {
     try {
-      const apiUrl =
-        process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
-
+      const apiUrl = getApiUrl();
       await axios.post(`${apiUrl}/auth/logout`, {}, {
         withCredentials: true,
       });

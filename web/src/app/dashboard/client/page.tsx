@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 import DashboardLayout from "../DashboardLayout";
+import { getApiUrl } from '@/lib/api';
 import { 
   Users, FileText, DollarSign, Briefcase, ChevronRight, X
 } from "lucide-react";
@@ -47,7 +48,8 @@ export default function ClientDashboard() {
   useEffect(() => {
     const fetchDashboard = async () => {
         try {
-            const res = await axios.get(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/user/client/dashboard`, {
+            const apiUrl = getApiUrl();
+            const res = await axios.get(`${apiUrl}/user/client/dashboard`, {
                 withCredentials: true 
             });
             setDashboardData(res.data.data);
@@ -68,13 +70,23 @@ export default function ClientDashboard() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-        await axios.post('/api/client/jobs/create', formData, { withCredentials: true });
+        const apiUrl = getApiUrl();
+        const payload = {
+            ...formData,
+            budget: Number(formData.budget),
+            deadline: formData.deadline ? new Date(formData.deadline).toISOString() : new Date().toISOString(),
+        };
+        await axios.post(`${apiUrl}/user/client/jobs`, payload, { withCredentials: true });
         alert('Pekerjaan berhasil diposting!');
         setShowPostJobModal(false);
         window.location.reload(); 
     } catch (error) {
         console.error(error);
-        alert('Gagal memposting pekerjaan');
+        if (axios.isAxiosError(error)) {
+            alert(error.response?.data?.message || 'Gagal memposting pekerjaan');
+        } else {
+            alert('Gagal memposting pekerjaan');
+        }
     }
   };
 

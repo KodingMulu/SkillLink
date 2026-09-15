@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import axios from 'axios';
 import DashboardLayout from "../../DashboardLayout";
 import { Plus, ExternalLink, Trash2, Edit3, Image as ImageIcon, X, Loader2 } from 'lucide-react';
+import { getApiUrl } from '@/lib/api';
 
 interface Project {
   id: string;
@@ -36,7 +37,8 @@ export default function PortfolioPage() {
   const fetchProjects = async () => {
     setIsLoading(true);
     try {
-      const res = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/user/freelancer/portfolio`, { withCredentials: true });
+      const apiUrl = getApiUrl();
+      const res = await axios.get(`${apiUrl}/user/freelancer/portfolio`, { withCredentials: true });
       setProjects(res.data.data);
     } catch (error) {
       console.error(error);
@@ -54,7 +56,8 @@ export default function PortfolioPage() {
     
     setIsSubmitting(true);
     try {
-      await axios.post('/api/portfolio', formData, { withCredentials: true });
+      const apiUrl = getApiUrl();
+      await axios.post(`${apiUrl}/user/freelancer/portfolio`, formData, { withCredentials: true });
       await fetchProjects();
       setIsModalOpen(false);
       setFormData({ title: '', category: 'Web Development', image: '', description: '' });
