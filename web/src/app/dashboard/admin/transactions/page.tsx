@@ -2,12 +2,12 @@
 
 import { useState, useEffect } from 'react';
 import axios from 'axios';
+import { getApiUrl } from '@/lib/api';
 import { 
   DollarSign, Search, Filter, Download, 
   ArrowUpRight, Clock, CheckCircle2, XCircle, 
   MoreVertical, ChevronLeft, ChevronRight, FileText,
-  CreditCard, Wallet, Landmark,
-  type LucideIcon 
+  CreditCard, Wallet, Landmark
 } from 'lucide-react';
 import DashboardLayout from '../../DashboardLayout';
 import TaxReportModal from './components/TaxReportModal';
@@ -70,11 +70,37 @@ export default function TransactionManagementPage() {
     page: 1, limit: 10, total: 0, totalPages: 1
   });
 
+  const fetchTransactions = async () => {
+    setLoadingTable(true);
+    try {
+      const res = await axios.get<TransactionListResponse>(
+        getApiUrl('/user/admin/transactions'),
+        {
+          params: {
+            page: pagination.page,
+            limit: 10,
+            search: searchTerm,
+            status: statusFilter
+          },
+          withCredentials: true
+        }
+      );
+      setTransactions(res.data.data || []);
+      if (res.data.pagination) {
+        setPagination(prev => ({ ...prev, ...res.data.pagination }));
+      }
+    } catch (error) {
+      setTransactions([]);
+    } finally {
+      setLoadingTable(false);
+    }
+  };
+
   useEffect(() => {
     const fetchStats = async () => {
       try {
         const res = await axios.get<AdminStatsResponse>(
-          `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/user/admin/stats`,
+          getApiUrl('/user/admin/stats'),
           { withCredentials: true }
         );
         setStats(res.data.transactionStats || []);
@@ -89,35 +115,9 @@ export default function TransactionManagementPage() {
   }, []);
 
   useEffect(() => {
-    const fetchTransactions = async () => {
-      setLoadingTable(true);
-      try {
-        const res = await axios.get<TransactionListResponse>(
-          `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/user/admin/transactions`,
-          {
-            params: {
-              page: pagination.page,
-              limit: 10,
-              search: searchTerm,
-              status: statusFilter
-            },
-            withCredentials: true
-          }
-        );
-        setTransactions(res.data.data || []);
-        if (res.data.pagination) {
-          setPagination(prev => ({ ...prev, ...res.data.pagination }));
-        }
-      } catch (error) {
-        setTransactions([]);
-      } finally {
-        setLoadingTable(false);
-      }
-    };
-
     const timeoutId = setTimeout(() => {
       fetchTransactions();
-    }, 500);
+    }, 400);
 
     return () => clearTimeout(timeoutId);
   }, [searchTerm, statusFilter, pagination.page]);

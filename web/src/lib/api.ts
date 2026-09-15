@@ -1,8 +1,10 @@
-export function getApiUrl(): string {
+export function getApiUrl(path: string = ''): string {
   const url = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
-  // Standardize: ensure url ends with /api if omitted accidentally
-  if (!url.endsWith('/api') && !url.includes('/api/')) {
-    return `${url.replace(/\/+$/, '')}/api`;
-  }
-  return url;
+  const baseUrl = (!url.endsWith('/api') && !url.includes('/api/'))
+    ? `${url.replace(/\/+$/, '')}/api`
+    : url;
+  if (!path) return baseUrl;
+  const cleanPath = path.startsWith('/') ? path : `/${path}`;
+  return `${baseUrl.replace(/\/+$/, '')}${cleanPath}`;
 }
+
