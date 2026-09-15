@@ -6,6 +6,8 @@ import { Wallet, Clock, CheckCircle2, Star, TrendingUp, TrendingDown } from "luc
 import axios from 'axios';
 import Link from 'next/link';
 
+import { getApiUrl } from '@/lib/api';
+
 interface DashboardStats {
   revenue: { value: number; growth: number; label: string };
   activeProjects: { value: number; growth: number; label: string };
@@ -55,7 +57,7 @@ export default function FreelancerDashboard() {
   useEffect(() => {
     const fetchDashboardData = async () => {
       try {
-        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+        const apiUrl = getApiUrl();
         const response = await axios.get(`${apiUrl}/user/freelancer/dashboard`, {
           withCredentials: true 
         });

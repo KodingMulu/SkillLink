@@ -6,6 +6,7 @@ import {
   Search, Users, CheckCircle2, X, Loader2
 } from 'lucide-react';
 import axios from 'axios';
+import { getApiUrl } from '@/lib/api';
 
 interface Job {
   id: string;
@@ -84,7 +85,7 @@ export default function FindJobsPage() {
   const fetchJobs = async () => {
     setLoading(true);
     try {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+      const apiUrl = getApiUrl();
       const response = await axios.get<ApiResponse>(`${apiUrl}/user/freelancer/jobs`, {
         params: {
           q: searchQuery,
@@ -117,7 +118,7 @@ export default function FindJobsPage() {
 
     setIsSubmitting(true);
     try {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+      const apiUrl = getApiUrl();
 
       await axios.post(`${apiUrl}/user/freelancer/proposals`, {
         jobId: selectedJob.id,

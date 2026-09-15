@@ -14,6 +14,7 @@ import {
     AlertCircle
 } from 'lucide-react';
 import axios from 'axios';
+import { getApiUrl } from '@/lib/api';
 
 interface Transaction {
     id: string;
@@ -52,7 +53,8 @@ export default function FreelancerWalletPage() {
     useEffect(() => {
         const fetchWalletData = async () => {
             try {
-                const response = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/user/freelancer/wallet`, {
+                const apiUrl = getApiUrl();
+                const response = await axios.get(`${apiUrl}/user/freelancer/wallet`, {
                     withCredentials: true
                 });
                 if (response.data.code === 200) {
@@ -73,8 +75,9 @@ export default function FreelancerWalletPage() {
 
         setIsSubmitting(true);
         try {
+            const apiUrl = getApiUrl();
             const response = await axios.post(
-                `${process.env.NEXT_PUBLIC_API_URL}/user/freelancer/wallet`,
+                `${apiUrl}/user/freelancer/wallet`,
                 { amount: Number(withdrawAmount) },
                 { withCredentials: true }
             );
@@ -90,7 +93,7 @@ export default function FreelancerWalletPage() {
                 setWithdrawAmount('');
 
                 // Refresh data untuk memastikan sinkronisasi
-                const refreshRes = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/user/freelancer/wallet`);
+                const refreshRes = await axios.get(`${apiUrl}/user/freelancer/wallet`, { withCredentials: true });
                 setWallet(refreshRes.data.data);
             }
         } catch (error) {

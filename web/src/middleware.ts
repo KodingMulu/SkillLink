@@ -12,7 +12,7 @@ export async function middleware(request: NextRequest) {
   }
 
   try {
-    const secretKey = process.env.JWT_SECRET || 'skilllink_super_secret_jwt_key_2026_change_me_in_production';
+    const secretKey = process.env.JWT_SECRET || 'skilllink_super_secret_jwt_key_2026_dev_mode';
     const secret = new TextEncoder().encode(secretKey); 
     const { payload } = await jwtVerify(token, secret);
 

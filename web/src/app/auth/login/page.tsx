@@ -60,10 +60,12 @@ export default function LoginPage() {
         const rawRole = response.data.user?.role || response.data.role;
         const userRole = String(rawRole).toUpperCase();
 
-        if (userRole === 'ADMIN') router.replace('/dashboard/admin');
-        else if (userRole === 'CLIENT') router.replace('/dashboard/client');
-        else if (userRole === 'FREELANCER') router.replace('/dashboard/freelancer');
-        else router.replace('/');
+        let targetPath = '/';
+        if (userRole === 'ADMIN') targetPath = '/dashboard/admin';
+        else if (userRole === 'CLIENT') targetPath = '/dashboard/client';
+        else if (userRole === 'FREELANCER') targetPath = '/dashboard/freelancer';
+
+        window.location.href = targetPath;
       } else {
         alert(`Login Gagal: ${response.data.message}`);
       }

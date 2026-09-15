@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import DashboardLayout from '../../DashboardLayout';
 import Link from 'next/link';
 import axios from 'axios';
+import { getApiUrl } from '@/lib/api';
 import {
   User, Mail, MapPin, Briefcase,
   Star, Clock, Edit2, Github, Linkedin,
@@ -60,7 +61,7 @@ export default function FreelancerProfilePage() {
   useEffect(() => {
     const fetchProfile = async () => {
       try {
-        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+        const apiUrl = getApiUrl();
         const response = await axios.get(`${apiUrl}/user/freelancer/profile`, { withCredentials: true });
         if (response.data.code === 200) {
           setProfile(response.data.data);
