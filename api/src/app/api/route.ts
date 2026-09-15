@@ -1,8 +1,11 @@
 import { NextResponse } from "next/server";
 
 export function GET() {
-     return NextResponse.json({
-          message: "Hello World",
-          code: 200
-     })
+     return NextResponse.json(
+          {
+               message: "SkillLink API Service",
+               code: 200
+          },
+          { status: 200 }
+     );
 }

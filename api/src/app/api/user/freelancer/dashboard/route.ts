@@ -33,7 +33,7 @@ export async function GET(req: NextRequest) {
       completedProjectsLastMonth,
       activeProjectsList,
       recommendedJobs,
-      rawRatings
+      ratingAgg
     ] = await Promise.all([
       prisma.wallet.findUnique({
         where: { userId: userId },
@@ -117,18 +117,18 @@ export async function GET(req: NextRequest) {
           tags: true,
         }
       }),
-      prisma.$queryRaw`SELECT rating FROM "Project" WHERE "freelancerId" = ${userId} AND rating IS NOT NULL`
+
+      prisma.project.aggregate({
+        _avg: { rating: true },
+        where: {
+          freelancerId: userId,
+          rating: { not: null }
+        }
+      })
     ]);
 
     const totalRevenue = totalRevenueData._sum.amount ? Number(totalRevenueData._sum.amount) : 0;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const ratingList = rawRatings as any[];
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const totalRatingScore = ratingList.reduce((acc: number, curr: any) => acc + (curr.rating || 0), 0);
-
-    const avgRating = ratingList.length > 0
-      ? Number((totalRatingScore / ratingList.length).toFixed(1))
-      : 0;
+    const avgRating = ratingAgg._avg.rating ? Number(ratingAgg._avg.rating.toFixed(1)) : 0;
 
     const calculateGrowth = (current: number, previous: number) => {
       if (previous === 0) return current > 0 ? 100 : 0;

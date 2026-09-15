@@ -54,42 +54,95 @@ export async function PATCH(
             );
         }
 
-        const updatedProposal = await prisma.proposal.update({
-            where: { id: proposalId },
-            data: { status }
-        });
-
         if (status === 'ACCEPTED') {
-            await prisma.job.update({
-                where: { id: proposal.jobId },
-                data: { status: 'IN_PROGRESS' }
+            let clientWallet = await prisma.wallet.findUnique({
+                where: { userId: user.id }
             });
-
-            const existingProject = await prisma.project.findUnique({
-                where: { jobId: proposal.jobId }
-            });
-
-            if (!existingProject) {
-                await prisma.project.create({
-                    data: {
-                        jobId: proposal.jobId,
-                        clientId: user.id,
-                        freelancerId: proposal.freelancerId,
-                        status: 'IN_PROGRESS',
-                        progress: 0
-                    }
+            if (!clientWallet) {
+                clientWallet = await prisma.wallet.create({
+                    data: { userId: user.id, balance: 0 }
                 });
             }
-        }
 
-        return NextResponse.json(
-            {
-                message: `Proposal ${status.toLowerCase()}`,
-                code: 200,
-                data: updatedProposal
-            },
-            { status: 200 }
-        );
+            const bidAmount = proposal.bidAmount;
+            const currentBalance = Number(clientWallet.balance);
+
+            if (currentBalance < bidAmount) {
+                return NextResponse.json(
+                    { message: `Saldo wallet tidak mencukupi (Saldo: Rp ${currentBalance.toLocaleString('id-ID')}, Dibutuhkan: Rp ${bidAmount.toLocaleString('id-ID')}). Silakan top-up saldo Anda terlebih dahulu.`, code: 400 },
+                    { status: 400 }
+                );
+            }
+
+            const updatedProposal = await prisma.$transaction(async (tx) => {
+                const updatedProp = await tx.proposal.update({
+                    where: { id: proposalId },
+                    data: { status: 'ACCEPTED' }
+                });
+
+                await tx.job.update({
+                    where: { id: proposal.jobId },
+                    data: { status: 'IN_PROGRESS' }
+                });
+
+                const existingProject = await tx.project.findUnique({
+                    where: { jobId: proposal.jobId }
+                });
+
+                if (!existingProject) {
+                    await tx.project.create({
+                        data: {
+                            jobId: proposal.jobId,
+                            clientId: user.id,
+                            freelancerId: proposal.freelancerId,
+                            status: 'IN_PROGRESS',
+                            progress: 0
+                        }
+                    });
+                }
+
+                await tx.wallet.update({
+                    where: { id: clientWallet.id },
+                    data: {
+                        balance: { decrement: bidAmount }
+                    }
+                });
+
+                await tx.transaction.create({
+                    data: {
+                        walletId: clientWallet.id,
+                        amount: bidAmount,
+                        type: 'PAYMENT_OUT',
+                        status: 'COMPLETED'
+                    }
+                });
+
+                return updatedProp;
+            });
+
+            return NextResponse.json(
+                {
+                    message: "Proposal diterima dan pembayaran proyek berhasil diproses",
+                    code: 200,
+                    data: updatedProposal
+                },
+                { status: 200 }
+            );
+        } else {
+            const updatedProposal = await prisma.proposal.update({
+                where: { id: proposalId },
+                data: { status: 'REJECTED' }
+            });
+
+            return NextResponse.json(
+                {
+                    message: "Proposal ditolak",
+                    code: 200,
+                    data: updatedProposal
+                },
+                { status: 200 }
+            );
+        }
 
     } catch (error) {
         console.error("UPDATE_PROPOSAL_ERROR:", error);

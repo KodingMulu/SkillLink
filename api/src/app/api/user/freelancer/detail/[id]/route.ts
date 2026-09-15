@@ -59,8 +59,7 @@ export async function GET(
         const totalProjects = completedProjects.length;
 
         const totalRating = completedProjects.reduce((acc, curr) => {
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            const rating = (curr as any).rating || 0;
+            const rating = curr.rating || 0;
             return acc + rating;
         }, 0);
 
@@ -72,8 +71,7 @@ export async function GET(
             role: proj.job.title,
             company: proj.client.username,
             period: new Date(proj.updatedAt).toLocaleDateString('id-ID', { month: 'short', year: 'numeric' }),
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            rating: (proj as any).rating
+            rating: proj.rating || 0
         }));
 
         return NextResponse.json(
