@@ -2,29 +2,35 @@ import { comparePassword, signToken } from "@/lib/auth";
 import prisma from "@/lib/prisma";
 import { NextResponse } from "next/server";
 
-export async function POST(req:Request) {
+export async function POST(req: Request) {
      try {
           const { email, password } = await req.json();
 
+          if (!email || !password) {
+               return NextResponse.json(
+                    { message: "Email and password are required", code: 400 },
+                    { status: 400 }
+               );
+          }
+
           const user = await prisma.user.findUnique({
-               where: {
-                    email
-               }
+               where: { email }
           });
+
           if (!user) {
-               return NextResponse.json({
-                    message: "User not found",
-                    code: 400
-               });
-          };
+               return NextResponse.json(
+                    { message: "User not found", code: 400 },
+                    { status: 400 }
+               );
+          }
 
           const validatePassword = await comparePassword(password, user.password);
           if (!validatePassword) {
-               return NextResponse.json({
-                    message: "Invalid password",
-                    code: 400
-               });
-          };
+               return NextResponse.json(
+                    { message: "Invalid password", code: 400 },
+                    { status: 400 }
+               );
+          }
 
           const token = signToken({
                id: user.id,
@@ -32,30 +38,35 @@ export async function POST(req:Request) {
                role: user.role
           });
 
-          const response = NextResponse.json({
-               message: "User logged in successfully",
-               token: token,
-               user: {
-                    id: user.id,
-                    email: user.email,
-                    role: user.role,
-                    username: user.username
+          const response = NextResponse.json(
+               {
+                    message: "User logged in successfully",
+                    token: token,
+                    user: {
+                         id: user.id,
+                         email: user.email,
+                         role: user.role,
+                         username: user.username
+                    },
+                    code: 200
                },
-               code: 200
-          });
+               { status: 200 }
+          );
 
           response.cookies.set("token", token, {
                httpOnly: true,
                path: "/",
+               sameSite: "strict",
+               secure: process.env.NODE_ENV === "production",
                maxAge: 60 * 60 * 24 * 7
           });
 
           return response;
      } catch (error) {
-          console.log(error);
-          return NextResponse.json({
-               message: "Something went wrong",
-               code: 500
-          })
+          console.error("Login Error:", error);
+          return NextResponse.json(
+               { message: "Something went wrong", code: 500 },
+               { status: 500 }
+          );
      }
 }

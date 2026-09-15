@@ -57,7 +57,16 @@ export async function middleware(request: NextRequest) {
   }
 
   try {
-    const secret = new TextEncoder().encode(process.env.JWT_SECRET || 'rahasia_default');
+    const jwtSecret = process.env.JWT_SECRET;
+    if (!jwtSecret) {
+      console.error("JWT_SECRET environment variable is missing in middleware.");
+      if (isApiRoute) {
+        const res = NextResponse.json({ message: "Internal server error: Security configuration missing" }, { status: 500 });
+        return setCorsHeaders(res);
+      }
+      return NextResponse.redirect(loginUrl);
+    }
+    const secret = new TextEncoder().encode(jwtSecret);
     const { payload } = await jwtVerify(token, secret);
     const role = payload.role as string;
 

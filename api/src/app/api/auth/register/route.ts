@@ -24,10 +24,10 @@ export async function POST(req: Request) {
                );
           };
 
-          const code = Math.floor(1000 + Math.random() * 9000).toString();
+          const code = Math.floor(100000 + Math.random() * 900000).toString();
           const hashed = await hashPassword(password);
 
-          await prisma.user.create({
+          const newUser = await prisma.user.create({
                data: {
                     email,
                     username,
@@ -51,7 +51,14 @@ export async function POST(req: Request) {
                     `Your verification code is ${code}`
                );
           } catch (emailError) {
-               console.error("Email failed to send:", emailError);
+               console.error("Email failed to send, rolling back registration:", emailError);
+               await prisma.user.delete({
+                    where: { id: newUser.id }
+               });
+               return NextResponse.json(
+                    { message: "Failed to send verification email. Please try registering again." },
+                    { status: 500 }
+               );
           }
 
           return NextResponse.json(

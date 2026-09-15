@@ -5,37 +5,42 @@ export async function POST(req: Request) {
      try {
           const { email, code } = await req.json();
 
+          if (!email || !code) {
+               return NextResponse.json(
+                    { message: "Email and verification code are required", code: 400 },
+                    { status: 400 }
+               );
+          }
+
           const user = await prisma.user.findUnique({
-               where: {
-                    email
-               }
+               where: { email }
           });
           if (!user) {
-               return NextResponse.json({
-                    message: "User not found",
-                    code: 400
-               })
+               return NextResponse.json(
+                    { message: "User not found", code: 400 },
+                    { status: 400 }
+               );
           }
 
           if (user.isVerified) {
-               return NextResponse.json({
-                    message: "User already verified",
-                    code: 400
-               })
-          };
+               return NextResponse.json(
+                    { message: "User already verified", code: 400 },
+                    { status: 400 }
+               );
+          }
 
-          if (new Date() > user.verificationExpires!) {
-               return NextResponse.json({
-                    message: "Verification code expired",
-                    code: 400
-               })
+          if (!user.verificationExpires || new Date() > user.verificationExpires) {
+               return NextResponse.json(
+                    { message: "Verification code expired", code: 400 },
+                    { status: 400 }
+               );
           }
 
           if (user.verificationCode !== code) {
-               return NextResponse.json({
-                    message: "Invalid verification code",
-                    code: 400
-               });
+               return NextResponse.json(
+                    { message: "Invalid verification code", code: 400 },
+                    { status: 400 }
+               );
           }
 
           await prisma.user.update({
@@ -47,15 +52,15 @@ export async function POST(req: Request) {
                }
           });
 
-          return NextResponse.json({
-               message: "Email verified successfully",
-               code: 200
-          });
+          return NextResponse.json(
+               { message: "Email verified successfully", code: 200 },
+               { status: 200 }
+          );
      } catch (error) {
-          console.error(error);
-          return NextResponse.json({
-               message: "Something went wrong",
-               code: 500
-          });
+          console.error("Verification Error:", error);
+          return NextResponse.json(
+               { message: "Something went wrong", code: 500 },
+               { status: 500 }
+          );
      }
 }
