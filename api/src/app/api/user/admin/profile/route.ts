@@ -13,7 +13,9 @@ export async function GET(req: NextRequest) {
             where: { id: userAuth.id }
         });
 
-        if (!user) return NextResponse.json({ message: "User not found", code: 404 });
+        if (!user) {
+            return NextResponse.json({ message: "User not found", code: 404 }, { status: 404 });
+        }
 
         const profileData = {
             name: user.username || "Admin",
@@ -23,7 +25,7 @@ export async function GET(req: NextRequest) {
             avatar: user.username ? user.username.substring(0, 2).toUpperCase() : "AD"
         };
 
-        return NextResponse.json({ message: "Success", code: 200, data: profileData });
+        return NextResponse.json({ message: "Success", code: 200, data: profileData }, { status: 200 });
 
     } catch (error) {
         return NextResponse.json({ message: "Internal Server Error", code: 500 }, { status: 500 });
