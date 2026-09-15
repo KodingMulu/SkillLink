@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import DashboardLayout from '../../DashboardLayout';
+import { getApiUrl } from '@/lib/api';
 import Link from 'next/link';
 import axios from 'axios';
 import {
@@ -41,13 +42,13 @@ export default function ClientProfilePage() {
     useEffect(() => {
         const fetchProfile = async () => {
             try {
-                const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+                const apiUrl = getApiUrl();
                 const response = await axios.get(`${apiUrl}/user/client/profile`, { withCredentials: true });
                 if (response.data.code === 200) {
                     setProfile(response.data.data);
                 }
             } catch (error) {
-                console.error(error);
+                console.error("Error fetching client profile:", error);
             } finally {
                 setLoading(false);
             }
@@ -66,10 +67,10 @@ export default function ClientProfilePage() {
     if (loading || !profile) {
         return (
             <DashboardLayout role="client">
-                <div className="flex h-screen items-center justify-center">
-                    <div className="animate-pulse flex flex-col items-center gap-4">
-                        <div className="h-16 w-16 bg-slate-200 rounded-full"></div>
-                        <div className="h-4 w-48 bg-slate-200 rounded"></div>
+                <div className="flex h-[400px] items-center justify-center">
+                    <div className="flex flex-col items-center gap-3">
+                        <div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+                        <p className="text-xs text-slate-500 font-medium">Memuat Profil Klien...</p>
                     </div>
                 </div>
             </DashboardLayout>
@@ -78,35 +79,40 @@ export default function ClientProfilePage() {
 
     return (
         <DashboardLayout role="client">
-            <div className="relative h-64 w-full bg-slate-900 rounded-b-[3rem] overflow-hidden shadow-lg">
-                <div className="absolute inset-0 bg-gradient-to-r from-emerald-900 via-slate-900 to-teal-900 opacity-90"></div>
-                <div className="absolute inset-0 opacity-30 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')]"></div>
+            {/* Dark Header Cover */}
+            <div className="relative h-44 w-full bg-slate-900 rounded-2xl overflow-hidden border border-slate-800">
+                <div className="absolute inset-0 bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900"></div>
+                <div className="absolute bottom-4 left-6 text-white z-10">
+                    <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-blue-600 text-white uppercase tracking-wider">
+                        Client Account
+                    </span>
+                </div>
             </div>
 
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 -mt-24 pb-12">
-                <div className="bg-white rounded-[2rem] border border-slate-100 shadow-xl p-6 md:p-8 mb-8 relative z-10">
-                    <div className="flex flex-col lg:flex-row gap-8 items-start">
-                        <div className="w-36 h-36 bg-gradient-to-br from-emerald-600 to-teal-600 rounded-[2rem] flex items-center justify-center text-white text-5xl font-black shadow-2xl border-4 border-white mx-auto lg:mx-0 uppercase">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 -mt-16 pb-12">
+                <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 md:p-8 mb-8 relative z-10">
+                    <div className="flex flex-col lg:flex-row gap-6 items-start">
+                        <div className="w-24 h-24 bg-slate-900 rounded-2xl flex items-center justify-center text-white text-3xl font-bold border-4 border-white shadow-md mx-auto lg:mx-0 uppercase">
                             {profile.avatar}
                         </div>
 
-                        <div className="flex-1 text-center lg:text-left space-y-3">
-                            <h1 className="text-3xl md:text-4xl font-black text-slate-900">{profile.name}</h1>
-                            <div className="flex flex-wrap justify-center lg:justify-start gap-4 text-sm font-semibold pt-2">
-                                <div className="flex items-center gap-2 bg-emerald-50 text-emerald-700 px-4 py-2 rounded-xl border border-emerald-100">
-                                    <Briefcase className="w-4 h-4" /> <span>{profile.stats.totalJobsPosted} Jobs Posted</span>
+                        <div className="flex-1 text-center lg:text-left space-y-2">
+                            <h1 className="text-2xl md:text-3xl font-bold text-slate-900">{profile.name}</h1>
+                            <div className="flex flex-wrap justify-center lg:justify-start gap-3 text-xs font-semibold pt-1">
+                                <div className="flex items-center gap-1.5 bg-blue-50 text-blue-700 px-3 py-1.5 rounded-lg border border-blue-100">
+                                    <Briefcase className="w-3.5 h-3.5" /> <span>{profile.stats.totalJobsPosted} Jobs Posted</span>
                                 </div>
-                                <div className="flex items-center gap-2 bg-blue-50 text-blue-700 px-4 py-2 rounded-xl border border-blue-100">
-                                    <DollarSign className="w-4 h-4" /> <span>{formatRupiah(profile.stats.totalSpent)} Spent</span>
+                                <div className="flex items-center gap-1.5 bg-emerald-50 text-emerald-700 px-3 py-1.5 rounded-lg border border-emerald-100">
+                                    <DollarSign className="w-3.5 h-3.5" /> <span>{formatRupiah(profile.stats.totalSpent)} Total Spent</span>
                                 </div>
-                                <div className="flex items-center gap-2 bg-slate-50 text-slate-600 px-4 py-2 rounded-xl">
-                                    <MapPin className="w-4 h-4" /> <span>{profile.location}</span>
+                                <div className="flex items-center gap-1.5 bg-slate-100 text-slate-600 px-3 py-1.5 rounded-lg">
+                                    <MapPin className="w-3.5 h-3.5" /> <span>{profile.location}</span>
                                 </div>
                             </div>
                         </div>
 
-                        <Link href="/dashboard/client/settings" className="px-6 py-3 bg-white border border-slate-200 text-slate-700 font-bold rounded-xl hover:bg-slate-50 transition shadow-sm flex items-center gap-2">
-                            <Edit2 size={18} /> Edit Profil
+                        <Link href="/dashboard/client/settings" className="px-5 py-2.5 bg-white border border-slate-300 text-slate-700 font-bold text-xs rounded-xl hover:bg-slate-50 transition shadow-sm flex items-center gap-1.5 mx-auto lg:mx-0">
+                            <Edit2 size={15} /> Edit Profil
                         </Link>
                     </div>
                 </div>
@@ -114,22 +120,22 @@ export default function ClientProfilePage() {
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                     <div className="lg:col-span-1 space-y-6">
                         <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
-                            <h3 className="text-sm font-black text-slate-900 uppercase tracking-widest mb-4">Detail Kontak</h3>
-                            <div className="space-y-4">
+                            <h3 className="text-xs font-bold text-slate-900 uppercase tracking-wider mb-4">Detail Kontak</h3>
+                            <div className="space-y-3 text-xs">
                                 <div className="flex items-center gap-3">
-                                    <Mail className="text-slate-400" size={18} />
+                                    <Mail className="text-slate-400" size={16} />
                                     <span className="text-slate-700 font-medium truncate" title={profile.email}>{profile.email}</span>
                                 </div>
                                 <div className="flex items-center gap-3">
-                                    <Building className="text-slate-400" size={18} />
+                                    <Building className="text-slate-400" size={16} />
                                     <span className="text-slate-700 font-medium">Bergabung {formatDate(profile.joinDate)}</span>
                                 </div>
                             </div>
                         </div>
 
                         <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
-                            <h3 className="text-sm font-black text-slate-900 uppercase tracking-widest mb-4">Tentang Perusahaan</h3>
-                            <p className="text-slate-600 leading-relaxed whitespace-pre-wrap">
+                            <h3 className="text-xs font-bold text-slate-900 uppercase tracking-wider mb-4">Tentang Perusahaan</h3>
+                            <p className="text-xs text-slate-600 leading-relaxed whitespace-pre-wrap">
                                 {profile.bio || "Deskripsi perusahaan belum ditambahkan."}
                             </p>
                         </div>
@@ -137,22 +143,22 @@ export default function ClientProfilePage() {
 
                     <div className="lg:col-span-2 space-y-6">
                         <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
-                            <h3 className="text-lg font-black text-slate-900 mb-6">Pekerjaan Terbaru</h3>
+                            <h3 className="text-base font-bold text-slate-900 mb-4">Lowongan Terbaru</h3>
                             {profile.recentJobs.length === 0 ? (
-                                <div className="text-center py-8 text-slate-400 italic">Belum ada pekerjaan yang diposting.</div>
+                                <div className="text-center py-8 text-slate-400 text-xs italic">Belum ada pekerjaan yang diposting.</div>
                             ) : (
-                                <div className="space-y-4">
+                                <div className="space-y-3">
                                     {profile.recentJobs.map((job) => (
-                                        <div key={job.id} className="flex flex-col sm:flex-row sm:items-center justify-between p-4 rounded-xl bg-slate-50 border border-slate-100 hover:border-slate-300 transition gap-4">
+                                        <div key={job.id} className="flex flex-col sm:flex-row sm:items-center justify-between p-4 rounded-xl bg-slate-50 border border-slate-100 hover:border-slate-200 transition gap-3">
                                             <div>
-                                                <h4 className="font-bold text-slate-900">{job.title}</h4>
-                                                <div className="flex items-center gap-3 mt-1 text-xs font-bold text-slate-500">
+                                                <h4 className="font-bold text-slate-900 text-sm">{job.title}</h4>
+                                                <div className="flex items-center gap-3 mt-1 text-xs font-semibold text-slate-500">
                                                     <span className="flex items-center gap-1"><Calendar size={12} /> {formatDate(job.date)}</span>
-                                                    <span className="px-2 py-0.5 bg-white border rounded uppercase">{job.status}</span>
+                                                    <span className="px-2 py-0.5 bg-white border border-slate-200 rounded text-[10px] uppercase font-bold text-slate-700">{job.status}</span>
                                                 </div>
                                             </div>
                                             <div className="text-right">
-                                                <p className="font-black text-emerald-600">{formatRupiah(job.budget)}</p>
+                                                <p className="font-bold text-slate-900 text-sm">{formatRupiah(job.budget)}</p>
                                             </div>
                                         </div>
                                     ))}

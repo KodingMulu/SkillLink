@@ -5,7 +5,7 @@ import { getAuthUser } from "@/lib/server-auth";
 
 export async function GET(request: NextRequest) {
     try {
-        const userAuth = getAuthUser(request);
+        const userAuth = await getAuthUser(request);
         if (!userAuth) {
             return NextResponse.json(
                 { message: "Unauthorized: Token missing or invalid", code: 401 },

@@ -9,7 +9,7 @@ function calculateGrowth(current: number, previous: number) {
 
 export async function GET(req: NextRequest) {
   try {
-    const userAuth = getAuthUser(req);
+    const userAuth = await getAuthUser(req);
     if (!userAuth) {
       return NextResponse.json(
         { message: "Unauthorized: Token missing or invalid", code: 401 },
